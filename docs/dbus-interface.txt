@@ -1,0 +1,29 @@
+
+- Interface CompilerService
+  - function: BusName addJob(file, toolchain, parameters)
+  - function: set_identity(name, private_key, public_key)
+  - function: get_identity(out name, out public_key)
+  - signal: identity_changed(name, public_key)
+  - function: add_group(name, private_key, public_key)
+  - function: remove_group(name, public_key)
+  - function: get_group_list(out groups)
+  - property: thread_count (rw)
+  - property: load (read-only)
+  - signal: local_stats_changed(active_jobs, local_jobs, remote_jobs, enqueued_jobs)
+  - function: get_local_stats(out active_jobs, out local_jobs, out remove_jobs, out enqueued_jobs)
+
+- Interface NetworkStatus
+  - TODO
+
+- Interface CompilerJob
+  - function: abort()
+  - signal: finished(success, return_value)
+  - property: cli_output (read-only)
+
+- Paths:
+  - org/ddcn/CompilerService
+  - org/ddcn/NetworkStatus
+  - org/ddcn/Jobs
+    - org/ddcn/Jobs/0
+	- ...
+
