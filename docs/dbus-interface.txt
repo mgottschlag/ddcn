@@ -1,3 +1,5 @@
+WARNING:
+This is mostly outdated, use the ddcn_service.dia diagram for reference instead.
 
 - Interface CompilerService
   - function: BusName addJob(file, toolchain, parameters)
@@ -8,11 +10,14 @@
   - function: remove_group(name, public_key)
   - function: get_group_list(out groups)
   - property: thread_count (rw)
-  - property: load (read-only)
+  - property: activeJobCount (read-only)
   - signal: local_stats_changed(active_jobs, local_jobs, remote_jobs, enqueued_jobs)
   - function: get_local_stats(out active_jobs, out local_jobs, out remove_jobs, out enqueued_jobs)
 
 - Interface NetworkStatus
+  - signal: peerConnected(name, pubkey, trusted, load)
+  - signal: peerDisconnected(name)
+  - signal: peerChanged(name, pubkey, trusted, load)
   - TODO
 
 - Interface CompilerJob
