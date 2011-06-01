@@ -9,10 +9,14 @@ include(${QT_USE_FILE})
 
 set(SRC
 	main.cpp
+	CompilerService.cpp
+	Job.cpp
+	JobAdaptor.cpp
 )
 
 set(MOC_H
 	CompilerService.h
+	CompilerServiceAdaptor.h
 	CompilerNetwork.h
 	Job.h
 	JobAdaptor.h
@@ -21,6 +25,6 @@ set(MOC_H
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
 
 #include_directories(${QT_INCLUDES})
-add_executable(ddcn_service ${SRC} ${UIS_H})
+add_executable(ddcn_service ${SRC} ${MOC_SRC})
 target_link_libraries(ddcn_service ${QT_LIBRARIES} )
 

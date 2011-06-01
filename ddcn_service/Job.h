@@ -36,6 +36,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class Job : public QObject {
 	Q_OBJECT
 public:
+public slots:
+	void abort();
+signals:
+	void finished(bool success, QString consoleOutput);
 private:
 };
 

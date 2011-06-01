@@ -24,36 +24,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef COMPILERSERVICE_H_INCLUDED
-#define COMPILERSERVICE_H_INCLUDED
+#include "CompilerService.h"
 
-#include <QObject>
-
-/**
- * Class which manages, executes and delegates compiler jobs.
- */
-class CompilerService : public QObject {
-	Q_OBJECT
-	Q_PROPERTY(int threadCount
-	           READ getThreadCount
-	           WRITE setThreadCount
-	           NOTIFY threadCountChanged)
-public:
-	CompilerService();
-public slots:
-	void setThreadCount(int threadCount) {
-		this->threadCount = threadCount;
-		emit threadCountChanged(threadCount);
-		// TODO: Change number of threads running
-	}
-	int getThreadCount() {
-		return threadCount;
-	}
-signals:
-	void threadCountChanged(int threadCount);
-private:
-	int threadCount;
-};
-
-#endif
+CompilerService::CompilerService() : threadCount(1) {
+}
 

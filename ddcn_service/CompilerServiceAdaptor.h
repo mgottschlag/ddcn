@@ -24,35 +24,50 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef COMPILERSERVICE_H_INCLUDED
-#define COMPILERSERVICE_H_INCLUDED
+#ifndef COMPILERSERVICEADAPTOR_H_INCLUDED
+#define COMPILERSERVICEADAPTOR_H_INCLUDED
 
-#include <QObject>
+#include "CompilerService.h"
+
+#include <QDBusAbstractAdaptor>
 
 /**
- * Class which manages, executes and delegates compiler jobs.
+ * Class which exports a CompilerService object.
  */
-class CompilerService : public QObject {
+class CompilerServiceAdaptor : public QDBusAbstractAdaptor {
 	Q_OBJECT
+	Q_CLASSINFO("D-Bus Interface", "org.ddcn.CompilerService")
 	Q_PROPERTY(int threadCount
 	           READ getThreadCount
 	           WRITE setThreadCount
 	           NOTIFY threadCountChanged)
 public:
-	CompilerService();
+	/**
+	 * Creates a dbus adaptor for the compiler service.
+	 * @param service Compiler service object to export.
+	 */
+	explicit CompilerServiceAdaptor(CompilerService *service)
+			: QDBusAbstractAdaptor(service), service(service) {
+		connect(service,
+		        SIGNAL(threadCountChanged(int)),
+		        this,
+		        SLOT(onThreadCountChanged(int)));
+	}
 public slots:
 	void setThreadCount(int threadCount) {
-		this->threadCount = threadCount;
-		emit threadCountChanged(threadCount);
-		// TODO: Change number of threads running
+		service->setThreadCount(threadCount);
 	}
 	int getThreadCount() {
-		return threadCount;
+		return service->getThreadCount();
+	}
+private slots:
+	void onThreadCountChanged(int threadCount) {
+		emit threadCountChanged(threadCount);
 	}
 signals:
 	void threadCountChanged(int threadCount);
 private:
-	int threadCount;
+	CompilerService *service;
 };
 
 #endif

@@ -29,7 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Job.h"
 
-#include <QDBusAdaptor>
+#include <QDBusAbstractAdaptor>
 
 /**
  * Class which exports a Job instance via D-Bus.
@@ -48,13 +48,15 @@ public slots:
 	 * Aborts the job, causing it to finish with an error.
 	 */
 	void abort();
-public signals:
+signals:
 	/**
 	 * Triggered when the job finishes.
 	 * @param success True if the job could be compiled successfully.
 	 * @param consoleOutput Output of the compiler command.
 	 */
 	void finished(bool success, QString consoleOutput);
+private:
+	Job *job;
 };
 
 #endif

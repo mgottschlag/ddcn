@@ -24,14 +24,20 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "CompilerServiceAdaptor.h"
+
 #include <QCoreApplication>
+#include <QDBusConnection>
 
 int main(int argc, char **argv) {
 	QCoreApplication app(argc, argv);
 	// Create the compiler service
-	// TODO
+	CompilerService service;
+	new CompilerServiceAdaptor(&service);
+	// TODO: Initialize CompilerNetwork
 	// Create the D-Bus interface
-	// TODO
+	QDBusConnection::sessionBus().registerObject("/CompilerService", &service);
+	QDBusConnection::sessionBus().registerService("org.ddcn.service");
 	// Start the event loop
 	return app.exec();
 }
