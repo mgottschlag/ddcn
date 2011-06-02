@@ -9,15 +9,19 @@ include(${QT_USE_FILE})
 
 set(SRC
 	main.cpp
+	CompilerNetwork.cpp
+	CompilerNetworkAdaptor.cpp
 	CompilerService.cpp
 	Job.cpp
 	JobAdaptor.cpp
+	DBusStructs.cpp
 )
 
 set(MOC_H
 	CompilerService.h
 	CompilerServiceAdaptor.h
 	CompilerNetwork.h
+	CompilerNetworkAdaptor.h
 	Job.h
 	JobAdaptor.h
 )

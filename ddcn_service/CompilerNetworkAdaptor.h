@@ -24,21 +24,20 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef COMPILERNETWORK_H_INCLUDED
-#define COMPILERNETWORK_H_INCLUDED
+#ifndef COMPILERNETWORKADAPTOR_H_INCLUDED
+#define COMPILERNETWORKADAPTOR_H_INCLUDED
 
-#include "TrustedPeer.h"
-#include "TrustedGroup.h"
-#include "GroupMembership.h"
+#include "CompilerNetwork.h"
+#include "DBusStructs.h"
 
-#include <QObject>
+#include <QDBusAbstractAdaptor>
 
 /**
- * Class which communicates with peers in the compiler network and receives
- * and sends compiler jobs.
+ * Class which exports a CompilerNetwork object.
  */
-class CompilerNetwork : public QObject {
+class CompilerNetworkAdaptor : public QDBusAbstractAdaptor {
 	Q_OBJECT
+	Q_CLASSINFO("D-Bus Interface", "org.ddcn.CompilerNetwork")
 	Q_PROPERTY(QString peerName
 	           READ getPeerName
 	           WRITE setPeerName
@@ -48,8 +47,12 @@ class CompilerNetwork : public QObject {
 	           WRITE setEncryption
 	           NOTIFY encryptionChanged)
 public:
-	CompilerNetwork();
-
+	/**
+	 * Creates a dbus adaptor for the compiler network.
+	 * @param network Compiler network object to export.
+	 */
+	explicit CompilerNetworkAdaptor(CompilerNetwork *network);
+public slots:
 	void setPeerName(QString peerName);
 	QString getPeerName();
 
@@ -59,44 +62,43 @@ public:
 	void setKeys(QString publicKey, QString privateKey);
 	void generateKeys();
 	QString getPublicKey();
-	QString getPrivateKey();
 
 	void addTrustedPeer(QString name, QString publicKey);
 	void removeTrustedPeer(QString name, QString publicKey);
-	QList<TrustedPeer*> getTrustedPeers() {
-		return trustedPeers;
-	}
+	QList<TrustedPeerInfo> getTrustedPeers();
 
 	void addTrustedGroup(QString name, QString publicKey);
 	void removeTrustedGroup(QString name, QString publicKey);
-	QList<TrustedGroup*> getTrustedGroups() {
-		return trustedGroups;
-	}
+	QList<TrustedGroupInfo> getTrustedGroups();
 
 	void addGroupMembership(QString name, QString publicKey, QString privateKey);
 	void removeGroupMembership(QString name, QString publicKey);
-	QList<GroupMembership*> getGroupMemberships() {
-		return groupMemberships;
-	}
+	QList<GroupMembershipInfo> getGroupMemberships();
+private slots:
+	// These slots just emit the corresponding signals of this class, they are
+	// used to forward the signals of the encapsulated class to dbus
+	void onPeerNameChanged(QString peerName);
+	void onEncryptionChanged(bool encryptionEnabled);
+	void onPublicKeyChanged(QString publicKey);
+	void onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers);
+	void onTrustedGroupsChanged(const QList<TrustedGroup*> &trustedGroups);
+	void onGroupMembershipsChanged(const QList<GroupMembership*> &groupMemberships);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
 	void publicKeyChanged(QString publicKey);
-	void privateKeyChanged(QString privateKey);
-	void trustedPeersChanged(QList<TrustedPeer*> trustedPeers);
-	void trustedGroupsChanged(QList<TrustedGroup*> trustedGroups);
-	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
+	void trustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers);
+	void trustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups);
+	void groupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships);
 private:
-	QString peerName;
-	bool encryptionEnabled;
-	QString publicKey;
-	QString privateKey;
+	static TrustedPeerInfo toTrustedPeerInfo(TrustedPeer *trustedPeer);
+	static TrustedGroupInfo toTrustedGroupInfo(TrustedGroup *trustedGroup);
+	static GroupMembershipInfo toGroupMembershipInfo(GroupMembership *groupMembership);
+	static QList<TrustedPeerInfo> toTrustedPeerInfo(const QList<TrustedPeer*> &trustedPeers);
+	static QList<TrustedGroupInfo> toTrustedGroupInfo(const QList<TrustedGroup*> &trustedGroups);
+	static QList<GroupMembershipInfo> toGroupMembershipInfo(const QList<GroupMembership*> &groupMemberships);
 
-	// TODO: Do we need much lookups here? A hash map then would be faster.
-	// We could need public-key based lookups a lot.
-	QList<TrustedPeer*> trustedPeers;
-	QList<TrustedGroup*> trustedGroups;
-	QList<GroupMembership*> groupMemberships;
+	CompilerNetwork *network;
 };
 
 #endif

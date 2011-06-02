@@ -24,38 +24,43 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "CompilerServiceAdaptor.h"
-#include "CompilerNetworkAdaptor.h"
-#include "DBusStructs.h"
+#ifndef DBUSSTRUCTS_H_INCLUDED
+#define DBUSSTRUCTS_H_INCLUDED
 
-#include <QCoreApplication>
-#include <QDBusConnection>
+#include <QString>
+#include <QDBusMetaType>
 
-int main(int argc, char **argv) {
-	QCoreApplication app(argc, argv);
-	// Register meta types
-	qDBusRegisterMetaType<TrustedPeerInfo>();
-	qDBusRegisterMetaType<QList<TrustedPeerInfo> >();
-	qDBusRegisterMetaType<TrustedGroupInfo>();
-	qDBusRegisterMetaType<QList<TrustedGroupInfo> >();
-	qDBusRegisterMetaType<GroupMembershipInfo>();
-	qDBusRegisterMetaType<QList<GroupMembershipInfo> >();
-	// Load config file
-	// TODO
-	// Create the compiler service
-	CompilerService service;
-	new CompilerServiceAdaptor(&service);
-	// Create the compiler network
-	CompilerNetwork network;
-	new CompilerNetworkAdaptor(&network);
-	// Create compiler network status interface
-	// TODO
-	// Connect compiler service and compiler network
-	// TODO
-	// Create the D-Bus interface
-	QDBusConnection::sessionBus().registerObject("/CompilerService", &service);
-	QDBusConnection::sessionBus().registerObject("/CompilerNetwork", &network);
-	QDBusConnection::sessionBus().registerService("org.ddcn.service");
-	// Start the event loop
-	return app.exec();
-}
+struct TrustedPeerInfo {
+	QString name;
+	QString publicKey;
+};
+
+Q_DECLARE_METATYPE(TrustedPeerInfo)
+Q_DECLARE_METATYPE(QList<TrustedPeerInfo>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const TrustedPeerInfo &info);
+const QDBusArgument &operator>>(const QDBusArgument &argument, TrustedPeerInfo &info);
+
+struct TrustedGroupInfo {
+	QString name;
+	QString publicKey;
+};
+
+Q_DECLARE_METATYPE(TrustedGroupInfo)
+Q_DECLARE_METATYPE(QList<TrustedGroupInfo>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const TrustedGroupInfo &info);
+const QDBusArgument &operator>>(const QDBusArgument &argument, TrustedGroupInfo &info);
+
+struct GroupMembershipInfo {
+	QString name;
+	QString publicKey;
+};
+
+Q_DECLARE_METATYPE(GroupMembershipInfo)
+Q_DECLARE_METATYPE(QList<GroupMembershipInfo>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const GroupMembershipInfo &info);
+const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipInfo &info);
+
+#endif

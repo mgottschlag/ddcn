@@ -24,38 +24,23 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "CompilerServiceAdaptor.h"
-#include "CompilerNetworkAdaptor.h"
-#include "DBusStructs.h"
+#ifndef TRUSTEDPEER_H_INCLUDED
+#define TRUSTEDPEER_H_INCLUDED
 
-#include <QCoreApplication>
-#include <QDBusConnection>
+#include <QString>
 
-int main(int argc, char **argv) {
-	QCoreApplication app(argc, argv);
-	// Register meta types
-	qDBusRegisterMetaType<TrustedPeerInfo>();
-	qDBusRegisterMetaType<QList<TrustedPeerInfo> >();
-	qDBusRegisterMetaType<TrustedGroupInfo>();
-	qDBusRegisterMetaType<QList<TrustedGroupInfo> >();
-	qDBusRegisterMetaType<GroupMembershipInfo>();
-	qDBusRegisterMetaType<QList<GroupMembershipInfo> >();
-	// Load config file
-	// TODO
-	// Create the compiler service
-	CompilerService service;
-	new CompilerServiceAdaptor(&service);
-	// Create the compiler network
-	CompilerNetwork network;
-	new CompilerNetworkAdaptor(&network);
-	// Create compiler network status interface
-	// TODO
-	// Connect compiler service and compiler network
-	// TODO
-	// Create the D-Bus interface
-	QDBusConnection::sessionBus().registerObject("/CompilerService", &service);
-	QDBusConnection::sessionBus().registerObject("/CompilerNetwork", &network);
-	QDBusConnection::sessionBus().registerService("org.ddcn.service");
-	// Start the event loop
-	return app.exec();
-}
+class TrustedPeer {
+public:
+	QString getName() {
+		return name;
+	}
+	QString getPublicKey() {
+		return publicKey;
+	}
+private:
+	QString name;
+	QString publicKey;
+};
+
+#endif
+

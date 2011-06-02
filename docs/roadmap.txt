@@ -1,6 +1,7 @@
 
 Roadmap:
 - Create dummy interfaces where possible and necessary (especially DBus interfaces) to make working on just one part of the system possible. Cost: 1 week.
+- Select some C projects as milestones for the project. Cost: 1 day.
 - Create CMake based build system. Cost: 1 day.
 - Figure out which parts of GCC can be offloaded to the network (e.g. compiling without linking) and which can not (e.g. preprocessing, depencendy generation) and which are tricky to emulate (e.g. -march=native). Cost: 1 week.
 - Write a prototype of the compiler service which does not include networking at all but instead only compiles locally. Cost: 2 weeks.
@@ -18,4 +19,5 @@ Optionally:
 - Generate some fancy graphs about network usage over time while compiling a larger project.
 - Extend the gcc replacement to handle C++ as well.
 - Build easy-to-use packages for Ubuntu, Fedora, Gentoo.
+- Optimize for battery usage and don't accept remote jobs when on battery.
 

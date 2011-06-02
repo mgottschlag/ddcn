@@ -24,38 +24,49 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "CompilerServiceAdaptor.h"
-#include "CompilerNetworkAdaptor.h"
 #include "DBusStructs.h"
 
-#include <QCoreApplication>
-#include <QDBusConnection>
+QDBusArgument &operator<<(QDBusArgument &argument, const TrustedPeerInfo &info)
+{
+	argument.beginStructure();
+	argument << info.name << info.publicKey;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, TrustedPeerInfo &info)
+{
+	argument.beginStructure();
+	argument >> info.name >> info.publicKey;
+	argument.endStructure();
+	return argument;
+}
 
-int main(int argc, char **argv) {
-	QCoreApplication app(argc, argv);
-	// Register meta types
-	qDBusRegisterMetaType<TrustedPeerInfo>();
-	qDBusRegisterMetaType<QList<TrustedPeerInfo> >();
-	qDBusRegisterMetaType<TrustedGroupInfo>();
-	qDBusRegisterMetaType<QList<TrustedGroupInfo> >();
-	qDBusRegisterMetaType<GroupMembershipInfo>();
-	qDBusRegisterMetaType<QList<GroupMembershipInfo> >();
-	// Load config file
-	// TODO
-	// Create the compiler service
-	CompilerService service;
-	new CompilerServiceAdaptor(&service);
-	// Create the compiler network
-	CompilerNetwork network;
-	new CompilerNetworkAdaptor(&network);
-	// Create compiler network status interface
-	// TODO
-	// Connect compiler service and compiler network
-	// TODO
-	// Create the D-Bus interface
-	QDBusConnection::sessionBus().registerObject("/CompilerService", &service);
-	QDBusConnection::sessionBus().registerObject("/CompilerNetwork", &network);
-	QDBusConnection::sessionBus().registerService("org.ddcn.service");
-	// Start the event loop
-	return app.exec();
+QDBusArgument &operator<<(QDBusArgument &argument, const TrustedGroupInfo &info)
+{
+	argument.beginStructure();
+	argument << info.name << info.publicKey;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, TrustedGroupInfo &info)
+{
+	argument.beginStructure();
+	argument >> info.name >> info.publicKey;
+	argument.endStructure();
+	return argument;
+}
+
+QDBusArgument &operator<<(QDBusArgument &argument, const GroupMembershipInfo &info)
+{
+	argument.beginStructure();
+	argument << info.name << info.publicKey;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipInfo &info)
+{
+	argument.beginStructure();
+	argument >> info.name >> info.publicKey;
+	argument.endStructure();
+	return argument;
 }
