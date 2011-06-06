@@ -28,7 +28,5 @@ set(MOC_H
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
 
-#include_directories(${QT_INCLUDES})
 add_executable(ddcn_service ${SRC} ${MOC_SRC})
 target_link_libraries(ddcn_service ${QT_LIBRARIES} )
-
