@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
 
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
+      documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -24,17 +24,25 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "CompilerService.h"
+#ifndef TOOL_CHAIN_INCLUDED
+#define TOOL_CHAIN_INCLUDED
 
-CompilerService::CompilerService() : threadCount(1) {
+#include <QString>
+/**
+ * Class contains information about the available compiler versions
+ */
+class ToolChain {
 
-
-}
-bool CompilerService::isToolChainAvailable(ToolChain target) {
-	foreach (ToolChain toolChainListObjekt, availableToolChains) {
-		if (toolChainListObjekt == target) {
+public:
+	QString version;
+	QString path;
+	bool operator == (ToolChain o) {
+		if (o.path == path && o.version == version) {
 			return true;
+		} else {
+			return false;
 		}
 	}
-	return false;
-}
+};
+
+#endif

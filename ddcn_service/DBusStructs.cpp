@@ -70,3 +70,17 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipIn
 	argument.endStructure();
 	return argument;
 }
+QDBusArgument &operator<<(QDBusArgument &argument, const ToolChain &info)
+{
+	argument.beginStructure();
+	argument << info.version << info.path;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChain &info)
+{
+	argument.beginStructure();
+	argument >> info.version>> info.path;
+	argument.endStructure();
+	return argument;
+}

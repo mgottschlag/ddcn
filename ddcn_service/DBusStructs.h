@@ -27,8 +27,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef DBUSSTRUCTS_H_INCLUDED
 #define DBUSSTRUCTS_H_INCLUDED
 
+#include "ToolChain.h"
 #include <QString>
 #include <QDBusMetaType>
+
 
 struct TrustedPeerInfo {
 	QString name;
@@ -62,5 +64,12 @@ Q_DECLARE_METATYPE(QList<GroupMembershipInfo>)
 
 QDBusArgument &operator<<(QDBusArgument &argument, const GroupMembershipInfo &info);
 const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipInfo &info);
+
+
+Q_DECLARE_METATYPE(ToolChain)
+Q_DECLARE_METATYPE(QList<ToolChain>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const ToolChain &info);
+const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChain &info);
 
 #endif

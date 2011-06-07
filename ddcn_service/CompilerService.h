@@ -27,7 +27,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef COMPILERSERVICE_H_INCLUDED
 #define COMPILERSERVICE_H_INCLUDED
 
+#include "ToolChain.h"
 #include <QObject>
+#include <QList>
+#include <QString>
+
 
 /**
  * Class which manages, executes and delegates compiler jobs.
@@ -53,6 +57,10 @@ signals:
 	void threadCountChanged(int threadCount);
 private:
 	int threadCount;
+	void findToolChains();
+	bool isToolChainAvailable(ToolChain target);
+	QList<ToolChain> availableToolChains;
+
 };
 
 #endif
