@@ -28,8 +28,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define COMPILERSERVICEADAPTOR_H_INCLUDED
 
 #include "CompilerService.h"
-
+#include "Job.h"
+#include <QList>
 #include <QDBusAbstractAdaptor>
+#include <QStringList>
 
 /**
  * Class which exports a CompilerService object.
@@ -46,26 +48,22 @@ public:
 	 * Creates a dbus adaptor for the compiler service.
 	 * @param service Compiler service object to export.
 	 */
-	explicit CompilerServiceAdaptor(CompilerService *service)
-			: QDBusAbstractAdaptor(service), service(service) {
-		connect(service,
-		        SIGNAL(threadCountChanged(int)),
-		        this,
-		        SLOT(onThreadCountChanged(int)));
-	}
+	explicit CompilerServiceAdaptor(CompilerService *service);
 public slots:
-	void setThreadCount(int threadCount) {
-		service->setThreadCount(threadCount);
-	}
-	int getThreadCount() {
-		return service->getThreadCount();
-	}
+	void setThreadCount(int threadCount);
+	int getThreadCount();
+	void shutdown();
 private slots:
-	void onThreadCountChanged(int threadCount) {
-		emit threadCountChanged(threadCount);
-	}
+	void onThreadCountChanged(int threadCount);
 signals:
 	void threadCountChanged(int threadCount);
+	/**
+	 * Creates a new Job and returns its DBus path.
+	 * @param inputFiles The (binary) content of the files to pass to the new job.
+	 * @param parameters The compilation parameters.
+	 * @param toolChain The gcc target triple (platform, system and kernel (order may vary) /gcc-version: eg. i686-linux-gnu/4.4.5).
+	 */
+	QString addJob(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain);
 private:
 	CompilerService *service;
 };

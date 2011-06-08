@@ -42,12 +42,12 @@ int main(int argc, char **argv) {
 	qDBusRegisterMetaType<QList<GroupMembershipInfo> >();
 	// Load config file
 	// TODO
-	// Create the compiler service
-	CompilerService service;
-	new CompilerServiceAdaptor(&service);
 	// Create the compiler network
 	CompilerNetwork network;
 	new CompilerNetworkAdaptor(&network);
+	// Create the compiler service
+	CompilerService service(&network);
+	new CompilerServiceAdaptor(&service);
 	// Create compiler network status interface
 	// TODO
 	// Connect compiler service and compiler network

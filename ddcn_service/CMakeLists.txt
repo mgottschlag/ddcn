@@ -12,8 +12,11 @@ set(SRC
 	CompilerNetwork.cpp
 	CompilerNetworkAdaptor.cpp
 	CompilerService.cpp
+	CompilerServiceAdaptor.cpp
 	Job.cpp
 	JobAdaptor.cpp
+	JobRequest.cpp
+	OnlinePeer.cpp
 	DBusStructs.cpp
 )
 
