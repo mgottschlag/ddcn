@@ -31,6 +31,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QObject>
 
+/**
+ * Single compiler job.
+ */
 class Job : public QObject {
 	Q_OBJECT
 public:
@@ -46,7 +49,7 @@ public:
 	int preprocess();
 
 	QList<QByteArray> readPreprocessedFiles();
-	void writeOutputFiles(QList<QByteArray> outputFiles);
+	bool writeOutputFiles(QList<QByteArray> outputFiles);
 
 	void wasFinished(int returnValue);
 signals:

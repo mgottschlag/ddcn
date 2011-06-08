@@ -29,6 +29,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QStringList>
 
+/**
+ * Parses and splits gcc command arguments into arguments for preprocessing and
+ * compiling.
+ */
 class CommandLineParser {
 public:
 	CommandLineParser(int argc, char **argv);

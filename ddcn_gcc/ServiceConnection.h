@@ -30,6 +30,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QObject>
 #include "Job.h"
 
+/**
+ * Class which sends jobs to the local CompilerService process.
+ */
 class ServiceConnection : public QObject {
 	Q_OBJECT
 public:

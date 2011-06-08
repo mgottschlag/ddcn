@@ -82,8 +82,11 @@ void ServiceConnection::onJobFinished(bool executed,
                                       QList<QByteArray> outputFiles) {
 	if (executed) {
 		std::cout << consoleOutput.toStdString() << std::endl;
-		currentJob->writeOutputFiles(outputFiles);
-		currentJob->wasFinished(returnValue);
+		if (!currentJob->writeOutputFiles(outputFiles)) {
+			currentJob->wasFinished(-1);
+		} else {
+			currentJob->wasFinished(returnValue);
+		}
 	} else {
 		// Fallback, compile locally
 		emit sendingFailed();

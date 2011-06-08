@@ -103,9 +103,20 @@ int Job::preprocess() {
 QList<QByteArray> Job::readPreprocessedFiles() {
 	return preprocessedInput;
 }
-void Job::writeOutputFiles(QList<QByteArray> outputFiles) {
-	// TODO
-	qCritical("Error: Writing output unimplemented.");
+bool Job::writeOutputFiles(QList<QByteArray> outputFiles) {
+	QStringList fileNames = arguments->getOutputFiles();
+	if (outputFiles.count() > fileNames.count())
+	for (int i = 0; i < outputFiles.count(); i++) {
+		QFile file(fileNames[i]);
+		if (!file.open(QIODevice::WriteOnly)) {
+			qCritical("Error: Could not open %s.", fileNames[i].toStdString().c_str());
+			emit finished(-1);
+			return false;
+		}
+		file.write(outputFiles[i]);
+		file.close();
+	}
+	return true;
 }
 
 void Job::wasFinished(int returnValue) {

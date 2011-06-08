@@ -31,6 +31,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QCoreApplication>
 
+/**
+ * Main application class.
+ */
 class Application : public QObject {
 	Q_OBJECT
 public:
