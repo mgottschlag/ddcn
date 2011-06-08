@@ -73,14 +73,17 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipIn
 QDBusArgument &operator<<(QDBusArgument &argument, const ToolChain &info)
 {
 	argument.beginStructure();
-	argument << info.version << info.path;
+	argument << info.getVersion() << info.getPath();
 	argument.endStructure();
 	return argument;
 }
 const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChain &info)
 {
 	argument.beginStructure();
-	argument >> info.version>> info.path;
+	QString version;
+	QString path;
+	argument >> version >> path;
 	argument.endStructure();
+	info = ToolChain(version, path);
 	return argument;
 }

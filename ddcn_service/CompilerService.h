@@ -60,7 +60,7 @@ public slots:
 	void onIncomingJobRequest(JobRequest *request);
 	void onIncomingJob(Job *job);
 	void spareResourcesInNetwork();
-	void requestAccepted(JobRequest);
+	void requestAccepted(JobRequest *request);
 signals:
 	void threadCountChanged(int threadCount);
 private:

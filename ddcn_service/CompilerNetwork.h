@@ -30,6 +30,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "TrustedPeer.h"
 #include "TrustedGroup.h"
 #include "GroupMembership.h"
+#include "Job.h"
 
 #include <QObject>
 
@@ -78,6 +79,9 @@ public:
 	QList<GroupMembership*> getGroupMemberships() {
 		return groupMemberships;
 	}
+
+	bool canAcceptOutgoingJobRequest();
+	bool delegateOutgoingJob(Job *job);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);

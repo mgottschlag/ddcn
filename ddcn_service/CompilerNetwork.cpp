@@ -81,3 +81,13 @@ void CompilerNetwork::addGroupMembership(QString name, QString publicKey, QStrin
 void CompilerNetwork::removeGroupMembership(QString name, QString publicKey) {
 	// TODO
 }
+
+bool CompilerNetwork::canAcceptOutgoingJobRequest() {
+	// TODO
+	return false;
+}
+bool CompilerNetwork::delegateOutgoingJob(Job *job) {
+	// TODO
+	return false;
+}
+

@@ -46,11 +46,14 @@ void CompilerServiceAdaptor::onThreadCountChanged(int threadCount) {
 }
 
 QString CompilerServiceAdaptor::addJob(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain) {
-	Job *job = new Job(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain, false);
+	Job *job = new Job(inputFiles, parameters, toolChain, false);
+	service->addJob(job);
+	// TODO: Export job to D-Bus
+	return "";
 }
 
 void CompilerServiceAdaptor::shutdown() {
-
+	// TODO
 }
 
 

@@ -27,35 +27,37 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "JobRequest.h"
 
 
-JobRequest::JobRequest(OnlinePeer sourcePeer, int maxNumberOfAcceptedJobs) {
+JobRequest::JobRequest(OnlinePeer *sourcePeer, int maxNumberOfAcceptedJobs) {
 	this->sourcePeer = sourcePeer;
 	this->maxNumberOfAcceptedJobs = 0;
 }
 
-OnlinePeer 	JobRequest::getTargetPeer() {
+OnlinePeer *JobRequest::getTargetPeer() {
 	return this->targetPeer;
 }
-OnlinePeer 	JobRequest::getSourcePeer() {
+OnlinePeer *JobRequest::getSourcePeer() {
 	return this->sourcePeer;
 }
-int	JobRequest::getNumberOfAcceptedJobs() {
+int JobRequest::getNumberOfAcceptedJobs() {
 	return this->maxNumberOfAcceptedJobs;
 }
-ToolChain JobRequest::getToolChain() {
+ToolChain *JobRequest::getToolChain() {
 	return this->toolChain;
 }
-QList<Job*>	JobRequest::getJobList() {
+QList<Job*> JobRequest::getJobList() {
 	return this->jobList;
 }
-void JobRequest::setTargetPeer(OnlinePeer targetPeer) {
+void JobRequest::setTargetPeer(OnlinePeer *targetPeer) {
 	this->targetPeer = targetPeer;
 }
 
 bool JobRequest::addJobList(QList<Job*> jobList) {
-	return this->jobList.append(jobList.mid(0,
+	this->jobList.append(jobList.mid(0,
 			(this->maxNumberOfAcceptedJobs - this->jobList.count())));
+	return true;
 }
 
 bool JobRequest::addJob(Job *job) {
-	return (this->jobList.count() < this->maxNumberOfAcceptedJobs) ? this->jobList.append(job) : false;
+	this->jobList.append(job);
+	return (this->jobList.count() < this->maxNumberOfAcceptedJobs) ? true : false;
 }

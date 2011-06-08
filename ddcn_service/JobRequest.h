@@ -26,8 +26,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef JOBREQUEST_H_
 #define JOBREQUEST_H_
+
 #include "OnlinePeer.h"
 #include "Job.h"
+#include "ToolChain.h"
+
 #include <QList>
 
 
@@ -39,37 +42,37 @@ public:
 	 * @param sourcePeer the OnlinePeer that is responsible (that created the request).
 	 * @param maxNumberOfAcceptedJobs the maximum number of jobs the peer accepts.
 	 */
-	JobRequest(OnlinePeer sourcePeer, int maxNumberOfAcceptedJobs);
+	JobRequest(OnlinePeer *sourcePeer, int maxNumberOfAcceptedJobs);
 	/**
 	 * Returns the target peer of the request.
 	 * @return the target peer of the request.
 	 */
-	OnlinePeer getTargetPeer();
+	OnlinePeer *getTargetPeer();
 	/**
 	 * Returns the source peer of the request.
 	 * @return the source peer of the request.
 	 */
-	OnlinePeer getSourcePeer();
+	OnlinePeer *getSourcePeer();
 	/**
 	 * Returns the number of jobs accepted by this peer.
 	 * @return the number of jobs accepted by this peer.
 	 */
-	int	 getNumberOfAcceptedJobs();
+	int getNumberOfAcceptedJobs();
 	/**
 	 * Returns the List of jobs.
 	 * @return the List of jobs.
 	 */
-	QList<Job*>	getJobList();
+	QList<Job*> getJobList();
 	/**
 	 * Returns the Tool chain for this jobs.
 	 * @return the Tool chain for this jobs.
 	 */
-	ToolChain getToolChain();
+	ToolChain *getToolChain();
 	/**
 	 * Sets the target peer where to send this request to.
 	 * @param targetPeer  the target peer where to send this request to.
 	 */
-	void setTargetPeer(OnlinePeer targetPeer);
+	void setTargetPeer(OnlinePeer *targetPeer);
 	/**
 	 * Sets the job list to pass with this job request.
 	 * If a job list with a number of entries greater than the number of maximum accepted requests is entered,

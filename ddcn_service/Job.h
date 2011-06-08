@@ -38,7 +38,9 @@ class Job : public QObject {
 	Q_OBJECT
 public:
 	Job(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain, bool isRemoteJob);
-	bool isRemoteJob();
+	bool isRemoteJob() {
+		return remoteJob;
+	}
 public slots:
 	void abort();
 	void execute();
