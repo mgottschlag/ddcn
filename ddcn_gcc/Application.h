@@ -37,12 +37,22 @@ public:
 	Application(QCoreApplication *qtApp);
 
 	void run(int argc, char **argv);
+
+	bool wasFinished() {
+		return finished;
+	}
+	int getReturnValue() {
+		return returnValue;
+	}
 private slots:
 	void onFinished(int returnValue);
 	void onSendingFailed();
 private:
 	QCoreApplication *qtApp;
 	Job *job;
+
+	bool finished;
+	int returnValue;
 };
 
 #endif

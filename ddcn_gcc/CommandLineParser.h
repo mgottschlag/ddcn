@@ -32,24 +32,29 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class CommandLineParser {
 public:
 	CommandLineParser(int argc, char **argv);
-	~CommandLineParser();
 
 	bool isRemoteExecutionPossible();
 	QStringList getPreprocessingParameters();
-	QStringList getPreprocessingFileList();
+	QStringList getInputFiles();
 	QStringList getRemoteParameters();
-	QStringList getOutputFileNames();
+	QStringList getOutputFiles();
 
 	/**
 	 * Returns a copy of the original arguments.
-	 * @return Copy of the arguments, terminated by a single NULL pointer.
+	 * @return Copy of the arguments.
 	 */
-	char **getOriginalParameters();
+	QStringList getOriginalParameters();
 
 private:
 	void backupArguments(int argc, char **argv);
 
-	char **argumentBackup;
+	QStringList originalArguments;
+	bool remoteExecutionPossible;
+
+	QStringList preprocessingParameters;
+	QStringList remoteParameters;
+	QStringList inputFiles;
+	QStringList outputFiles;
 };
 
 #endif

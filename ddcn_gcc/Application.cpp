@@ -39,6 +39,11 @@ void Application::run(int argc, char **argv) {
 	// Run the job
 	job->initialize(argc, argv);
 	if (job->isRemoteExecutionPossible()) {
+		int returnValue = job->preprocess();
+		if (returnValue != 0) {
+			emit onFinished(returnValue);
+			return;
+		}
 		ServiceConnection *service = new ServiceConnection(this);
 		// If the service is unavailable, fall back
 		connect(service, SIGNAL(sendingFailed()), this, SLOT(onSendingFailed()));
@@ -46,14 +51,16 @@ void Application::run(int argc, char **argv) {
 	} else {
 		job->executeLocally();
 	}
-
 }
 
 void Application::onFinished(int returnValue) {
 	qtApp->exit(returnValue);
+	finished = true;
+	this->returnValue = returnValue;
 }
 
 void Application::onSendingFailed() {
-// 	// Fallback if remote execution is not possible
+	// Fallback if remote execution is not possible
+	qDebug("Sending the job to the service failed, falling back.");
 	job->executeLocally();
 }

@@ -27,53 +27,111 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CommandLineParser.h"
 
 #include <cstdlib>
+#include <cstring>
 
 CommandLineParser::CommandLineParser(int argc, char **argv) {
-	// Create backup or all arguments
-	backupArguments(argc, argv);
-	// Parse arguments via getopt
-	// TODO
-}
-CommandLineParser::~CommandLineParser() {
-	// Free argument backup
-	char **arg = argumentBackup;
-	while (arg != NULL) {
-		std::free(*arg);
-		arg++;
+	// Parse arguments
+	bool compilingOnly = false;
+	bool nativeOptimization = false;
+	for (int i = 1; i < argc; i++) {
+		// Only if "-c" is given we can actually offload this command to the
+		// network as linking has to be done locally
+		if (!std::strcmp(argv[i], "-c")) {
+			compilingOnly = true;
+		}
+		// If we are supposed to optimize for the host architecture, this cannot
+		// easily be done on other computers, so leave this out for now
+		if (!std::strcmp(argv[i], "-mcpu=native")) {
+			compilingOnly = true;
+		}
+		if (!std::strcmp(argv[i], "-mtune=native")) {
+			compilingOnly = true;
+		}
+		originalArguments.append(argv[i]);
 	}
-	delete[] argumentBackup;
+	QStringList &arguments = originalArguments;
+	if (!compilingOnly || nativeOptimization) {
+		remoteExecutionPossible = false;
+		// We can only execute the job locally, so do not do more work here
+		return;
+	} else {
+		remoteExecutionPossible = true;
+	}
+	// Split options into preprocessor and remote compiler options
+	for (int i = 0; i < arguments.count(); i++) {
+		QString argument = arguments[i];
+		if (argument == "-I" || argument == "-iquote") {
+			if (i == arguments.count() - 1) {
+				remoteExecutionPossible = false;
+				return;
+			}
+			preprocessingParameters.append(argument);
+			i++;
+			preprocessingParameters.append(arguments[i]);
+		} else if (argument.startsWith("-I") || argument.startsWith("-iquote")) {
+			preprocessingParameters.append(argument);
+		} else if (argument == "-L") {
+			// We do not need to care about any linker paths
+			if (i == arguments.count() - 1) {
+				remoteExecutionPossible = false;
+				return;
+			}
+			i++;
+		} else if (argument.startsWith("-L")) {
+			// Drop linker path again
+		} else if (argument == "-o") {
+			if (i == arguments.count() - 1) {
+				remoteExecutionPossible = false;
+				return;
+			}
+			i++;
+			outputFiles.append(arguments[i]);
+		} else if (argument == "-c") {
+			remoteParameters.append(argument);
+		} else if (argument.at(0) == '-'){
+			// TODO: Dependency generation arguments
+			// TODO: Other parameters which do not have any "-" in front of them
+			preprocessingParameters.append(argument);
+			remoteParameters.append(argument);
+		} else {
+			// This is an input file
+			inputFiles.append(argument);
+		}
+	}
+	if (inputFiles.empty()) {
+		remoteExecutionPossible = false;
+		return;
+	}
+	if (outputFiles.empty()) {
+		// No output file was specified, so we have to derive output names from
+		// the input files
+		for (int i = 0; i < inputFiles.count(); i++) {
+			QString fileName = inputFiles[i];
+			if (fileName.contains(".")) {
+				fileName = fileName.left(fileName.lastIndexOf('.'));
+			}
+			fileName.append(".o");
+			outputFiles.append(fileName);
+		}
+	}
 }
 
 bool CommandLineParser::isRemoteExecutionPossible() {
-	// TODO
-	return false;
+	return remoteExecutionPossible;
 }
 QStringList CommandLineParser::getPreprocessingParameters() {
-	// TODO
-	return QStringList();
+	return preprocessingParameters;
 }
-QStringList CommandLineParser::getPreprocessingFileList() {
-	// TODO
-	return QStringList();
+QStringList CommandLineParser::getInputFiles() {
+	return inputFiles;
 }
 QStringList CommandLineParser::getRemoteParameters() {
-	// TODO
-	return QStringList();
+	return remoteParameters;
 }
-QStringList CommandLineParser::getOutputFileNames() {
-	// TODO
-	return QStringList();
+QStringList CommandLineParser::getOutputFiles() {
+	return outputFiles;
 }
 
-char **CommandLineParser::getOriginalParameters() {
-	return argumentBackup;
-}
-
-void CommandLineParser::backupArguments(int argc, char **argv) {
-	argumentBackup = new char*[argc];
-	argumentBackup[argc] = NULL;
-	// We do not need to backup the first argument as it is our process name
-	for (int i = 0; i < argc - 1; i++) {
-		argumentBackup[i] = strdup(argv[i + 1]);
-	}
+QStringList CommandLineParser::getOriginalParameters() {
+	return originalArguments;
 }

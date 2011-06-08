@@ -38,6 +38,12 @@ int main(int argc, char **argv) {
 	Application *app = new Application(&qtApp);
 	app->run(argc, argv);
 
+	// If the application already has finished, quit the process (this cannot
+	// be done by Qt yet as the main loop is not yet running)
+	if (app->wasFinished()) {
+		return app->getReturnValue();
+	}
+
 	// Start the event loop
 	return qtApp.exec();
 }

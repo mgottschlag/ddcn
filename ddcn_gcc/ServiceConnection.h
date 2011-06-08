@@ -36,7 +36,12 @@ public:
 	ServiceConnection(QObject *parent);
 
 	void sendJob(Job *job);
+signals:
+	void sendingFailed();
+private slots:
+	void onJobFinished(bool executed, int returnValue, QString consoleOutput, QList<QByteArray> outputFiles);
 private:
+	Job *currentJob;
 };
 
 #endif

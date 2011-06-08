@@ -27,26 +27,33 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef JOB_H_INCLUDED
 #define JOB_H_INCLUDED
 
+#include "CommandLineParser.h"
+
 #include <QObject>
 
 class Job : public QObject {
+	Q_OBJECT
 public:
 	Job(QObject *parent);
+	~Job();
 
 	void initialize(int argc, char **argv);
 
 	bool isRemoteExecutionPossible();
+	QStringList getRemoteParameters();
 
-	int executeLocally();
+	void executeLocally();
 	int preprocess();
 
 	QList<QByteArray> readPreprocessedFiles();
 	void writeOutputFiles(QList<QByteArray> outputFiles);
-private slots:
-	void onFinished(/* TODO */);
+
+	void wasFinished(int returnValue);
 signals:
 	void finished(int returnValue);
 private:
+	CommandLineParser *arguments;
+	QList<QByteArray> preprocessedInput;
 };
 
 #endif
