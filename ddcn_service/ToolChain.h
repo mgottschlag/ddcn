@@ -32,19 +32,17 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Class contains information about the available compiler versions
  */
 class ToolChain {
-
 public:
-	const QString version;
-	const QString path;
 	ToolChain(QString version, QString path) : version(version), path(path) {
-
+	}
+	ToolChain() {
 	}
 	/**
 	 * Returns the gcc target triple (platform, system and kernel (order may vary) /gcc-version:
 	 * eg. i686-linux-gnu/4.4.5).
 	 * @return the gcc target triple
 	 */
-	QString getVersion() {
+	QString getVersion() const {
 		return this->version;
 	}
 
@@ -52,7 +50,7 @@ public:
 	 * Returns the path to the compiler.
 	 * @return the path to the compiler.
 	 */
-	QString getPath() {
+	QString getPath() const {
 		return this->path;
 	}
 
@@ -63,6 +61,9 @@ public:
 			return false;
 		}
 	}
+private:
+	QString version;
+	QString path;
 };
 
 #endif

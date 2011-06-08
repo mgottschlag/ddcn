@@ -41,11 +41,15 @@ void CompilerService::addJob(Job *job) {
 void CompilerService::manageJobs() {
 	//TODO in what case do jobs have to be distributed in the network?
 	if (getThreadCount() > this->localJobQueue.count()) {
-		while (network.canAcceptOutgoingJobRequest()) {
-			Job *job = this->localJobQueue.getLast();
-			removeJob(job);
-			network.delegateJob(job);
-			this->delegatedJobs.append(job);
+		while (network->canAcceptOutgoingJobRequest()) {
+			Job *job = this->localJobQueue.last();
+			if (network->delegateOutgoingJob(job)) {
+				removeJob(job);
+				this->delegatedJobQueue.append(job);
+			} else {
+				// TODO: Move the job to the beginning of the list as other jobs
+				// might be possible to be delegated
+			}
 		}
 	}
 }
@@ -57,8 +61,7 @@ void CompilerService::findToolChains() {
 	//nicht mehr vorhandene GCC Versionen aus der Liste der ToolChainObjekte löschen...
 	//oder einfach direkt bei jedem Start von ddcn eine neue Liste der vorhandenen GVV
 	//Versionen anlegen?
-    print 'system('/usr/bin |grep gcc')';
-
+	//print 'system('/usr/bin |grep gcc')';
 }
 bool CompilerService::isToolChainAvailable(ToolChain target) {
 	foreach (ToolChain toolChainListObjekt, availableToolChains) {
@@ -87,3 +90,9 @@ bool CompilerService::removeJob(Job *job) {
 	return (this->localJobQueue.removeOne(job)) ?  true : (this->remoteJobQueue.removeOne(job));
 }
 
+void CompilerService::spareResourcesInNetwork() {
+	// TODO
+}
+void CompilerService::requestAccepted(JobRequest *request) {
+	// TODO
+}

@@ -28,15 +28,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 
-public Job(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain, bool isRemoteJob) {
+Job::Job(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain, bool isRemoteJob) {
 	this->inputFiles = inputFiles;
 	this->parameters = parameters;
 	this->toolChain = toolChain;
 	this->remoteJob = isRemoteJob;
-}
-
-void finished(bool executed, int resultValue, QString consoleOutput, QList<QByteArray> outputFiles) {
-
 }
 
 void Job::abort() {
