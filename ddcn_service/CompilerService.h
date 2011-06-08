@@ -27,15 +27,13 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef COMPILERSERVICE_H_INCLUDED
 #define COMPILERSERVICE_H_INCLUDED
 
-#include "ToolChain.h"
 #include "Job.h"
-#include <QObject>
+#include "ToolChain.h"
+#include "JobRequest.h"
+#include "CompilerNetwork.h"
 #include <QList>
-#include <QString>
-
-
+#include <QObject>
 using namespace std;
-
 
 /**
  * Class which manages, executes and delegates compiler jobs.
@@ -47,8 +45,9 @@ class CompilerService : public QObject {
 	           WRITE setThreadCount
 	           NOTIFY threadCountChanged)
 public:
-	CompilerService();
-public slots:
+	CompilerService(CompilerNetwork *network);
+	void addJob(Job *job);
+	bool removeJob(Job *job);
 	void setThreadCount(int threadCount) {
 		this->threadCount = threadCount;
 		emit threadCountChanged(threadCount);
@@ -57,16 +56,23 @@ public slots:
 	int getThreadCount() {
 		return threadCount;
 	}
+public slots:
+	void onIncomingJobRequest(JobRequest *request);
+	void onIncomingJob(Job *job);
+	void spareResourcesInNetwork();
+	void requestAccepted(JobRequest);
 signals:
 	void threadCountChanged(int threadCount);
 private:
+	void manageJobs();
 	int threadCount;
 	void findToolChains();
 	bool isToolChainAvailable(ToolChain target);
 	QList<ToolChain> availableToolChains;
-	QList<Job> localJobQueue;
-	QList<Job> remoteJobQueue;
-	QList<Job> delegatedJobs;
+	CompilerNetwork *network;
+	QList<Job*> localJobQueue;
+	QList<Job*> remoteJobQueue;
+	QList<Job*> delegatedJobQueue;
 
 };
 
