@@ -30,6 +30,16 @@ CompilerService::CompilerService() : threadCount(1) {
 
 
 }
+void CompilerService::findToolChains() {
+	//TODO
+	//Als erstes ein Array mit den vorhanden Versionen erstellen ls + grep?
+	//mit den vorhandenen ToolChain Objekten vergleichen und gegebenfalls einfügen
+	//nicht mehr vorhandene GCC Versionen aus der Liste der ToolChainObjekte löschen...
+	//oder einfach direkt bei jedem Start von ddcn eine neue Liste der vorhandenen GVV
+	//Versionen anlegen?
+    print 'system('/usr/bin |grep gcc')';
+
+}
 bool CompilerService::isToolChainAvailable(ToolChain target) {
 	foreach (ToolChain toolChainListObjekt, availableToolChains) {
 		if (toolChainListObjekt == target) {
