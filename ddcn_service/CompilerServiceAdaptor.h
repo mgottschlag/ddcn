@@ -53,10 +53,6 @@ public slots:
 	void setThreadCount(int threadCount);
 	int getThreadCount();
 	void shutdown();
-private slots:
-	void onThreadCountChanged(int threadCount);
-signals:
-	void threadCountChanged(int threadCount);
 	/**
 	 * Creates a new Job and returns its DBus path.
 	 * @param inputFiles The (binary) content of the files to pass to the new job.
@@ -64,6 +60,10 @@ signals:
 	 * @param toolChain The gcc target triple (platform, system and kernel (order may vary) /gcc-version: eg. i686-linux-gnu/4.4.5).
 	 */
 	QString addJob(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain);
+private slots:
+	void onThreadCountChanged(int threadCount);
+signals:
+	void threadCountChanged(int threadCount);
 private:
 	CompilerService *service;
 };

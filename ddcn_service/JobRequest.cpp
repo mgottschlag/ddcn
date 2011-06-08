@@ -47,17 +47,13 @@ ToolChain JobRequest::getToolChain() {
 QList<Job*>	JobRequest::getJobList() {
 	return this->jobList;
 }
-void JobRequest::setTargetPeet(OnlinePeer targetPeer) {
+void JobRequest::setTargetPeer(OnlinePeer targetPeer) {
 	this->targetPeer = targetPeer;
 }
 
 bool JobRequest::addJobList(QList<Job*> jobList) {
-	//TODO geht das?
-	QList<Job*> tmpList = jobList;
-	while (jobList.count() > this->maxNumberOfAcceptedJobs) {
-		tmpList.removeLast();
-	}
-	return this->jobList.append(tmpList);
+	return this->jobList.append(jobList.mid(0,
+			(this->maxNumberOfAcceptedJobs - this->jobList.count())));
 }
 
 bool JobRequest::addJob(Job *job) {

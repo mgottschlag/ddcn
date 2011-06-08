@@ -44,17 +44,17 @@ public:
 	 * Returns the target peer of the request.
 	 * @return the target peer of the request.
 	 */
-	OnlinePeer 	getTargetPeer();
+	OnlinePeer getTargetPeer();
 	/**
 	 * Returns the source peer of the request.
 	 * @return the source peer of the request.
 	 */
-	OnlinePeer 	getSourcePeer();
+	OnlinePeer getSourcePeer();
 	/**
 	 * Returns the number of jobs accepted by this peer.
 	 * @return the number of jobs accepted by this peer.
 	 */
-	int			getNumberOfAcceptedJobs();
+	int	 getNumberOfAcceptedJobs();
 	/**
 	 * Returns the List of jobs.
 	 * @return the List of jobs.
@@ -64,12 +64,12 @@ public:
 	 * Returns the Tool chain for this jobs.
 	 * @return the Tool chain for this jobs.
 	 */
-	ToolChain	getToolChain();
+	ToolChain getToolChain();
 	/**
 	 * Sets the target peer where to send this request to.
 	 * @param targetPeer  the target peer where to send this request to.
 	 */
-	void		setTargetPeet(OnlinePeer targetPeer);
+	void setTargetPeer(OnlinePeer targetPeer);
 	/**
 	 * Sets the job list to pass with this job request.
 	 * If a job list with a number of entries greater than the number of maximum accepted requests is entered,
@@ -77,14 +77,14 @@ public:
 	 * @param jobList the job list to pass with this job request.
 	 * @return true, if the job list has been added.
 	 */
-	bool		addJobList(QList<Job*> jobList);
+	bool addJobList(QList<Job*> jobList);
 	/**
 	 * Adds a given job to the job list and returns the success of the operation.
 	 * Adding a job will fail, if the number of jobs in the list already reached maxNumberOfAcceptedJobs.
 	 * @param the job to add to the list.
 	 * @return true if the job has been added.
 	 */
-	bool		addJob(Job *job);
+	bool addJob(Job *job);
 
 private:
 	OnlinePeer *targetPeer;
