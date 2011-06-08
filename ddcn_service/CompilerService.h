@@ -28,9 +28,13 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define COMPILERSERVICE_H_INCLUDED
 
 #include "ToolChain.h"
+#include "Job.h"
 #include <QObject>
 #include <QList>
 #include <QString>
+
+
+using namespace std;
 
 
 /**
@@ -60,6 +64,9 @@ private:
 	void findToolChains();
 	bool isToolChainAvailable(ToolChain target);
 	QList<ToolChain> availableToolChains;
+	QList<Job> localJobQueue;
+	QList<Job> remoteJobQueue;
+	QList<Job> delegatedJobs;
 
 };
 
