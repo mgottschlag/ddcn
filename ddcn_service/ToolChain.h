@@ -34,8 +34,28 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class ToolChain {
 
 public:
-	QString version;
-	QString path;
+	const QString version;
+	const QString path;
+	ToolChain(QString version, QString path) : version(version), path(path) {
+
+	}
+	/**
+	 * Returns the gcc target triple (platform, system and kernel (order may vary) /gcc-version:
+	 * eg. i686-linux-gnu/4.4.5).
+	 * @return the gcc target triple
+	 */
+	QString getVersion() {
+		return this->version;
+	}
+
+	/**
+	 * Returns the path to the compiler.
+	 * @return the path to the compiler.
+	 */
+	QString getPath() {
+		return this->path;
+	}
+
 	bool operator == (ToolChain o) {
 		if (o.path == path && o.version == version) {
 			return true;

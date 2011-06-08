@@ -25,6 +25,7 @@ set(MOC_H
 	CompilerServiceAdaptor.h
 	CompilerNetwork.h
 	CompilerNetworkAdaptor.h
+	JobRequest.h
 	Job.h
 	JobAdaptor.h
 )
