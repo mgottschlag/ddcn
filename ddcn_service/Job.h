@@ -28,6 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define JOB_H_INCLUDED
 
 #include <QObject>
+#include <QStringList>
 
 /**
  * Class which contains a single compiler job which has either been received
@@ -36,15 +37,21 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class Job : public QObject {
 	Q_OBJECT
 public:
+	Job(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain, bool isRemoteJob);
 	bool isRemoteJob();
 public slots:
 	void abort();
 	void execute();
 signals:
-	void finished(bool success, QString consoleOutput);
+	void finished(bool executed, int resultValue, QString consoleOutput, QList<QByteArray> outputFiles);
 private:
 	QString consoleOutput;
+	QList<QByteArray> inputFiles;
+	QList<QByteArray> outputFiles;
+	QStringList parameters;
+	QString toolChain;
 	bool remoteJob;
+
 };
 
 #endif

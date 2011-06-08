@@ -26,10 +26,30 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerService.h"
 
-CompilerService::CompilerService() : threadCount(1) {
-
-
+CompilerService::CompilerService(CompilerNetwork *network) : threadCount(1) {
+	this->network = network;
 }
+
+void CompilerService::addJob(Job *job) {
+	if (job->isRemoteJob())
+		this->localJobQueue.append(job);
+	else
+		this->remoteJobQueue.append(job);
+	manageJobs();
+}
+
+void CompilerService::manageJobs() {
+	//TODO in what case do jobs have to be distributed in the network?
+	if (getThreadCount() > this->localJobQueue.count()) {
+		while (network.canAcceptOutgoingJobRequest()) {
+			Job *job = this->localJobQueue.getLast();
+			removeJob(job);
+			network.delegateJob(job);
+			this->delegatedJobs.append(job);
+		}
+	}
+}
+
 void CompilerService::findToolChains() {
 	//TODO
 	//Als erstes ein Array mit den vorhanden Versionen erstellen ls + grep?
@@ -48,3 +68,22 @@ bool CompilerService::isToolChainAvailable(ToolChain target) {
 	}
 	return false;
 }
+
+void CompilerService::onIncomingJob(Job *job) {
+	addJob(job);
+}
+
+void CompilerService::onIncomingJobRequest(JobRequest *request) {
+	//Accept Jobs if local queue is empty or if number of jobs in the local queue is less than the available threads.
+	if (this->localJobQueue.count() < this->getThreadCount()) {
+
+	}
+}
+
+
+bool CompilerService::removeJob(Job *job) {
+	//Tries to locate a given Job in the local job queue or in the remote job queue and removes it,
+	//otherwise return false.
+	return (this->localJobQueue.removeOne(job)) ?  true : (this->remoteJobQueue.removeOne(job));
+}
+
