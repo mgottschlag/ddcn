@@ -2,6 +2,11 @@
 project(ddcn_service)
 cmake_minimum_required(VERSION 2.4.0)
 
+find_package(Boost REQUIRED COMPONENTS system)
+SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+find_package(Ariba REQUIRED)
+find_package(MCPO REQUIRED)
+
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter")
 
 find_package(Qt4 COMPONENTS QtCore QtDBus REQUIRED)
@@ -18,6 +23,7 @@ set(SRC
 	JobRequest.cpp
 	OnlinePeer.cpp
 	DBusStructs.cpp
+	NetworkNode.cpp
 )
 
 set(MOC_H
@@ -32,5 +38,7 @@ set(MOC_H
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
 
+include_directories(${ARIBA_INCLUDE_DIR} ${MCPO_INCLUDE_DIR} ${Boost_INCLUDE_DIR})
+
 add_executable(ddcn_service ${SRC} ${MOC_SRC})
-target_link_libraries(ddcn_service ${QT_LIBRARIES} )
+target_link_libraries(ddcn_service ${QT_LIBRARIES} ${ARIBA_LIBRARY} ${PTHREAD_LIBRARY} ${MCPO_LIBRARY} ${Boost_LIBRARIES})
