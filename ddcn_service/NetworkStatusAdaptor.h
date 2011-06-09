@@ -24,56 +24,34 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef COMPILERSERVICE_H_INCLUDED
-#define COMPILERSERVICE_H_INCLUDED
+#ifndef NETWORKSTATUSADAPTOR_H_INCLUDED
+#define NETWORKSTATUSADAPTOR_H_INCLUDED
 
-#include "Job.h"
-#include "ToolChain.h"
-#include "JobRequest.h"
-#include "CompilerNetwork.h"
-#include <QList>
-#include <QObject>
-using namespace std;
+#include "NetworkStatus.h"
+#include "DBusStructs.h"
+
+#include <QDBusAbstractAdaptor>
 
 /**
- * Class which manages, executes and delegates compiler jobs.
+ * Class which exports a CompilerNetwork object.
  */
-class CompilerService : public QObject {
+class NetworkStatusAdaptor : public QDBusAbstractAdaptor {
 	Q_OBJECT
-	Q_PROPERTY(int threadCount
-	           READ getThreadCount
-	           WRITE setThreadCount
-	           NOTIFY threadCountChanged)
+	Q_CLASSINFO("D-Bus Interface", "org.ddcn.NetworkStatus")
+	Q_PROPERTY(float networkLoad
+	           READ getNetworkLoad
+	           NOTIFY networkLoadChanged)
 public:
-	CompilerService(CompilerNetwork *network);
-	void addJob(Job *job);
-	bool removeJob(Job *job);
-	void setThreadCount(int threadCount) {
-		this->threadCount = threadCount;
-		emit threadCountChanged(threadCount);
-		// TODO: Change number of threads running
-	}
-	int getThreadCount() {
-		return threadCount;
-	}
+	/**
+	 * Creates a dbus adaptor for the network status
+	 * @param status Network status object to export.
+	 */
+	explicit NetworkStatusAdaptor(NetworkStatus *networkStatus);
 public slots:
-	void onIncomingJobRequest(JobRequest *request);
-	void onIncomingJob(Job *job);
-	void spareResourcesInNetwork();
-	void requestAccepted(JobRequest *request);
+private slots:
 signals:
-	void threadCountChanged(int threadCount);
 private:
-	void manageJobs();
-	int threadCount;
-	void findToolChains();
-	bool isToolChainAvailable(ToolChain target);
-	QList<ToolChain> availableToolChains;
-	CompilerNetwork *network;
-	QList<Job*> localJobQueue;
-	QList<Job*> remoteJobQueue;
-	QList<Job*> delegatedJobQueue;
-
+	NetworkStatus *networkStatus;
 };
 
 #endif

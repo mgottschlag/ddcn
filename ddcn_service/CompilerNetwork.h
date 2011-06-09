@@ -31,6 +31,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "TrustedGroup.h"
 #include "GroupMembership.h"
 #include "Job.h"
+#include "NetworkNode.h"
 
 #include <QObject>
 
@@ -50,6 +51,7 @@ class CompilerNetwork : public QObject {
 	           NOTIFY encryptionChanged)
 public:
 	CompilerNetwork();
+	~CompilerNetwork();
 
 	void setPeerName(QString peerName);
 	QString getPeerName();
@@ -101,6 +103,8 @@ private:
 	QList<TrustedPeer*> trustedPeers;
 	QList<TrustedGroup*> trustedGroups;
 	QList<GroupMembership*> groupMemberships;
+
+	NetworkNode *localNode;
 };
 
 #endif
