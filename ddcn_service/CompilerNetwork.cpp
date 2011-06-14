@@ -105,20 +105,18 @@ void CompilerNetwork::addTrustedPeer(QString name, const QCA::PublicKey &publicK
 	}
 	TrustedPeer *trustedPeer = new TrustedPeer(name, publicKey);
 	trustedPeers.append(trustedPeer);
-	foreach (OnlinePeer *online, onlinePeers) {
-		if (online->getPublicKey() == publicKey) {
-			online->setTrustedPeer(trustedPeer);
-		}
+	NetworkNode *node = network->getNetworkNode(publicKey);
+	if (node) {
+		node->setTrustedPeer(trustedPeer);
+		trustedPeer->setNetworkNode(node);
 	}
 }
 void CompilerNetwork::removeTrustedPeer(QString name, const QCA::PublicKey &publicKey) {
 	// TODO: Way too slow
 	foreach (TrustedPeer *trustedPeer, trustedPeers) {
 		if (trustedPeer->getPublicKey() == publicKey) {
-			foreach (OnlinePeer *online, onlinePeers) {
-				if (online->getTrustedPeer() == trustedPeer) {
-					online->setTrustedPeer(NULL);
-				}
+			if (trustedPeer->getNetworkNode() != NULL) {
+				trustedPeer->getNetworkNode()->setTrustedPeer(NULL);
 			}
 			trustedPeers.removeOne(trustedPeer);
 			delete trustedPeer;
@@ -211,4 +209,3 @@ void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NodeID node,
 		const QByteArray &message) {
 	// TODO
 }
-

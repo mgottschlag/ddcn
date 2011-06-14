@@ -44,7 +44,7 @@ NetworkInterface::~NetworkInterface() {
 	ariba::utility::StartupWrapper::stopSystem();
 }
 
-void NetworkInterface::send(NodeID node, const QByteArray &message) {
+void NetworkInterface::send(NetworkNode *node, const QByteArray &message) {
 	// TODO
 }
 void NetworkInterface::send(McpoGroup *group, const QByteArray &message) {
@@ -52,12 +52,18 @@ void NetworkInterface::send(McpoGroup *group, const QByteArray &message) {
 }
 McpoGroup *NetworkInterface::joinGroup(ariba::ServiceID group) {
 	// TODO
+	return NULL;
 }
 void NetworkInterface::leaveGroup(McpoGroup *group) {
 	// TODO
 }
 void NetworkInterface::setName(QString name) {
 	// TODO
+}
+
+NetworkNode *NetworkInterface::getNetworkNode(const QCA::PublicKey &publicKey) {
+	// TODO
+	return NULL;
 }
 
 bool NetworkInterface::onLinkRequest(const NodeID &remote) {

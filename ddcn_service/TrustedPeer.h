@@ -30,9 +30,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QString>
 #include <qca.h>
 
+class NetworkNode;
+
 class TrustedPeer {
 public:
-	TrustedPeer(QString name, const QCA::PublicKey &publicKey) : name(name), publicKey(publicKey) {
+	TrustedPeer(QString name, const QCA::PublicKey &publicKey) : name(name),
+			publicKey(publicKey), node(NULL) {
 	}
 
 	void setName(QString name) {
@@ -44,9 +47,17 @@ public:
 	QCA::PublicKey getPublicKey() {
 		return publicKey;
 	}
+
+	void setNetworkNode(NetworkNode *node) {
+		this->node = node;
+	}
+	NetworkNode *getNetworkNode() {
+		return node;
+	}
 private:
 	QString name;
 	QCA::PublicKey publicKey;
+	NetworkNode *node;
 };
 
 #endif
