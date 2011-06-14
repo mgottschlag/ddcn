@@ -24,6 +24,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// TODO: Always check whether incoming keys are valid!
+
 #include "CompilerNetworkAdaptor.h"
 
 CompilerNetworkAdaptor::CompilerNetworkAdaptor(CompilerNetwork *network)
@@ -39,9 +41,9 @@ CompilerNetworkAdaptor::CompilerNetworkAdaptor(CompilerNetwork *network)
 	        this,
 	        SLOT(onEncryptionChanged(bool)));
 	connect(network,
-	        SIGNAL(publicKeyChanged(QString)),
+	        SIGNAL(publicKeyChanged(QCA::PublicKey)),
 	        this,
-	        SLOT(onPublicKeyChanged(QString)));
+	        SLOT(onPublicKeyChanged(QCA::PublicKey)));
 	connect(network,
 	        SIGNAL(trustedPeersChanged(QList<TrustedPeer*>)),
 	        this,
@@ -71,40 +73,59 @@ bool CompilerNetworkAdaptor::getEncryption() {
 }
 
 void CompilerNetworkAdaptor::setKeys(QString publicKey, QString privateKey) {
-	network->setKeys(publicKey, privateKey);
+	QCA::PublicKey pub;
+	pub.fromPEM(publicKey);
+	QCA::PrivateKey priv;
+	priv.fromPEM(privateKey);
+	network->setKeys(pub, priv);
 }
 void CompilerNetworkAdaptor::generateKeys() {
 	network->generateKeys();
 }
 QString CompilerNetworkAdaptor::getPublicKey() {
-	return network->getPublicKey();
+	QCA::PublicKey publicKey = network->getPublicKey();
+	return publicKey.toPEM();
 }
 
 void CompilerNetworkAdaptor::addTrustedPeer(QString name, QString publicKey) {
-	network->addTrustedPeer(name, publicKey);
+	QCA::PublicKey pub;
+	pub.fromPEM(publicKey);
+	network->addTrustedPeer(name, pub);
 }
 void CompilerNetworkAdaptor::removeTrustedPeer(QString name, QString publicKey) {
-	network->removeTrustedPeer(name, publicKey);
+	QCA::PublicKey pub;
+	pub.fromPEM(publicKey);
+	network->removeTrustedPeer(name, pub);
 }
 QList<TrustedPeerInfo> CompilerNetworkAdaptor::getTrustedPeers() {
 	return toTrustedPeerInfo(network->getTrustedPeers());
 }
 
 void CompilerNetworkAdaptor::addTrustedGroup(QString name, QString publicKey) {
-	network->addTrustedGroup(name, publicKey);
+	QCA::PublicKey pub;
+	pub.fromPEM(publicKey);
+	network->addTrustedGroup(name, pub);
 }
 void CompilerNetworkAdaptor::removeTrustedGroup(QString name, QString publicKey) {
-	network->removeTrustedGroup(name, publicKey);
+	QCA::PublicKey pub;
+	pub.fromPEM(publicKey);
+	network->removeTrustedGroup(name, pub);
 }
 QList<TrustedGroupInfo> CompilerNetworkAdaptor::getTrustedGroups() {
 	return toTrustedGroupInfo(network->getTrustedGroups());
 }
 
 void CompilerNetworkAdaptor::addGroupMembership(QString name, QString publicKey, QString privateKey) {
-	network->addGroupMembership(name, publicKey, privateKey);
+	QCA::PublicKey pub;
+	pub.fromPEM(publicKey);
+	QCA::PrivateKey priv;
+	priv.fromPEM(privateKey);
+	network->addGroupMembership(name, pub, priv);
 }
 void CompilerNetworkAdaptor::removeGroupMembership(QString name, QString publicKey) {
-	network->removeGroupMembership(name, publicKey);
+	QCA::PublicKey pub;
+	pub.fromPEM(publicKey);
+	network->removeGroupMembership(name, pub);
 }
 QList<GroupMembershipInfo> CompilerNetworkAdaptor::getGroupMemberships() {
 	return toGroupMembershipInfo(network->getGroupMemberships());
@@ -116,8 +137,8 @@ void CompilerNetworkAdaptor::onPeerNameChanged(QString peerName) {
 void CompilerNetworkAdaptor::onEncryptionChanged(bool encryptionEnabled) {
 	emit encryptionChanged(encryptionEnabled);
 }
-void CompilerNetworkAdaptor::onPublicKeyChanged(QString publicKey) {
-	emit publicKeyChanged(publicKey);
+void CompilerNetworkAdaptor::onPublicKeyChanged(const QCA::PublicKey &publicKey) {
+	emit publicKeyChanged(publicKey.toPEM());
 }
 
 void CompilerNetworkAdaptor::onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers) {
@@ -133,19 +154,19 @@ void CompilerNetworkAdaptor::onGroupMembershipsChanged(const QList<GroupMembersh
 TrustedPeerInfo CompilerNetworkAdaptor::toTrustedPeerInfo(TrustedPeer *trustedPeer) {
 	TrustedPeerInfo info;
 	info.name = trustedPeer->getName();
-	info.publicKey = trustedPeer->getPublicKey();
+	info.publicKey = trustedPeer->getPublicKey().toPEM();
 	return info;
 }
 TrustedGroupInfo CompilerNetworkAdaptor::toTrustedGroupInfo(TrustedGroup *trustedGroup) {
 	TrustedGroupInfo info;
 	info.name = trustedGroup->getName();
-	info.publicKey = trustedGroup->getPublicKey();
+	info.publicKey = trustedGroup->getPublicKey().toPEM();
 	return info;
 }
 GroupMembershipInfo CompilerNetworkAdaptor::toGroupMembershipInfo(GroupMembership *groupMembership) {
 	GroupMembershipInfo info;
 	info.name = groupMembership->getName();
-	info.publicKey = groupMembership->getPublicKey();
+	info.publicKey = groupMembership->getPublicKey().toPEM();
 	return info;
 }
 QList<TrustedPeerInfo> CompilerNetworkAdaptor::toTrustedPeerInfo(const QList<TrustedPeer*> &trustedPeers) {

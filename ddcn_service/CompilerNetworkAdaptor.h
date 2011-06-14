@@ -79,7 +79,7 @@ private slots:
 	// used to forward the signals of the encapsulated class to dbus
 	void onPeerNameChanged(QString peerName);
 	void onEncryptionChanged(bool encryptionEnabled);
-	void onPublicKeyChanged(QString publicKey);
+	void onPublicKeyChanged(const QCA::PublicKey &publicKey);
 	void onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers);
 	void onTrustedGroupsChanged(const QList<TrustedGroup*> &trustedGroups);
 	void onGroupMembershipsChanged(const QList<GroupMembership*> &groupMemberships);

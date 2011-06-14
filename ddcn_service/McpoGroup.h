@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
 
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
+      documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -24,40 +24,35 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef GROUPMEMBERSHIP_H_INCLUDED
-#define GROUPMEMBERSHIP_H_INCLUDED
+#ifndef MCPOGROUP_H_INCLUDED
+#define MCPOGROUP_H_INCLUDED
 
-#include "McpoGroup.h"
+#include <ariba/ariba.h>
+#include <QtCrypto>
 
-#include <QString>
-#include <qca.h>
-
-class GroupMembership {
+class McpoGroup {
 public:
-	GroupMembership(QString name, const QCA::PublicKey &publicKey,
-			const QCA::PrivateKey &privateKey) : name(name),
-			publicKey(publicKey), privateKey(privateKey) {
+	McpoGroup(ariba::ServiceID serviceId) : refCount(0), serviceId(serviceId) {
 	}
-	QString getName() {
-		return name;
+
+	void grab() {
+		refCount++;
 	}
-	QCA::PublicKey getPublicKey() {
-		return publicKey;
+	void drop() {
+		if (--refCount) {
+			// Delete the object if it is not used any more
+			delete this;
+		}
 	}
-	QCA::PrivateKey getPrivateKey() {
-		return privateKey;
+
+	ariba::ServiceID getServiceId() {
+		return serviceId;
 	}
-	void setMcpoGroup(McpoGroup *mcpoGroup) {
-		this->mcpoGroup = mcpoGroup;
-	}
-	McpoGroup *getMcpoGroup() {
-		return mcpoGroup;
-	}
+
+	static ariba::ServiceID getServiceIdFromPublicKey(QCA::PublicKey publicKey);
 private:
-	QString name;
-	QCA::PublicKey publicKey;
-	QCA::PrivateKey privateKey;
-	McpoGroup *mcpoGroup;
+	int refCount;
+	ariba::ServiceID serviceId;
 };
 
 #endif

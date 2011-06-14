@@ -24,13 +24,35 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef ONLINEPEER_H_
-#define ONLINEPEER_H_
+#ifndef ONLINEPEER_H_INCLUDED
+#define ONLINEPEER_H_INCLUDED
 
+#include "TrustedPeer.h"
+
+#include <QString>
+#include <ariba/ariba.h>
+#include <qca.h>
 
 class OnlinePeer {
 public:
+	QCA::PublicKey getPublicKey() {
+		return publicKey;
+	}
+	float getLoad() {
+		return load;
+	}
+	void setTrustedPeer(TrustedPeer *trustedPeer) {
+		this->trustedPeer = trustedPeer;
+	}
+	TrustedPeer *getTrustedPeer() {
+		return trustedPeer;
+	}
 private:
+	QString name;
+	ariba::NodeID aribaNode;
+	QCA::PublicKey publicKey;
+	float load;
+	TrustedPeer *trustedPeer;
 };
 
 #endif /* ONLINEPEER_H_ */

@@ -31,9 +31,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "TrustedGroup.h"
 #include "GroupMembership.h"
 #include "Job.h"
-#include "NetworkNode.h"
+#include "NetworkInterface.h"
 
 #include <QObject>
+#include "JobRequest.h"
 
 /**
  * Class which communicates with peers in the compiler network and receives
@@ -59,53 +60,68 @@ public:
 	void setEncryption(bool encryptionEnabled);
 	bool getEncryption();
 
-	void setKeys(QString publicKey, QString privateKey);
+	void setKeys(QCA::PublicKey publicKey, QCA::PrivateKey privateKey);
 	void generateKeys();
-	QString getPublicKey();
-	QString getPrivateKey();
+	QCA::PublicKey getPublicKey();
+	QCA::PrivateKey getPrivateKey();
 
-	void addTrustedPeer(QString name, QString publicKey);
-	void removeTrustedPeer(QString name, QString publicKey);
+	void addTrustedPeer(QString name, const QCA::PublicKey &publicKey);
+	void removeTrustedPeer(QString name, const QCA::PublicKey &publicKey);
 	QList<TrustedPeer*> getTrustedPeers() {
 		return trustedPeers;
 	}
 
-	void addTrustedGroup(QString name, QString publicKey);
-	void removeTrustedGroup(QString name, QString publicKey);
+	void addTrustedGroup(QString name, const QCA::PublicKey &publicKey);
+	void removeTrustedGroup(QString name, const QCA::PublicKey &publicKey);
 	QList<TrustedGroup*> getTrustedGroups() {
 		return trustedGroups;
 	}
 
-	void addGroupMembership(QString name, QString publicKey, QString privateKey);
-	void removeGroupMembership(QString name, QString publicKey);
+	void addGroupMembership(QString name, const QCA::PublicKey &publicKey, const QCA::PrivateKey &privateKey);
+	void removeGroupMembership(QString name, const QCA::PublicKey &publicKey);
 	QList<GroupMembership*> getGroupMemberships() {
 		return groupMemberships;
 	}
 
 	bool canAcceptOutgoingJobRequest();
+	void rejectIncomingJobReqiest(JobRequest *request);
+	void acceptIncomingJobRequest(JobRequest *request);
 	bool delegateOutgoingJob(Job *job);
+private slots:
+	void onPeerConnected(NodeID node, QString name,
+		const QCA::PublicKey &publicKey);
+	void onPeerDisconnected(NodeID node);
+	void onPeerChanged(NodeID node, QString name);
+	void onMessageReceived(NodeID node, const QByteArray &message);
+	void onGroupMessageReceived(McpoGroup *group, NodeID node,
+		const QByteArray &message);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
-	void publicKeyChanged(QString publicKey);
-	void privateKeyChanged(QString privateKey);
+	void publicKeyChanged(const QCA::PublicKey &publicKey);
+	void privateKeyChanged(const QCA::PrivateKey &privateKey);
 	void trustedPeersChanged(QList<TrustedPeer*> trustedPeers);
 	void trustedGroupsChanged(QList<TrustedGroup*> trustedGroups);
 	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
+	void receivedJob(Job *job);
+	void receivedJobRequest(JobRequest *request);
+	void finishedJob(Job *job, bool executed, bool success);
+	void spareResources();
+	void outgoingRequestAccepted(JobRequest *request);
 private:
 	QString peerName;
 	bool encryptionEnabled;
-	QString publicKey;
-	QString privateKey;
+	QCA::PublicKey publicKey;
+	QCA::PrivateKey privateKey;
 
 	// TODO: Do we need much lookups here? A hash map then would be faster.
 	// We could need public-key based lookups a lot.
+	QList<OnlinePeer*> onlinePeers;
 	QList<TrustedPeer*> trustedPeers;
 	QList<TrustedGroup*> trustedGroups;
 	QList<GroupMembership*> groupMemberships;
 
-	NetworkNode *localNode;
+	NetworkInterface *network;
 };
 
 #endif
-

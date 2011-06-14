@@ -27,19 +27,36 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef TRUSTEDGROUP_H_INCLUDED
 #define TRUSTEDGROUP_H_INCLUDED
 
+#include "McpoGroup.h"
+
 #include <QString>
 
 class TrustedGroup {
 public:
+	TrustedGroup(QString name, const QCA::PublicKey &publicKey) : name(name),
+			publicKey(publicKey), mcpoGroup(0) {
+	}
+
+	void setName(QString name) {
+		this->name = name;
+	}
 	QString getName() {
 		return name;
 	}
-	QString getPublicKey() {
+	QCA::PublicKey getPublicKey() {
 		return publicKey;
+	}
+
+	void setMcpoGroup(McpoGroup *group) {
+		mcpoGroup = group;
+	}
+	McpoGroup *getMcpoGroup() {
+		return mcpoGroup;
 	}
 private:
 	QString name;
-	QString publicKey;
+	QCA::PublicKey publicKey;
+	McpoGroup *mcpoGroup;
 };
 
 #endif

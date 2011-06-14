@@ -6,6 +6,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Ariba REQUIRED)
 find_package(MCPO REQUIRED)
+find_package(QCA2 REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter")
 
@@ -23,7 +24,8 @@ set(SRC
 	JobRequest.cpp
 	OnlinePeer.cpp
 	DBusStructs.cpp
-	NetworkNode.cpp
+	NetworkInterface.cpp
+	McpoGroup.cpp
 )
 
 set(MOC_H
@@ -34,11 +36,12 @@ set(MOC_H
 	JobRequest.h
 	Job.h
 	JobAdaptor.h
+	NetworkInterface.h
 )
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
 
-include_directories(${ARIBA_INCLUDE_DIR} ${MCPO_INCLUDE_DIR} ${Boost_INCLUDE_DIR})
+include_directories(${ARIBA_INCLUDE_DIR} ${MCPO_INCLUDE_DIR} ${Boost_INCLUDE_DIR} ${QCA2_INCLUDE_DIR})
 
 add_executable(ddcn_service ${SRC} ${MOC_SRC})
-target_link_libraries(ddcn_service ${QT_LIBRARIES} ${ARIBA_LIBRARY} ${PTHREAD_LIBRARY} ${MCPO_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(ddcn_service ${QT_LIBRARIES} ${ARIBA_LIBRARY} ${PTHREAD_LIBRARY} ${MCPO_LIBRARY} ${Boost_LIBRARIES} ${QCA2_LIBRARY})
