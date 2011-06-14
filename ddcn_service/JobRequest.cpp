@@ -27,15 +27,15 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "JobRequest.h"
 
 
-JobRequest::JobRequest(OnlinePeer *sourcePeer, int maxNumberOfAcceptedJobs) {
+JobRequest::JobRequest(NetworkNode *sourcePeer, int maxNumberOfAcceptedJobs) {
 	this->sourcePeer = sourcePeer;
 	this->maxNumberOfAcceptedJobs = 0;
 }
 
-OnlinePeer *JobRequest::getTargetPeer() {
+NetworkNode *JobRequest::getTargetPeer() {
 	return this->targetPeer;
 }
-OnlinePeer *JobRequest::getSourcePeer() {
+NetworkNode *JobRequest::getSourcePeer() {
 	return this->sourcePeer;
 }
 int JobRequest::getNumberOfAcceptedJobs() {
@@ -47,7 +47,7 @@ ToolChain *JobRequest::getToolChain() {
 QList<Job*> JobRequest::getJobList() {
 	return this->jobList;
 }
-void JobRequest::setTargetPeer(OnlinePeer *targetPeer) {
+void JobRequest::setTargetPeer(NetworkNode *targetPeer) {
 	this->targetPeer = targetPeer;
 }
 

@@ -28,6 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define NETWORKINTERFACE_H_INCLUDED
 
 #include "McpoGroup.h"
+#include "NetworkNode.h"
 
 #include <ariba/ariba.h>
 #include <ariba/utility/system/StartupInterface.h>
@@ -50,18 +51,20 @@ public:
 	NetworkInterface(QString name, const QCA::PrivateKey &privateKey);
 	~NetworkInterface();
 
-	void send(NodeID node, const QByteArray &message);
+	void send(NetworkNode *node, const QByteArray &message);
 	void send(McpoGroup *group, const QByteArray &message);
 	McpoGroup *joinGroup(ariba::ServiceID group);
 	void leaveGroup(McpoGroup *group);
 	void setName(QString name);
+
+	NetworkNode *getNetworkNode(const QCA::PublicKey &publicKey);
 signals:
-	void peerConnected(NodeID node, QString name,
+	void peerConnected(NetworkNode *node, QString name,
 		const QCA::PublicKey &publicKey);
-	void peerDisconnected(NodeID node);
-	void peerChanged(NodeID node, QString name);
-	void messageReceived(NodeID node, const QByteArray &message);
-	void groupMessageReceived(McpoGroup *group, NodeID node,
+	void peerDisconnected(NetworkNode *node);
+	void peerChanged(NetworkNode *node, QString name);
+	void messageReceived(NetworkNode *node, const QByteArray &message);
+	void groupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const QByteArray &message);
 protected:
 	// Communication listener interface
@@ -91,6 +94,9 @@ private:
 	ariba::Node *node;
 
 	MCPO *mcpo;
+
+	QMap<ariba::ServiceID, McpoGroup*> mcpoGroups;
+	QMap<NodeID, NetworkNode*> onlineNodes;
 
 	static const ariba::ServiceID SERVICE_ID;
 };

@@ -22,7 +22,6 @@ set(SRC
 	Job.cpp
 	JobAdaptor.cpp
 	JobRequest.cpp
-	OnlinePeer.cpp
 	DBusStructs.cpp
 	NetworkInterface.cpp
 	McpoGroup.cpp

@@ -116,7 +116,6 @@ private:
 
 	// TODO: Do we need much lookups here? A hash map then would be faster.
 	// We could need public-key based lookups a lot.
-	QList<OnlinePeer*> onlinePeers;
 	QList<TrustedPeer*> trustedPeers;
 	QList<TrustedGroup*> trustedGroups;
 	QList<GroupMembership*> groupMemberships;
