@@ -24,65 +24,85 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "NetworkNode.h"
+#include "NetworkInterface.h"
 
 #include <ariba/utility/system/StartupWrapper.h>
+#include <QDebug>
 
-const ariba::ServiceID NetworkNode::SERVICE_ID = ariba::ServiceID(42);
+const ariba::ServiceID NetworkInterface::SERVICE_ID = ariba::ServiceID(42);
 
-NetworkNode::NetworkNode() {
+NetworkInterface::NetworkInterface(QString name,
+		const QCA::PrivateKey &privateKey) {
 	// Load networking settings
 	// TODO
 	// Start networking
 	ariba::utility::StartupWrapper::startSystem();
 	ariba::utility::StartupWrapper::startup(this, false);
 }
-NetworkNode::~NetworkNode() {
+NetworkInterface::~NetworkInterface() {
 	ariba::utility::StartupWrapper::shutdown(this, false);
 	ariba::utility::StartupWrapper::stopSystem();
 }
 
-bool NetworkNode::onLinkRequest(const NodeID &remote) {
+void NetworkInterface::send(NodeID node, const QByteArray &message) {
+	// TODO
+}
+void NetworkInterface::send(McpoGroup *group, const QByteArray &message) {
+	// TODO
+}
+McpoGroup *NetworkInterface::joinGroup(ariba::ServiceID group) {
+	// TODO
+}
+void NetworkInterface::leaveGroup(McpoGroup *group) {
+	// TODO
+}
+void NetworkInterface::setName(QString name) {
+	// TODO
+}
+
+bool NetworkInterface::onLinkRequest(const NodeID &remote) {
 	std::cout << "Link request." << std::endl;
 	// TODO
 	return true;
 }
-void NetworkNode::onMessage(const ariba::DataMessage &msg, const NodeID &remote,
+void NetworkInterface::onMessage(const ariba::DataMessage &msg, const NodeID &remote,
 		const LinkID &link) {
 	std::cout << "Message received." << std::endl;
 	// TODO
 }
-void NetworkNode::onLinkUp(const LinkID &link, const NodeID &remote) {
+void NetworkInterface::onLinkUp(const LinkID &link, const NodeID &remote) {
 	std::cout << "Link up." << std::endl;
+	// Send the other node our name and public key
 	// TODO
 }
-void NetworkNode::onLinkDown(const LinkID &link, const NodeID &remote) {
+void NetworkInterface::onLinkDown(const LinkID &link, const NodeID &remote) {
 	std::cout << "Link down." << std::endl;
 	// TODO
 }
-void NetworkNode::onLinkChanged(const LinkID &link, const NodeID &remote) {
+void NetworkInterface::onLinkChanged(const LinkID &link, const NodeID &remote) {
 	std::cout << "Link changed." << std::endl;
 	// TODO
 }
-void NetworkNode::onLinkFail(const LinkID &link, const NodeID &remote) {
+void NetworkInterface::onLinkFail(const LinkID &link, const NodeID &remote) {
 	std::cout << "Link fail." << std::endl;
 	// TODO
 }
 
-void NetworkNode::onJoinCompleted(const ariba::SpoVNetID &vid) {
+void NetworkInterface::onJoinCompleted(const ariba::SpoVNetID &vid) {
+	// Initialize multicast
+	mcpo = new MCPO(this, aribaModule, node);
+}
+void NetworkInterface::onJoinFailed(const ariba::SpoVNetID &vid) {
+	qFatal("Could not join spovnet.");
+}
+void NetworkInterface::onLeaveCompleted(const ariba::SpoVNetID &vid) {
 	// TODO
 }
-void NetworkNode::onJoinFailed(const ariba::SpoVNetID &vid) {
-	// TODO
-}
-void NetworkNode::onLeaveCompleted(const ariba::SpoVNetID &vid) {
-	// TODO
-}
-void NetworkNode::onLeaveFailed(const ariba::SpoVNetID &vid) {
+void NetworkInterface::onLeaveFailed(const ariba::SpoVNetID &vid) {
 	// TODO
 }
 
-void NetworkNode::startup() {
+void NetworkInterface::startup() {
 	// Initialize ariba module
 	aribaModule = new ariba::AribaModule();
 	ariba::Name spovnetName("ddcn");
@@ -90,6 +110,7 @@ void NetworkNode::startup() {
 	aribaModule->start();
 	// Create a new node
 	node = new ariba::Node(*aribaModule, nodeName);
+	// TODO: Initialize bootstrapping and names
 	// Bind listeners
 	node->bind(this);
 	node->bind(this, SERVICE_ID);
@@ -102,13 +123,12 @@ void NetworkNode::startup() {
 	node->initiate(spovnetName, params);
 	// Join the spovnet
 	node->join(spovnetName);
-	// Initialize multicast
-	mcpo = new MCPO(this, aribaModule, node);
-	// TODO
-	// Publish presence
-	// TODO
 }
-void NetworkNode::shutdown() {
+void NetworkInterface::shutdown() {
+	// Shutdown MCPO
+	if (mcpo) {
+		delete mcpo;
+	}
 	// Leave the spovnet
 	node->leave();
 	// Unbind listeners
@@ -121,9 +141,9 @@ void NetworkNode::shutdown() {
 	delete aribaModule;
 }
 
-void NetworkNode::receiveData(const ariba::DataMessage &msg) {
+void NetworkInterface::receiveData(const ariba::DataMessage &msg) {
 	// TODO
 }
-void NetworkNode::serviceIsReady() {
+void NetworkInterface::serviceIsReady() {
 	// TODO
 }

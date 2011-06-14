@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
 
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
+      documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -24,40 +24,15 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef GROUPMEMBERSHIP_H_INCLUDED
-#define GROUPMEMBERSHIP_H_INCLUDED
-
 #include "McpoGroup.h"
 
-#include <QString>
-#include <qca.h>
-
-class GroupMembership {
-public:
-	GroupMembership(QString name, const QCA::PublicKey &publicKey,
-			const QCA::PrivateKey &privateKey) : name(name),
-			publicKey(publicKey), privateKey(privateKey) {
+ariba::ServiceID McpoGroup::getServiceIdFromPublicKey(QCA::PublicKey publicKey) {
+	QByteArray data = publicKey.toDER();
+	uint32_t serviceId = 0;
+	for (int i = 0; i < data.count() / 4; i++) {
+		uint32_t v = (data[i * 4] << 24) + (data[i * 4 + 1] << 26)
+			+ (data[i * 4 + 2] << 8) + data[i * 4 + 3];
+		serviceId ^= v;
 	}
-	QString getName() {
-		return name;
-	}
-	QCA::PublicKey getPublicKey() {
-		return publicKey;
-	}
-	QCA::PrivateKey getPrivateKey() {
-		return privateKey;
-	}
-	void setMcpoGroup(McpoGroup *mcpoGroup) {
-		this->mcpoGroup = mcpoGroup;
-	}
-	McpoGroup *getMcpoGroup() {
-		return mcpoGroup;
-	}
-private:
-	QString name;
-	QCA::PublicKey publicKey;
-	QCA::PrivateKey privateKey;
-	McpoGroup *mcpoGroup;
-};
-
-#endif
+	return ariba::ServiceID(serviceId);
+}

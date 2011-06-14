@@ -27,14 +27,41 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CompilerNetwork.h"
 
 CompilerNetwork::CompilerNetwork() : encryptionEnabled(true) {
-	localNode = new NetworkNode();
+	// Load peer name and public key from configuration
+	QString name = "ddcn_node";
+	QCA::PrivateKey key;
+	// TODO
+	// Initialize ariba
+	network = new NetworkInterface(name, key);
+	connect(network,
+	        SIGNAL(peerConnected(NodeID, QString, QCA::PublicKey)),
+	        this,
+	        SLOT(onPeerConnected(NodeID, QString, QCA::PublicKey)));
+	connect(network,
+	        SIGNAL(peerDisconnected(NodeID)),
+	        this,
+	        SLOT(onPeerDisconnected(NodeID)));
+	connect(network,
+	        SIGNAL(peerChanged(NodeID, QString)),
+	        this,
+	        SLOT(onPeerChanged(NodeID, QString)));
+	connect(network,
+	        SIGNAL(messageReceived(NodeID, QByteArray)),
+	        this,
+	        SLOT(onMessageReceived(NodeID, QByteArray)));
+	connect(network,
+	        SIGNAL(groupMessageReceived(McpoGroup*, NodeID, QByteArray)),
+	        this,
+	        SLOT(onGroupMessageReceived(McpoGroup*, NodeID, QByteArray)));
 }
 CompilerNetwork::~CompilerNetwork() {
-	delete localNode;
+	delete network
+;
 }
 
 void CompilerNetwork::setPeerName(QString peerName) {
 	this->peerName = peerName;
+	network->setName(peerName);
 	emit peerNameChanged(peerName);
 }
 QString CompilerNetwork::getPeerName() {
@@ -43,55 +70,145 @@ QString CompilerNetwork::getPeerName() {
 
 void CompilerNetwork::setEncryption(bool encryptionEnabled) {
 	this->encryptionEnabled = encryptionEnabled;
+	// TODO: Disable encryption in NetworkNode
 	emit encryptionChanged(encryptionEnabled);
 }
 bool CompilerNetwork::getEncryption() {
 	return encryptionEnabled;
 }
 
-void CompilerNetwork::setKeys(QString publicKey, QString privateKey) {
+void CompilerNetwork::setKeys(QCA::PublicKey publicKey, QCA::PrivateKey privateKey) {
 	this->publicKey = publicKey;
 	this->privateKey = privateKey;
+	// TODO
+	//network->changeIdentity(peerName, publicKey);
 	emit publicKeyChanged(publicKey);
 	emit privateKeyChanged(privateKey);
 }
 void CompilerNetwork::generateKeys() {
 	// TODO
 }
-QString CompilerNetwork::getPublicKey() {
+QCA::PublicKey CompilerNetwork::getPublicKey() {
 	return publicKey;
 }
-QString CompilerNetwork::getPrivateKey() {
+QCA::PrivateKey CompilerNetwork::getPrivateKey() {
 	return privateKey;
 }
 
-void CompilerNetwork::addTrustedPeer(QString name, QString publicKey) {
-	// TODO
+void CompilerNetwork::addTrustedPeer(QString name, const QCA::PublicKey &publicKey) {
+	// TODO: Way too slow
+	foreach (TrustedPeer *other, trustedPeers) {
+		if (other->getPublicKey() == publicKey) {
+			// TODO: We might want to update the name here?
+			return;
+		}
+	}
+	TrustedPeer *trustedPeer = new TrustedPeer(name, publicKey);
+	trustedPeers.append(trustedPeer);
+	foreach (OnlinePeer *online, onlinePeers) {
+		if (online->getPublicKey() == publicKey) {
+			online->setTrustedPeer(trustedPeer);
+		}
+	}
 }
-void CompilerNetwork::removeTrustedPeer(QString name, QString publicKey) {
-	// TODO
+void CompilerNetwork::removeTrustedPeer(QString name, const QCA::PublicKey &publicKey) {
+	// TODO: Way too slow
+	foreach (TrustedPeer *trustedPeer, trustedPeers) {
+		if (trustedPeer->getPublicKey() == publicKey) {
+			foreach (OnlinePeer *online, onlinePeers) {
+				if (online->getTrustedPeer() == trustedPeer) {
+					online->setTrustedPeer(NULL);
+				}
+			}
+			trustedPeers.removeOne(trustedPeer);
+			delete trustedPeer;
+			return;
+		}
+	}
 }
 
-void CompilerNetwork::addTrustedGroup(QString name, QString publicKey) {
-	// TODO
+void CompilerNetwork::addTrustedGroup(QString name, const QCA::PublicKey &publicKey) {
+	// TODO: Way too slow
+	foreach (TrustedGroup *other, trustedGroups) {
+		if (other->getPublicKey() == publicKey) {
+			// TODO: We might want to update the name here?
+			return;
+		}
+	}
+	TrustedGroup *trustedGroup = new TrustedGroup(name, publicKey);
+	trustedGroups.append(trustedGroup);
+	// Join the group
+	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(publicKey);
+	trustedGroup->setMcpoGroup(network->joinGroup(serviceId));
 }
-void CompilerNetwork::removeTrustedGroup(QString name, QString publicKey) {
-	// TODO
+void CompilerNetwork::removeTrustedGroup(QString name, const QCA::PublicKey &publicKey) {
+	// TODO: Way too slow
+	foreach (TrustedGroup *trustedGroup, trustedGroups) {
+		if (trustedGroup->getPublicKey() == publicKey) {
+			network->leaveGroup(trustedGroup->getMcpoGroup());
+			trustedGroups.removeOne(trustedGroup);
+			delete trustedGroup;
+			return;
+		}
+	}
 }
 
-void CompilerNetwork::addGroupMembership(QString name, QString publicKey, QString privateKey) {
-	// TODO
+void CompilerNetwork::addGroupMembership(QString name, const QCA::PublicKey &publicKey, const QCA::PrivateKey &privateKey) {
+	// TODO: Way too slow
+	foreach (GroupMembership *other, groupMemberships) {
+		if (other->getPublicKey() == publicKey) {
+			// TODO: We might want to update the name here?
+			return;
+		}
+	}
+	GroupMembership *groupMembership = new GroupMembership(name, publicKey, privateKey);
+	groupMemberships.append(groupMembership);
+	// Join the group
+	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(publicKey);
+	groupMembership->setMcpoGroup(network->joinGroup(serviceId));
 }
-void CompilerNetwork::removeGroupMembership(QString name, QString publicKey) {
-	// TODO
+void CompilerNetwork::removeGroupMembership(QString name, const QCA::PublicKey &publicKey) {
+	// TODO: Way too slow
+	foreach (GroupMembership *groupMembership, groupMemberships) {
+		if (groupMembership->getPublicKey() == publicKey) {
+			network->leaveGroup(groupMembership->getMcpoGroup());
+			groupMemberships.removeOne(groupMembership);
+			delete groupMembership;
+			return;
+		}
+	}
 }
 
 bool CompilerNetwork::canAcceptOutgoingJobRequest() {
 	// TODO
 	return false;
 }
+void rejectIncomingJobReqiest(JobRequest *request) {
+	// TODO
+}
+void acceptIncomingJobRequest(JobRequest *request) {
+	// TODO
+}
 bool CompilerNetwork::delegateOutgoingJob(Job *job) {
 	// TODO
 	return false;
+}
+
+void CompilerNetwork::onPeerConnected(NodeID node, QString name,
+		const QCA::PublicKey &publicKey) {
+	// TODO
+}
+void CompilerNetwork::onPeerDisconnected(NodeID node) {
+	// TODO
+}
+void CompilerNetwork::onPeerChanged(NodeID node, QString name) {
+	// TODO
+}
+void CompilerNetwork::onMessageReceived(NodeID node, const QByteArray &message) {
+	// TODO
+}
+void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NodeID node,
+		const QByteArray &message) {
+	// TODO
 }
 

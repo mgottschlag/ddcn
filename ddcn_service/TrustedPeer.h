@@ -28,18 +28,25 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define TRUSTEDPEER_H_INCLUDED
 
 #include <QString>
+#include <qca.h>
 
 class TrustedPeer {
 public:
+	TrustedPeer(QString name, const QCA::PublicKey &publicKey) : name(name), publicKey(publicKey) {
+	}
+
+	void setName(QString name) {
+		this->name = name;
+	}
 	QString getName() {
 		return name;
 	}
-	QString getPublicKey() {
+	QCA::PublicKey getPublicKey() {
 		return publicKey;
 	}
 private:
 	QString name;
-	QString publicKey;
+	QCA::PublicKey publicKey;
 };
 
 #endif

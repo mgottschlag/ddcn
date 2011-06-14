@@ -24,22 +24,45 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef NETWORKNODE_H_INCLUDED
-#define NETWORKNODE_H_INCLUDED
+#ifndef NETWORKINTERFACE_H_INCLUDED
+#define NETWORKINTERFACE_H_INCLUDED
+
+#include "McpoGroup.h"
 
 #include <ariba/ariba.h>
 #include <ariba/utility/system/StartupInterface.h>
 #include <mcpo/MCPO.h>
+#include <QtCrypto>
 
 using ariba::services::mcpo::MCPO;
 
-class NetworkNode : public ariba::utility::StartupInterface,
+/**
+ * This class initializes Ariba and MCPO and does the communication between the
+ * main thread and the Ariba system queue thread.
+ */
+class NetworkInterface : public QObject,
+		public ariba::utility::StartupInterface,
 		public ariba::NodeListener,
 		public ariba::CommunicationListener,
 		public MCPO::ReceiverInterface {
+	Q_OBJECT
 public:
-	NetworkNode();
-	~NetworkNode();
+	NetworkInterface(QString name, const QCA::PrivateKey &privateKey);
+	~NetworkInterface();
+
+	void send(NodeID node, const QByteArray &message);
+	void send(McpoGroup *group, const QByteArray &message);
+	McpoGroup *joinGroup(ariba::ServiceID group);
+	void leaveGroup(McpoGroup *group);
+	void setName(QString name);
+signals:
+	void peerConnected(NodeID node, QString name,
+		const QCA::PublicKey &publicKey);
+	void peerDisconnected(NodeID node);
+	void peerChanged(NodeID node, QString name);
+	void messageReceived(NodeID node, const QByteArray &message);
+	void groupMessageReceived(McpoGroup *group, NodeID node,
+		const QByteArray &message);
 protected:
 	// Communication listener interface
 	virtual bool onLinkRequest(const NodeID &remote);
