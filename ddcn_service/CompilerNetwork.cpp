@@ -34,25 +34,25 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true) {
 	// Initialize ariba
 	network = new NetworkInterface(name, key);
 	connect(network,
-	        SIGNAL(peerConnected(NodeID, QString, QCA::PublicKey)),
+	        SIGNAL(peerConnected(NetworkNode*, QString, QCA::PublicKey)),
 	        this,
-	        SLOT(onPeerConnected(NodeID, QString, QCA::PublicKey)));
+	        SLOT(onPeerConnected(NetworkNode*, QString, QCA::PublicKey)));
 	connect(network,
-	        SIGNAL(peerDisconnected(NodeID)),
+	        SIGNAL(peerDisconnected(NetworkNode*)),
 	        this,
-	        SLOT(onPeerDisconnected(NodeID)));
+	        SLOT(onPeerDisconnected(NetworkNode*)));
 	connect(network,
-	        SIGNAL(peerChanged(NodeID, QString)),
+	        SIGNAL(peerChanged(NetworkNode*, QString)),
 	        this,
-	        SLOT(onPeerChanged(NodeID, QString)));
+	        SLOT(onPeerChanged(NetworkNode*, QString)));
 	connect(network,
-	        SIGNAL(messageReceived(NodeID, QByteArray)),
+	        SIGNAL(messageReceived(NetworkNode*, QByteArray)),
 	        this,
-	        SLOT(onMessageReceived(NodeID, QByteArray)));
+	        SLOT(onMessageReceived(NetworkNode*, QByteArray)));
 	connect(network,
-	        SIGNAL(groupMessageReceived(McpoGroup*, NodeID, QByteArray)),
+	        SIGNAL(groupMessageReceived(McpoGroup*, NetworkNode*, QByteArray)),
 	        this,
-	        SLOT(onGroupMessageReceived(McpoGroup*, NodeID, QByteArray)));
+	        SLOT(onGroupMessageReceived(McpoGroup*, NetworkNode*, QByteArray)));
 }
 CompilerNetwork::~CompilerNetwork() {
 	delete network
@@ -192,20 +192,20 @@ bool CompilerNetwork::delegateOutgoingJob(Job *job) {
 	return false;
 }
 
-void CompilerNetwork::onPeerConnected(NodeID node, QString name,
+void CompilerNetwork::onPeerConnected(NetworkNode *node, QString name,
 		const QCA::PublicKey &publicKey) {
 	// TODO
 }
-void CompilerNetwork::onPeerDisconnected(NodeID node) {
+void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	// TODO
 }
-void CompilerNetwork::onPeerChanged(NodeID node, QString name) {
+void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
 	// TODO
 }
-void CompilerNetwork::onMessageReceived(NodeID node, const QByteArray &message) {
+void CompilerNetwork::onMessageReceived(NetworkNode *node, const QByteArray &message) {
 	// TODO
 }
-void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NodeID node,
+void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const QByteArray &message) {
 	// TODO
 }

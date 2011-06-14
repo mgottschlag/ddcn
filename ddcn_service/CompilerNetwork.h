@@ -88,12 +88,12 @@ public:
 	void acceptIncomingJobRequest(JobRequest *request);
 	bool delegateOutgoingJob(Job *job);
 private slots:
-	void onPeerConnected(NodeID node, QString name,
+	void onPeerConnected(NetworkNode *node, QString name,
 		const QCA::PublicKey &publicKey);
-	void onPeerDisconnected(NodeID node);
-	void onPeerChanged(NodeID node, QString name);
-	void onMessageReceived(NodeID node, const QByteArray &message);
-	void onGroupMessageReceived(McpoGroup *group, NodeID node,
+	void onPeerDisconnected(NetworkNode *node);
+	void onPeerChanged(NetworkNode *node, QString name);
+	void onMessageReceived(NetworkNode *node, const QByteArray &message);
+	void onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const QByteArray &message);
 signals:
 	void peerNameChanged(QString peerName);
