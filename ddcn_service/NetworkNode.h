@@ -35,8 +35,8 @@ class TrustedPeer;
 
 class NetworkNode {
 public:
-	NetworkNode(NodeID nodeId) : aribaNode(nodeId), load(0.0f) {
-
+	NetworkNode(NodeID nodeId, LinkID linkId) : aribaNode(nodeId),
+			aribaLink(linkId), load(0.0f) {
 	}
 	QCA::PublicKey getPublicKey() {
 		return publicKey;
@@ -50,12 +50,21 @@ public:
 	TrustedPeer *getTrustedPeer() {
 		return trustedPeer;
 	}
+
+	QCA::TLS &getTLS() {
+		return tls;
+	}
+private slots:
+	void outgoingTlsDataAvailable();
 private:
 	QString name;
 	ariba::NodeID aribaNode;
+	ariba::LinkID aribaLink;
 	QCA::PublicKey publicKey;
 	float load;
 	TrustedPeer *trustedPeer;
+
+	QCA::TLS tls;
 };
 
 #endif /* ONLINEPEER_H_ */
