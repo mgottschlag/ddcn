@@ -35,8 +35,23 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ariba/utility/system/StartupInterface.h>
 #include <mcpo/MCPO.h>
 #include <QtCrypto>
+#include <QMutex>
+#include <QSet>
+
+uint qHash(ariba::utility::NodeID nodeId);
 
 using ariba::services::mcpo::MCPO;
+
+struct PacketType {
+	enum List {
+		UseTLS = 0x80,
+		TypeMask = 0x7F
+	};
+};
+
+Q_DECLARE_METATYPE(ariba::utility::NodeID);
+Q_DECLARE_METATYPE(ariba::utility::LinkID);
+Q_DECLARE_METATYPE(ariba::DataMessage);
 
 /**
  * This class initializes Ariba and MCPO and does the communication between the
@@ -47,7 +62,7 @@ class NetworkInterface : public QObject,
 		public ariba::NodeListener,
 		public ariba::CommunicationListener,
 		public MCPO::ReceiverInterface,
-		public ariba::utility::Timer {
+		public ariba::utility::SystemEventListener {
 	Q_OBJECT
 public:
 	NetworkInterface(QString name, const QCA::PrivateKey &privateKey);
@@ -70,13 +85,13 @@ signals:
 		const QByteArray &message);
 protected:
 	// Communication listener interface
-	virtual bool onLinkRequest(const NodeID &remote);
-	virtual void onMessage(const ariba::DataMessage &msg, const NodeID &remote,
-		const LinkID &link = LinkID::UNSPECIFIED);
-	virtual void onLinkUp(const LinkID &link, const NodeID &remote);
-	virtual void onLinkDown(const LinkID &link, const NodeID &remote);
-	virtual void onLinkChanged(const LinkID &link, const NodeID &remote);
-	virtual void onLinkFail(const LinkID &link, const NodeID &remote);
+	virtual bool onLinkRequest(const ariba::utility::NodeID &remote);
+	virtual void onMessage(const ariba::DataMessage &msg, const ariba::utility::NodeID &remote,
+		const ariba::utility::LinkID &link = ariba::utility::LinkID::UNSPECIFIED);
+	virtual void onLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	virtual void onLinkDown(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	virtual void onLinkChanged(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	virtual void onLinkFail(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
 
 	// Node listener interface
 	virtual void onJoinCompleted(const ariba::SpoVNetID &vid);
@@ -92,9 +107,27 @@ protected:
 	virtual void receiveData(const ariba::DataMessage &msg);
 	virtual void serviceIsReady();
 
-	// Timer interface
-	virtual void eventFunction();
+	// System event listener interface
+	virtual void handleSystemEvent(const ariba::utility::SystemEvent &event);
+signals:
+	void aribaMessage(const ariba::DataMessage &msg, const ariba::utility::NodeID &remote,
+		const ariba::utility::LinkID &link);
+	void aribaLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	void aribaLinkDown(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	void aribaLinkChanged(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	void aribaLinkFail(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	void mcpoReceiveData(const ariba::DataMessage &msg);
+private slots:
+	void onAribaMessage(const ariba::DataMessage &msg, const ariba::utility::NodeID &remote,
+		const ariba::utility::LinkID &link);
+	void onAribaLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	void onAribaLinkDown(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	void onAribaLinkChanged(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	void onAribaLinkFail(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
+	void onMcpoReceiveData(const ariba::DataMessage &msg);
 private:
+	void peerDiscovery();
+
 	ariba::AribaModule *aribaModule;
 	ariba::Node *node;
 
@@ -103,13 +136,30 @@ private:
 	QString name;
 
 	QMap<ariba::ServiceID, McpoGroup*> mcpoGroups;
-	QMap<NodeID, NetworkNode*> onlineNodes;
+	QMap<ariba::utility::NodeID, NetworkNode*> onlineNodes;
+	QMap<ariba::utility::NodeID, NetworkNode*> pendingNodes;
 
-	QMap<NodeID, NetworkNode*> pendingNodes;
+	QMutex knownNodesMutex;
+	QSet<ariba::utility::NodeID> knownNodes;
 
 	static const ariba::ServiceID SERVICE_ID;
 
 	BootstrapConfig bootstrapConfig;
+
+	class PeerDiscoveryTimer : public ariba::utility::Timer {
+	public:
+		PeerDiscoveryTimer(NetworkInterface *network) : network(network) {
+		}
+
+		virtual void eventFunction();
+	private:
+		NetworkInterface *network;
+	};
+
+	PeerDiscoveryTimer discoveryTimer;
+
+	static const ariba::utility::SystemEventType JOIN_GROUP_EVENT;
+	static const ariba::utility::SystemEventType LEAVE_GROUP_EVENT;
 };
 
 #endif

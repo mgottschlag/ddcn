@@ -40,6 +40,9 @@ int main(int argc, char **argv) {
 	qDBusRegisterMetaType<QList<TrustedGroupInfo> >();
 	qDBusRegisterMetaType<GroupMembershipInfo>();
 	qDBusRegisterMetaType<QList<GroupMembershipInfo> >();
+	qRegisterMetaType<ariba::utility::NodeID>();
+	qRegisterMetaType<ariba::utility::LinkID>();
+	qRegisterMetaType<ariba::DataMessage>();
 	// Load config file
 	// TODO
 	// Create the compiler network
