@@ -38,6 +38,9 @@ public:
 			const QCA::PrivateKey &privateKey) : name(name),
 			publicKey(publicKey), privateKey(privateKey) {
 	}
+	void setName(QString name) {
+		this->name = name;
+	}
 	QString getName() {
 		return name;
 	}
