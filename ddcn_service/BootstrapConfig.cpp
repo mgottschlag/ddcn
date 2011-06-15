@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
 
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
+      documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -24,38 +24,29 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef NETWORKNODE_H_INCLUDED
-#define NETWORKNODE_H_INCLUDED
+#include "BootstrapConfig.h"
 
-#include <QString>
-#include <ariba/ariba.h>
-#include <qca.h>
+BootstrapConfig::BootstrapConfig() : settings("ddcn", "ddcn") {
+	if (!settings.value("network/bootstrap_hints").isValid()) {
+		settings.setValue("network/bootstrap_hints", "ddcn{ip{127.0.0.1};tcp{5005}}");
+	}
+	if (!settings.value("network/endpoints").isValid()) {
+		settings.setValue("network/endpoints", "ip{127.0.0.1}tcp{5005}");
+	}
+}
 
-class TrustedPeer;
+void BootstrapConfig::setBootstrapHints(QString bootstrapHints) {
+	settings.setValue("network/bootstrap_hints", bootstrapHints);
+	emit bootstrapHintsChanged(bootstrapHints);
+}
+QString BootstrapConfig::getBootstrapHints() {
+	return settings.value("network/bootstrap_hints", "").toString();
+}
 
-class NetworkNode {
-public:
-	NetworkNode(NodeID nodeId) : aribaNode(nodeId), load(0.0f) {
-
-	}
-	QCA::PublicKey getPublicKey() {
-		return publicKey;
-	}
-	float getLoad() {
-		return load;
-	}
-	void setTrustedPeer(TrustedPeer *trustedPeer) {
-		this->trustedPeer = trustedPeer;
-	}
-	TrustedPeer *getTrustedPeer() {
-		return trustedPeer;
-	}
-private:
-	QString name;
-	ariba::NodeID aribaNode;
-	QCA::PublicKey publicKey;
-	float load;
-	TrustedPeer *trustedPeer;
-};
-
-#endif /* ONLINEPEER_H_ */
+void BootstrapConfig::setEndPoints(QString endPoints) {
+	settings.setValue("network/endpoints", endPoints);
+	emit endPointsChanged(endPoints);
+}
+QString BootstrapConfig::getEndPoints() {
+	return settings.value("network/endpoints", "").toString();
+}

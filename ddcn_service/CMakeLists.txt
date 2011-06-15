@@ -25,6 +25,7 @@ set(SRC
 	DBusStructs.cpp
 	NetworkInterface.cpp
 	McpoGroup.cpp
+	BootstrapConfig.cpp
 )
 
 set(MOC_H
@@ -36,6 +37,7 @@ set(MOC_H
 	Job.h
 	JobAdaptor.h
 	NetworkInterface.h
+	BootstrapConfig.h
 )
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})

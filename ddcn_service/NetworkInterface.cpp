@@ -32,9 +32,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const ariba::ServiceID NetworkInterface::SERVICE_ID = ariba::ServiceID(42);
 
 NetworkInterface::NetworkInterface(QString name,
-		const QCA::PrivateKey &privateKey) {
-	// Load networking settings
-	// TODO
+		const QCA::PrivateKey &privateKey) : name(name) {
 	// Start networking
 	ariba::utility::StartupWrapper::startSystem();
 	ariba::utility::StartupWrapper::startup(this, false);
@@ -71,12 +69,17 @@ bool NetworkInterface::onLinkRequest(const NodeID &remote) {
 	// TODO
 	return true;
 }
-void NetworkInterface::onMessage(const ariba::DataMessage &msg, const NodeID &remote,
-		const LinkID &link) {
+void NetworkInterface::onMessage(const ariba::DataMessage &msg,
+		const NodeID &remote, const LinkID &link) {
 	std::cout << "Message received." << std::endl;
 	// TODO
 }
 void NetworkInterface::onLinkUp(const LinkID &link, const NodeID &remote) {
+	QMap<NodeID, NetworkNode*>::Iterator it = pendingNodes.find(remote);
+	if (it == pendingNodes.end()) {
+		return;
+	}
+	NetworkNode *node = it.value();
 	std::cout << "Link up." << std::endl;
 	// Send the other node our name and public key
 	// TODO
@@ -97,6 +100,9 @@ void NetworkInterface::onLinkFail(const LinkID &link, const NodeID &remote) {
 void NetworkInterface::onJoinCompleted(const ariba::SpoVNetID &vid) {
 	// Initialize multicast
 	mcpo = new MCPO(this, aribaModule, node);
+	// Start timer
+	Timer::setInterval(1000);
+	Timer::start();
 }
 void NetworkInterface::onJoinFailed(const ariba::SpoVNetID &vid) {
 	qFatal("Could not join spovnet.");
@@ -112,14 +118,21 @@ void NetworkInterface::startup() {
 	// Initialize ariba module
 	aribaModule = new ariba::AribaModule();
 	ariba::Name spovnetName("ddcn");
-	ariba::Name nodeName = ariba::Name::UNSPECIFIED;
+	ariba::Name nodeName(name.toAscii());
+	aribaModule->setProperty("endpoints", bootstrapConfig.getEndPoints().toStdString());
+	aribaModule->setProperty("bootstrap.hints", bootstrapConfig.getBootstrapHints().toStdString());
+	// TODO: Can we still change these settings later?
 	aribaModule->start();
 	// Create a new node
 	node = new ariba::Node(*aribaModule, nodeName);
 	// TODO: Initialize bootstrapping and names
 	// Bind listeners
-	node->bind(this);
-	node->bind(this, SERVICE_ID);
+	if (!node->bind(this)) {
+		qFatal("Could not bind node listener.");
+	}
+	if (!node->bind(this, SERVICE_ID)) {
+		qFatal("Could not bind communication listener.");
+	}
 	// Start node
 	node->start();
 	// Set properties
@@ -152,4 +165,23 @@ void NetworkInterface::receiveData(const ariba::DataMessage &msg) {
 }
 void NetworkInterface::serviceIsReady() {
 	// TODO
+}
+
+void NetworkInterface::eventFunction() {
+	std::cout << "Checking for new nodes..." << std::endl;
+	std::vector<NodeID> nodes = node->getNeighborNodes();
+	BOOST_FOREACH(NodeID nodeId, nodes) {
+		QMap<NodeID, NetworkNode*>::Iterator it = onlineNodes.find(nodeId);
+		if (it != onlineNodes.end()) {
+			continue;
+		}
+		it = pendingNodes.find(nodeId);
+		if (it == pendingNodes.end()) {
+			std::cout << "New neighbor " << nodeId.toString() << std::endl;
+			// Establish link to the new node
+			node->establishLink(nodeId, SERVICE_ID);
+			NetworkNode *newNode = new NetworkNode(nodeId);
+			pendingNodes.insert(nodeId, newNode);
+		}
+	}
 }
