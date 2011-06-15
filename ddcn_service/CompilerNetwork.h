@@ -36,6 +36,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QObject>
 #include "JobRequest.h"
 
+struct FreeCompilerSlots {
+	NetworkNode *node;
+	unsigned int slotCount;
+};
+
 /**
  * Class which communicates with peers in the compiler network and receives
  * and sends compiler jobs.
@@ -114,6 +119,8 @@ private:
 
 	void saveSettings();
 
+	void askForFreeSlots();
+
 	QString peerName;
 	bool encryptionEnabled;
 	QCA::PublicKey publicKey;
@@ -127,8 +134,10 @@ private:
 
 	NetworkInterface *network;
 
-	unsigned int freeLocalSlots;
 	QList<Job*> waitingJobs;
+
+	QList<FreeCompilerSlots> freeRemoteSlots;
+	unsigned int freeLocalSlots;
 };
 
 #endif

@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
 
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
+      documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -24,38 +24,26 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef NETWORKNODE_H_INCLUDED
-#define NETWORKNODE_H_INCLUDED
+#ifndef BOOTSTRAPCONFIG_H_INCLUDED
+#define BOOTSTRAPCONFIG_H_INCLUDED
 
-#include <QString>
-#include <ariba/ariba.h>
-#include <qca.h>
+#include <QSettings>
 
-class TrustedPeer;
-
-class NetworkNode {
+class BootstrapConfig : QObject {
+	Q_OBJECT
 public:
-	NetworkNode(NodeID nodeId) : aribaNode(nodeId), load(0.0f) {
+	BootstrapConfig();
 
-	}
-	QCA::PublicKey getPublicKey() {
-		return publicKey;
-	}
-	float getLoad() {
-		return load;
-	}
-	void setTrustedPeer(TrustedPeer *trustedPeer) {
-		this->trustedPeer = trustedPeer;
-	}
-	TrustedPeer *getTrustedPeer() {
-		return trustedPeer;
-	}
+	void setBootstrapHints(QString bootstrapHints);
+	QString getBootstrapHints();
+
+	void setEndPoints(QString endPoints);
+	QString getEndPoints();
+signals:
+	void bootstrapHintsChanged(QString bootstrapHints);
+	void endPointsChanged(QString endPoints);
 private:
-	QString name;
-	ariba::NodeID aribaNode;
-	QCA::PublicKey publicKey;
-	float load;
-	TrustedPeer *trustedPeer;
+	QSettings settings;
 };
 
-#endif /* ONLINEPEER_H_ */
+#endif

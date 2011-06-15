@@ -29,6 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "McpoGroup.h"
 #include "NetworkNode.h"
+#include "BootstrapConfig.h"
 
 #include <ariba/ariba.h>
 #include <ariba/utility/system/StartupInterface.h>
@@ -45,7 +46,8 @@ class NetworkInterface : public QObject,
 		public ariba::utility::StartupInterface,
 		public ariba::NodeListener,
 		public ariba::CommunicationListener,
-		public MCPO::ReceiverInterface {
+		public MCPO::ReceiverInterface,
+		public ariba::utility::Timer {
 	Q_OBJECT
 public:
 	NetworkInterface(QString name, const QCA::PrivateKey &privateKey);
@@ -89,16 +91,25 @@ protected:
 	// MCPO receiver interface
 	virtual void receiveData(const ariba::DataMessage &msg);
 	virtual void serviceIsReady();
+
+	// Timer interface
+	virtual void eventFunction();
 private:
 	ariba::AribaModule *aribaModule;
 	ariba::Node *node;
 
 	MCPO *mcpo;
 
+	QString name;
+
 	QMap<ariba::ServiceID, McpoGroup*> mcpoGroups;
 	QMap<NodeID, NetworkNode*> onlineNodes;
 
+	QMap<NodeID, NetworkNode*> pendingNodes;
+
 	static const ariba::ServiceID SERVICE_ID;
+
+	BootstrapConfig bootstrapConfig;
 };
 
 #endif

@@ -29,7 +29,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 		freeLocalSlots(0) {
 	// Load peer name and public key from configuration
-	QString name = "ddcn_node";
+	QSettings settings("ddcn", "ddcn");
+	if (!settings.value("general/name").isValid()) {
+		settings.setValue("general/name", "ddcn_node");
+	}
+	QString name = settings.value("general/name").toString();
 	QCA::PrivateKey key;
 	// TODO
 	// Load trusted peers/groups etc from file
@@ -182,7 +186,16 @@ void CompilerNetwork::removeGroupMembership(QString name, const QCA::PublicKey &
 
 void CompilerNetwork::delegateOutgoingJob(Job *job) {
 	waitingJobs.append(job);
-	// TODO: Check whether we have free remote slots left and delegate the job
+	if (freeRemoteSlots.size() > 0) {
+		// TODO: Delegate the job
+		// If the free remote slots are too little, ask all nodes for free slots
+		// TODO: Better threshold here, like 0.5 * maxFreeRemoteSlots
+		if (freeRemoteSlots.count() < 4) {
+			askForFreeSlots();
+		}
+	} else {
+		askForFreeSlots();
+	}
 }
 Job *CompilerNetwork::cancelOutgoingJob() {
 	if (!waitingJobs.empty()) {
@@ -262,4 +275,8 @@ GroupMembership *CompilerNetwork::getGroupMembership(const QCA::PublicKey &publi
 
 void CompilerNetwork::saveSettings() {
 	// TODO: Save trusted groups, trusted peers, group memberships
+}
+
+void CompilerNetwork::askForFreeSlots() {
+	// TODO: Send a message to all trusted peers and trusted groups
 }
