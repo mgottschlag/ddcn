@@ -83,10 +83,12 @@ public:
 		return groupMemberships;
 	}
 
-	bool canAcceptOutgoingJobRequest();
-	void rejectIncomingJobReqiest(JobRequest *request);
-	void acceptIncomingJobRequest(JobRequest *request);
-	bool delegateOutgoingJob(Job *job);
+	void delegateOutgoingJob(Job *job);
+	Job *cancelOutgoingJob();
+	void rejectIncomingJob(Job *job);
+
+	void setFreeLocalSlots(unsigned int localSlots);
+	unsigned int getFreeLocalSlots();
 private slots:
 	void onPeerConnected(NetworkNode *node, QString name,
 		const QCA::PublicKey &publicKey);
@@ -104,11 +106,14 @@ signals:
 	void trustedGroupsChanged(QList<TrustedGroup*> trustedGroups);
 	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
 	void receivedJob(Job *job);
-	void receivedJobRequest(JobRequest *request);
 	void finishedJob(Job *job, bool executed, bool success);
-	void spareResources();
-	void outgoingRequestAccepted(JobRequest *request);
 private:
+	TrustedPeer *getTrustedPeer(const QCA::PublicKey &publicKey);
+	TrustedGroup *getTrustedGroup(const QCA::PublicKey &publicKey);
+	GroupMembership *getGroupMembership(const QCA::PublicKey &publicKey);
+
+	void saveSettings();
+
 	QString peerName;
 	bool encryptionEnabled;
 	QCA::PublicKey publicKey;
@@ -121,6 +126,9 @@ private:
 	QList<GroupMembership*> groupMemberships;
 
 	NetworkInterface *network;
+
+	unsigned int freeLocalSlots;
+	QList<Job*> waitingJobs;
 };
 
 #endif

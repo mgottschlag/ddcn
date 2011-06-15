@@ -26,10 +26,13 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerNetwork.h"
 
-CompilerNetwork::CompilerNetwork() : encryptionEnabled(true) {
+CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
+		freeLocalSlots(0) {
 	// Load peer name and public key from configuration
 	QString name = "ddcn_node";
 	QCA::PrivateKey key;
+	// TODO
+	// Load trusted peers/groups etc from file
 	// TODO
 	// Initialize ariba
 	network = new NetworkInterface(name, key);
@@ -96,12 +99,10 @@ QCA::PrivateKey CompilerNetwork::getPrivateKey() {
 }
 
 void CompilerNetwork::addTrustedPeer(QString name, const QCA::PublicKey &publicKey) {
-	// TODO: Way too slow
-	foreach (TrustedPeer *other, trustedPeers) {
-		if (other->getPublicKey() == publicKey) {
-			// TODO: We might want to update the name here?
-			return;
-		}
+	TrustedPeer *existing = getTrustedPeer(publicKey);
+	if (existing) {
+		existing->setName(name);
+		return;
 	}
 	TrustedPeer *trustedPeer = new TrustedPeer(name, publicKey);
 	trustedPeers.append(trustedPeer);
@@ -110,6 +111,7 @@ void CompilerNetwork::addTrustedPeer(QString name, const QCA::PublicKey &publicK
 		node->setTrustedPeer(trustedPeer);
 		trustedPeer->setNetworkNode(node);
 	}
+	saveSettings();
 }
 void CompilerNetwork::removeTrustedPeer(QString name, const QCA::PublicKey &publicKey) {
 	// TODO: Way too slow
@@ -123,21 +125,21 @@ void CompilerNetwork::removeTrustedPeer(QString name, const QCA::PublicKey &publ
 			return;
 		}
 	}
+	saveSettings();
 }
 
 void CompilerNetwork::addTrustedGroup(QString name, const QCA::PublicKey &publicKey) {
-	// TODO: Way too slow
-	foreach (TrustedGroup *other, trustedGroups) {
-		if (other->getPublicKey() == publicKey) {
-			// TODO: We might want to update the name here?
-			return;
-		}
+	TrustedGroup *existing = getTrustedGroup(publicKey);
+	if (existing) {
+		existing->setName(name);
+		return;
 	}
 	TrustedGroup *trustedGroup = new TrustedGroup(name, publicKey);
 	trustedGroups.append(trustedGroup);
 	// Join the group
 	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(publicKey);
 	trustedGroup->setMcpoGroup(network->joinGroup(serviceId));
+	saveSettings();
 }
 void CompilerNetwork::removeTrustedGroup(QString name, const QCA::PublicKey &publicKey) {
 	// TODO: Way too slow
@@ -149,21 +151,21 @@ void CompilerNetwork::removeTrustedGroup(QString name, const QCA::PublicKey &pub
 			return;
 		}
 	}
+	saveSettings();
 }
 
 void CompilerNetwork::addGroupMembership(QString name, const QCA::PublicKey &publicKey, const QCA::PrivateKey &privateKey) {
-	// TODO: Way too slow
-	foreach (GroupMembership *other, groupMemberships) {
-		if (other->getPublicKey() == publicKey) {
-			// TODO: We might want to update the name here?
-			return;
-		}
+	GroupMembership *existing = getGroupMembership(publicKey);
+	if (existing) {
+		existing->setName(name);
+		return;
 	}
 	GroupMembership *groupMembership = new GroupMembership(name, publicKey, privateKey);
 	groupMemberships.append(groupMembership);
 	// Join the group
 	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(publicKey);
 	groupMembership->setMcpoGroup(network->joinGroup(serviceId));
+	saveSettings();
 }
 void CompilerNetwork::removeGroupMembership(QString name, const QCA::PublicKey &publicKey) {
 	// TODO: Way too slow
@@ -175,32 +177,52 @@ void CompilerNetwork::removeGroupMembership(QString name, const QCA::PublicKey &
 			return;
 		}
 	}
+	saveSettings();
 }
 
-bool CompilerNetwork::canAcceptOutgoingJobRequest() {
-	// TODO
-	return false;
+void CompilerNetwork::delegateOutgoingJob(Job *job) {
+	waitingJobs.append(job);
+	// TODO: Check whether we have free remote slots left and delegate the job
 }
-void rejectIncomingJobReqiest(JobRequest *request) {
+Job *CompilerNetwork::cancelOutgoingJob() {
+	if (!waitingJobs.empty()) {
+		Job *job = waitingJobs.last();
+		waitingJobs.removeLast();
+		return job;
+	}
+	// TODO: Check whether we can abort an already delegated job
+	return NULL;
+}
+void CompilerNetwork::rejectIncomingJob(Job *job) {
 	// TODO
 }
-void acceptIncomingJobRequest(JobRequest *request) {
-	// TODO
+
+void CompilerNetwork::setFreeLocalSlots(unsigned int localSlots) {
+	freeLocalSlots = localSlots;
 }
-bool CompilerNetwork::delegateOutgoingJob(Job *job) {
-	// TODO
-	return false;
+unsigned int CompilerNetwork::getFreeLocalSlots() {
+	return freeLocalSlots;
 }
 
 void CompilerNetwork::onPeerConnected(NetworkNode *node, QString name,
 		const QCA::PublicKey &publicKey) {
-	// TODO
+	TrustedPeer *trustedPeer = getTrustedPeer(publicKey);
+	if (trustedPeer) {
+		trustedPeer->setNetworkNode(node);
+	}
+	// TODO: Emit spareResources() ?
 }
 void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
+	if (node->getTrustedPeer()) {
+		node->getTrustedPeer()->setNetworkNode(NULL);
+	}
+	// Reject local jobs delegated to this node
+	// TODO
+	// Abort remote jobs from this node
 	// TODO
 }
 void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
-	// TODO
+	// TODO: Nothing to do here? Maybe update TrustedPeer name
 }
 void CompilerNetwork::onMessageReceived(NetworkNode *node, const QByteArray &message) {
 	// TODO
@@ -208,4 +230,36 @@ void CompilerNetwork::onMessageReceived(NetworkNode *node, const QByteArray &mes
 void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const QByteArray &message) {
 	// TODO
+}
+
+TrustedPeer *CompilerNetwork::getTrustedPeer(const QCA::PublicKey &publicKey) {
+	// TODO: Way too slow
+	foreach (TrustedPeer *trustedPeer, trustedPeers) {
+		if (trustedPeer->getPublicKey() == publicKey) {
+			return trustedPeer;
+		}
+	}
+	return NULL;
+}
+TrustedGroup *CompilerNetwork::getTrustedGroup(const QCA::PublicKey &publicKey) {
+	// TODO: Way too slow
+	foreach (TrustedGroup *trustedGroup, trustedGroups) {
+		if (trustedGroup->getPublicKey() == publicKey) {
+			return trustedGroup;
+		}
+	}
+	return NULL;
+}
+GroupMembership *CompilerNetwork::getGroupMembership(const QCA::PublicKey &publicKey) {
+	// TODO: Way too slow
+	foreach (GroupMembership *groupMembership, groupMemberships) {
+		if (groupMembership->getPublicKey() == publicKey) {
+			return groupMembership;
+		}
+	}
+	return NULL;
+}
+
+void CompilerNetwork::saveSettings() {
+	// TODO: Save trusted groups, trusted peers, group memberships
 }

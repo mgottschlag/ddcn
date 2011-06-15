@@ -40,7 +40,7 @@ void CompilerService::addJob(Job *job) {
 
 void CompilerService::manageJobs() {
 	//TODO in what case do jobs have to be distributed in the network?
-	if (getThreadCount() > this->localJobQueue.count()) {
+	/*if (getThreadCount() > this->localJobQueue.count()) {
 		while (network->canAcceptOutgoingJobRequest()) {
 			Job *job = this->localJobQueue.last();
 			if (network->delegateOutgoingJob(job)) {
@@ -51,7 +51,7 @@ void CompilerService::manageJobs() {
 				// might be possible to be delegated
 			}
 		}
-	}
+	}*/
 }
 
 void CompilerService::findToolChains() {
