@@ -29,6 +29,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QObject>
 #include <QStringList>
+#include <QProcess>
+#include "InputOutputFilePair.h"
 
 /**
  * Class which contains a single compiler job which has either been received
@@ -52,8 +54,11 @@ private:
 	QList<QByteArray> outputFiles;
 	QStringList parameters;
 	QString toolChain;
+	QProcess *gccProcess;
 	bool remoteJob;
-
+private slots:
+	void onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus);
+	void onExecuteError(QProcess::ProcessError error);
 };
 
 #endif

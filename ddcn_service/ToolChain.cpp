@@ -24,43 +24,40 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef TOOL_CHAIN_INCLUDED
-#define TOOL_CHAIN_INCLUDED
+
 #include <QProcess>
 #include <QString>
-/**
- * Class contains information about the available compiler versions
- */
-class ToolChain {
-public:
-	ToolChain(QString version, QString path) : version(version), path(path) {
-	}
+#include <QFile>
+#include "ToolChain.h"
 
-	ToolChain(QString path);
-	
-	/**
-	 * Returns the gcc target triple (platform, system and kernel (order may vary) /gcc-version:
-	 * eg. i686-linux-gnu/4.4.5).
-	 * @return the gcc target triple
-	 */
-	QString getVersion() const;
+ToolChain::ToolChain(QString path) {
+	if (QFile(path).exists()) {
+		//TODO zurückgeändert
+		QProcess *compiler = new QProcess();
+		QProcessEnvironment environment = compiler->processEnvironment();
+		environment.value("LANG", "C");
+		compiler->setProcessEnvironment(environment);
 
-	/**
-	 * Returns the path to the compiler.
-	 * @return the path to the compiler.
-	 */
-	QString getPath() const;
-
-	bool operator == (ToolChain o) {
-		if (o.path == path && o.version == version) {
-			return true;
-		} else {
-			return false;
+		QString version = "/";
+		compiler->start(path, QStringList("-v"));
+		compiler->waitForStarted(500);
+		compiler->waitForFinished(500);
+		while (!compiler->atEnd()) {
+			QString line = compiler->readLine(1000);
+			if (line.startsWith("Target: ")) {
+				version = line.right(line.indexOf(":") + 1).append(version);
+			} else if (line.startsWith(line.startsWith("gcc version"))) {
+				version.append(line.mid(11, line.indexOf("(") - 13));
+			}
 		}
 	}
-private:
-	QString version;
-	QString path;
-};
+}
 
-#endif
+
+QString ToolChain::getVersion() const {
+	return this->version;
+}
+
+QString ToolChain::getPath() const {
+	return this->path;
+}

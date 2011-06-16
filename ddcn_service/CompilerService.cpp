@@ -28,6 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 CompilerService::CompilerService(CompilerNetwork *network) : threadCount(1) {
 	this->network = network;
+	//TODO Toolchains laden
 }
 
 void CompilerService::addJob(Job *job) {
@@ -38,51 +39,21 @@ void CompilerService::addJob(Job *job) {
 	manageJobs();
 }
 
-void CompilerService::manageJobs() {
-	//TODO in what case do jobs have to be distributed in the network?
-	/*if (getThreadCount() > this->localJobQueue.count()) {
-		while (network->canAcceptOutgoingJobRequest()) {
-			Job *job = this->localJobQueue.last();
-			if (network->delegateOutgoingJob(job)) {
-				removeJob(job);
-				this->delegatedJobQueue.append(job);
-			} else {
-				// TODO: Move the job to the beginning of the list as other jobs
-				// might be possible to be delegated
-			}
-		}
-	}*/
-}
-
-void CompilerService::findToolChains() {
-	//TODO
-	//Als erstes ein Array mit den vorhanden Versionen erstellen ls + grep?
-	//mit den vorhandenen ToolChain Objekten vergleichen und gegebenfalls einfügen
-	//nicht mehr vorhandene GCC Versionen aus der Liste der ToolChainObjekte löschen...
-	//oder einfach direkt bei jedem Start von ddcn eine neue Liste der vorhandenen GVV
-	//Versionen anlegen?
-	//print 'system('/usr/bin |grep gcc')';
-}
-bool CompilerService::isToolChainAvailable(ToolChain target) {
-	foreach (ToolChain toolChainListObjekt, availableToolChains) {
-		if (toolChainListObjekt == target) {
-			return true;
-		}
-	}
-	return false;
-}
-
+//SLOTS
 void CompilerService::onIncomingJob(Job *job) {
 	addJob(job);
 }
 
-void CompilerService::onIncomingJobRequest(JobRequest *request) {
-	//Accept Jobs if local queue is empty or if number of jobs in the local queue is less than the available threads.
-	if (this->localJobQueue.count() < this->getThreadCount()) {
-
+void CompilerService::onRemoteCompileFinished(Job *job, bool executed) {
+	if (executed) {
+		this->removeJob(job);
+	} else {
+		this->localJobQueue.move(this->localJobQueue.indexOf(job, 0), this->localJobQueue.count());
 	}
+	manageJobs();
 }
 
+//PRIVATE
 
 bool CompilerService::removeJob(Job *job) {
 	//Tries to locate a given Job in the local job queue or in the remote job queue and removes it,
@@ -90,9 +61,49 @@ bool CompilerService::removeJob(Job *job) {
 	return (this->localJobQueue.removeOne(job)) ?  true : (this->remoteJobQueue.removeOne(job));
 }
 
-void CompilerService::spareResourcesInNetwork() {
-	// TODO
+
+
+void CompilerService::manageJobs() {
+	//TODO in what case do jobs have to be distributed in the network?
+	if (this->getThreadCount() < this->localJobQueue.count()) {
+		Job *job = this->localJobQueue.last();
+		this->localJobQueue.removeLast();
+		this->delegatedJobQueue.append(job);
+		network->delegateOutgoingJob(job);
+	}
 }
-void CompilerService::requestAccepted(JobRequest *request) {
-	// TODO
+
+void CompilerService::loadToolChains() {
+	QSettings settings("ddcn", "ddcn");
+	int size = settings.beginReadArray("toolChains");
+	for (int i = 0; i < size; ++i) {
+		settings.setArrayIndex(i);
+		QString version = settings.value("version").toString();
+		QString path = settings.value("path").toString();
+		if (QFile(path).exists()) {
+			ToolChain toolChain(version, path);
+			this->toolChains.append(toolChain);
+		}
+	}
+	settings.endArray();
+}
+
+void CompilerService::saveToolChains()  {
+	QSettings settings("ddcn", "ddcn");
+	settings.beginWriteArray("toolChans");
+	for (int i = 0; i < this->toolChains.size(); ++i) {
+		settings.setArrayIndex(i);
+		settings.setValue("version", this->toolChains.at(i).getVersion());
+		settings.setValue("path", this->toolChains.at(i).getPath());
+	}
+	settings.endArray();
+}
+
+bool CompilerService::isToolChainAvailable(ToolChain target) {
+	foreach (ToolChain toolChainListObjekt, toolChains) {
+		if (toolChainListObjekt == target) {
+			return true;
+		}
+	}
+	return false;
 }

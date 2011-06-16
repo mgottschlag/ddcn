@@ -19,12 +19,14 @@ set(SRC
 	CompilerNetworkAdaptor.cpp
 	CompilerService.cpp
 	CompilerServiceAdaptor.cpp
+	InputOutputFilePair.cpp
 	Job.cpp
 	JobAdaptor.cpp
 	JobRequest.cpp
 	DBusStructs.cpp
 	NetworkInterface.cpp
 	McpoGroup.cpp
+	ToolChain.cpp
 	BootstrapConfig.cpp
 )
 
@@ -33,6 +35,7 @@ set(MOC_H
 	CompilerServiceAdaptor.h
 	CompilerNetwork.h
 	CompilerNetworkAdaptor.h
+	InputOutputFilePair.h
 	JobRequest.h
 	Job.h
 	JobAdaptor.h
