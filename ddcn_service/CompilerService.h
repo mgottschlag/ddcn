@@ -47,33 +47,43 @@ class CompilerService : public QObject {
 public:
 	CompilerService(CompilerNetwork *network);
 	void addJob(Job *job);
-	bool removeJob(Job *job);
 	void setThreadCount(int threadCount) {
 		this->threadCount = threadCount;
 		emit threadCountChanged(threadCount);
 		// TODO: Change number of threads running
 	}
+	
 	int getThreadCount() {
 		return threadCount;
 	}
+	
+	void addToolChain(QString path) {
+		ToolChain toolChain = ToolChain(path);
+		if (this->toolChains.indexOf(toolChain) >= 0 && QFile(path).exists()) {
+			this->toolChains.append(toolChain);
+			saveToolChains();
+		}
+	}
 public slots:
-	void onIncomingJobRequest(JobRequest *request);
 	void onIncomingJob(Job *job);
-	void spareResourcesInNetwork();
-	void requestAccepted(JobRequest *request);
+	/**Removes the job from the local queue if it has been executed successfully.
+	 * Otherwise, moves the job to the end of the list in order to execute it again.
+	 */
+	void onRemoteCompileFinished(Job *job, bool executed);
 signals:
 	void threadCountChanged(int threadCount);
 private:
+	bool removeJob(Job *job);
 	void manageJobs();
-	int threadCount;
-	void findToolChains();
+	void loadToolChains();
+	void saveToolChains();
 	bool isToolChainAvailable(ToolChain target);
-	QList<ToolChain> availableToolChains;
+	int threadCount;
+	QList<ToolChain> toolChains; //TODO muss noch gefüllt werden
 	CompilerNetwork *network;
 	QList<Job*> localJobQueue;
 	QList<Job*> remoteJobQueue;
 	QList<Job*> delegatedJobQueue;
-
 };
 
 #endif

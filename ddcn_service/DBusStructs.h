@@ -66,8 +66,8 @@ QDBusArgument &operator<<(QDBusArgument &argument, const GroupMembershipInfo &in
 const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipInfo &info);
 
 
-Q_DECLARE_METATYPE(ToolChain)
-Q_DECLARE_METATYPE(QList<ToolChain>)
+//Q_DECLARE_METATYPE(ToolChain)
+//Q_DECLARE_METATYPE(QList<ToolChain>)
 
 QDBusArgument &operator<<(QDBusArgument &argument, const ToolChain &info);
 const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChain &info);

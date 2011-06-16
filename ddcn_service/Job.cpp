@@ -25,6 +25,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "Job.h"
+#include <QProcess>
+#include <QTemporaryFile>
+#include "InputOutputFilePair.h"
 
 
 
@@ -40,5 +43,55 @@ void Job::abort() {
 }
 
 void Job::execute() {
-	qCritical("Job::execute() not implemented!");
+	//create temporary files and add them to the parameters list
+	foreach (QByteArray fileContent, this->inputFiles) {
+//		InputOutputFilePair ioFile = new InputOutputFilePair();
+		
+
+
+
+
+		/*
+		QTemporaryFile file(this);
+		file.setFileTemplate();
+		file.setAutoRemove(true);
+		if (file.open()) {
+			file.write(fileContent);
+			file.close();
+		}
+		this->parameters.append(file.fileName());*/
+	}
+
+	//create a gcc process and submit the parameters
+	gccProcess = new QProcess(this);
+	connect(gccProcess,
+		SIGNAL(finished(int, QProcess::ExitStatus)),
+		this,
+		SLOT(onExecuteFinished(int, QProcess::ExitStatus))
+	);
+	gccProcess->start("gcc", this->parameters);
 }
+
+
+void Job::onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+	
+}
+
+void Job::onExecuteError(QProcess::ProcessError error) {
+	//finished signal: finished(bool executed, int resultValue, QString consoleOutput, QList<QByteArray> outputFiles);
+	QString errorString = "Error: An unresolveable error occured.\n"; //TODO 
+	switch(error) {
+		case 0: errorString = "Error: Could not start gcc process.\n"; break;
+		case 1: errorString = "Error: gcc process started successfully but crashed.\n"; break;
+		case 2: errorString = "Error: gcc process timed out.\n"; break;
+		case 3: errorString = "Error: An error occurred when attempting to write to the process.\n"; break;
+		case 4: errorString = "Error: An error occurred when attempting to read from the process.\n"; break;
+		default: errorString = "Error: An unresolveable unknown error occured.\n";
+	}
+	emit finished(false, 1, errorString, QList<QByteArray>());
+	//kill Job
+	this->abort();
+}
+
+
+
