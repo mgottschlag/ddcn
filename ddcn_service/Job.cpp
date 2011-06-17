@@ -28,25 +28,51 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QProcess>
 #include <QTemporaryFile>
 #include "InputOutputFilePair.h"
+#include "TemporaryFile.h"
 
 
 
-Job::Job(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain, bool isRemoteJob) {
+Job::Job(QStringList inputFiles, QStringList parameters,
+		 QString toolChain, bool isRemoteJob) : preProcessListPosition(0) {
 	this->inputFiles = inputFiles;
 	this->parameters = parameters;
 	this->toolChain = toolChain;
 	this->remoteJob = isRemoteJob;
 }
 
-void Job::abort() {
-	qCritical("Job::abort() not implemented!");
+void Job::preProcess() {
+	QStringList preProcessParameter;
+	if (this->preProcessListPosition < this->inputFiles.count()) {
+		QString inputFile = this->inputFiles[this->preProcessListPosition];
+		TemporaryFile tmpFile(
+			inputFile.right(inputFile.length() - inputFile.lastIndexOf(".")),
+			"ddcn_tmp_",
+			inputFile.left(inputFile.indexOf(".")));
+		preProcessParameter << "-E " << inputFile << "-o"
+									<< tmpFile.getFilename() << this->parameters;
+
+		//create a gcc process and submit the parameters
+		gccPreProcess = new QProcess(this);
+		connect(gccPreProcess,
+			SIGNAL(finished(int, QProcess::ExitStatus)),
+			this,
+			SLOT(onPreProcessFinished(int,QProcess::ExitStatus))
+		);
+		connect(gccPreProcess,
+			SIGNAL(error(int, QProcess::ExitStatus)),
+			this,
+			SLOT(onPreProcessExecuteError(QProcess::ExitStatus))
+		);
+		gccPreProcess->start("gcc", preProcessParameter);
+	}
+	else {
+		emit preProcessFinished(this);
+	}
 }
 
 void Job::execute() {
-	//create temporary files and add them to the parameters list
-	foreach (QByteArray fileContent, this->inputFiles) {
-//		InputOutputFilePair ioFile = new InputOutputFilePair();
-		
+	//TODO foreach (QByteArray fileContent, this->inputFiles) {
+	//gcc 
 
 
 
@@ -60,7 +86,7 @@ void Job::execute() {
 			file.close();
 		}
 		this->parameters.append(file.fileName());*/
-	}
+	//}
 
 	//create a gcc process and submit the parameters
 	gccProcess = new QProcess(this);
@@ -69,15 +95,44 @@ void Job::execute() {
 		this,
 		SLOT(onExecuteFinished(int, QProcess::ExitStatus))
 	);
+	connect(gccProcess,
+		SIGNAL(error(int, QProcess::ExitStatus)),
+		this,
+		SLOT(onExecuteError(QProcess::ProcessError))
+	);
 	gccProcess->start("gcc", this->parameters);
 }
 
-
 void Job::onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus) {
-	
+	jobResult.consoleOutput = gccProcess->readAll();
+	jobResult.returnValue = exitCode;
+	emit finished(this);
 }
 
 void Job::onExecuteError(QProcess::ProcessError error) {
+	
+	jobResult.consoleOutput = gccProcess->readLine() + "\n"
+											+ getQProcessErrorDescription(error);
+	jobResult.returnValue = -1; //= Error!
+	
+	emit finished(this);
+}
+
+void Job::onPreProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+	this->preProcessListPosition++;
+	this->preProcess();
+}
+
+void Job::onPreProcessExecuteError(QProcess::ProcessError error) {
+	preProcessResult.consoleOutput = gccProcess->readLine() + "\n"
+											+ getQProcessErrorDescription(error);
+	preProcessResult.returnValue = -1; //= Error!
+	
+	emit finished(this);
+}
+
+QString Job::getQProcessErrorDescription(QProcess::ProcessError error) {
 	//finished signal: finished(bool executed, int resultValue, QString consoleOutput, QList<QByteArray> outputFiles);
 	QString errorString = "Error: An unresolveable error occured.\n"; //TODO 
 	switch(error) {
@@ -88,10 +143,9 @@ void Job::onExecuteError(QProcess::ProcessError error) {
 		case 4: errorString = "Error: An error occurred when attempting to read from the process.\n"; break;
 		default: errorString = "Error: An unresolveable unknown error occured.\n";
 	}
-	emit finished(false, 1, errorString, QList<QByteArray>());
-	//kill Job
-	this->abort();
+	return errorString;
 }
+
 
 
 

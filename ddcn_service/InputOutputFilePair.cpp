@@ -28,9 +28,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QFile>
 #include <QIODevice>
 
-InputOutputFilePair::InputOutputFilePair(QString extension1, QString extension2, QString templateName) {
-	this->extensions[0] = extension1;
-	this->extensions[1] = extension2;
+InputOutputFilePair::InputOutputFilePair(QString inputExtension,
+										 QString outputExtension, QString templateName) {
+	this->extensions[0] = inputExtension;
+	this->extensions[1] = outputExtension;
 	if ((QDir().tempPath()).endsWith("/")) {
 		this->path = QDir().tempPath();
 	} else {
@@ -39,6 +40,7 @@ InputOutputFilePair::InputOutputFilePair(QString extension1, QString extension2,
 	this->filename = generateFilename(templateName);
 	createTemporaryFiles();
 }
+
 
 void InputOutputFilePair::createTemporaryFiles() {
 	for (int i = 0; i < 2; i++) {

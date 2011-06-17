@@ -30,6 +30,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ToolChain.h"
 #include <QString>
 #include <QDBusMetaType>
+#include "Job.h"
 
 
 struct TrustedPeerInfo {
@@ -66,10 +67,20 @@ QDBusArgument &operator<<(QDBusArgument &argument, const GroupMembershipInfo &in
 const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipInfo &info);
 
 
-//Q_DECLARE_METATYPE(ToolChain)
-//Q_DECLARE_METATYPE(QList<ToolChain>)
+struct ToolChainInfo {
+	QString path;
+	QString version;
+};
 
-QDBusArgument &operator<<(QDBusArgument &argument, const ToolChain &info);
-const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChain &info);
+Q_DECLARE_METATYPE(ToolChainInfo)
+Q_DECLARE_METATYPE(QList<ToolChainInfo>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info);
+const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info);
+
+Q_DECLARE_METATYPE(JobResult)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const JobResult &jobResult);
+const QDBusArgument &operator>>(const QDBusArgument &argument, JobResult &jobResult);
 
 #endif

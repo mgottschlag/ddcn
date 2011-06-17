@@ -33,57 +33,92 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CompilerNetwork.h"
 #include <QList>
 #include <QObject>
+#include <QSettings>
+
 using namespace std;
 
 /**
  * Class which manages, executes and delegates compiler jobs.
  */
 class CompilerService : public QObject {
-	Q_OBJECT
-	Q_PROPERTY(int threadCount
-	           READ getThreadCount
-	           WRITE setThreadCount
-	           NOTIFY threadCountChanged)
+    Q_OBJECT
 public:
-	CompilerService(CompilerNetwork *network);
-	void addJob(Job *job);
-	void setThreadCount(int threadCount) {
-		this->threadCount = threadCount;
-		emit threadCountChanged(threadCount);
-		// TODO: Change number of threads running
+    CompilerService(CompilerNetwork *network);
+    void addJob(Job *job);
+
+    QList<ToolChain> *getToolChains() {
+        return &this->toolChains;
+    }
+
+    int getCurrentThreadCount() {
+        return this->currentThreadCount;
+    }
+
+    int getMaxThreadCount() {
+        return this->maxThreadCount;
+    }
+    
+    void addToolChain(QString path) {
+        ToolChain toolChain(path);
+        if (this->toolChains.indexOf(toolChain) >= 0 && QFile(path).exists()) {
+            this->toolChains.append(toolChain);
+            saveToolChains();
+        }
+    }
+
+	void setMaxThreadCount(int count) {
+		this->saveMaxThreadCount(count);
+		emit maxThreadCountChanged(this->maxThreadCount);
 	}
-	
-	int getThreadCount() {
-		return threadCount;
-	}
-	
-	void addToolChain(QString path) {
-		ToolChain toolChain = ToolChain(path);
-		if (this->toolChains.indexOf(toolChain) >= 0 && QFile(path).exists()) {
-			this->toolChains.append(toolChain);
-			saveToolChains();
-		}
-	}
+
+    void removeToolChain(QString path) {
+        ToolChain toolChain(path);
+        if (this->toolChains.removeOne(toolChain)) {
+            saveToolChains();
+        }
+    }
 public slots:
-	void onIncomingJob(Job *job);
-	/**Removes the job from the local queue if it has been executed successfully.
-	 * Otherwise, moves the job to the end of the list in order to execute it again.
-	 */
-	void onRemoteCompileFinished(Job *job, bool executed);
+    void onIncomingJob(Job *job);
+    /**Removes the job from the local queue if it has been executed successfully.
+     * Otherwise, moves the job to the end of the list in order to execute it again.
+     */
+    void onRemoteCompileFinished(Job *job, bool executed);
 signals:
-	void threadCountChanged(int threadCount);
+    void currentThreadCountChanged(int currentThreadCount);
+    void maxThreadCountChanged(int maxThreadCount);
+	void localJobCompilationFinished(Job *job);
 private:
-	bool removeJob(Job *job);
-	void manageJobs();
-	void loadToolChains();
-	void saveToolChains();
-	bool isToolChainAvailable(ToolChain target);
-	int threadCount;
-	QList<ToolChain> toolChains; //TODO muss noch gefüllt werden
-	CompilerNetwork *network;
-	QList<Job*> localJobQueue;
-	QList<Job*> remoteJobQueue;
-	QList<Job*> delegatedJobQueue;
+    bool removeJob(Job *job);
+    void manageJobs();
+    void manageLocalJobs();
+    void manageOutgoingJobs();
+    void loadToolChains();
+    void saveToolChains();
+	void executeFirstJobFromList(QList<Job*> *jobList);
+    void executeJobLocally(Job *job);
+    bool isToolChainAvailable(ToolChain target);
+	void saveMaxThreadCount(int count);
+    void setCurrentThreadCount(int count) {
+        this->currentThreadCount = count;
+        emit currentThreadCountChanged(this->currentThreadCount);
+    }
+    
+    void determineAndSetMaxThreadCount();
+    int currentThreadCount;
+    int maxThreadCount;
+    QList<ToolChain> toolChains;
+    CompilerNetwork *network;
+    QList<Job*> localJobQueue;
+    QList<Job*> remoteJobQueue;
+    QList<Job*> delegatedJobQueue;
+	QSettings settings;
+	static QString settingToolChains;
+	static QString settingToolChainPath;
+	static QString settingToolChainVersion;
+	static QString settingMaxThreadCount;
+private slots:
+    //TODO richtig??
+    void onLocalCompileFinished(Job *job);
 };
 
 #endif

@@ -40,6 +40,8 @@ int main(int argc, char **argv) {
 	qDBusRegisterMetaType<QList<TrustedGroupInfo> >();
 	qDBusRegisterMetaType<GroupMembershipInfo>();
 	qDBusRegisterMetaType<QList<GroupMembershipInfo> >();
+	qDBusRegisterMetaType<ToolChainInfo>();
+	qDBusRegisterMetaType<QList<ToolChainInfo> >();
 	qRegisterMetaType<ariba::utility::NodeID>();
 	qRegisterMetaType<ariba::utility::LinkID>();
 	qRegisterMetaType<ariba::DataMessage>();
@@ -50,7 +52,12 @@ int main(int argc, char **argv) {
 	new CompilerNetworkAdaptor(&network);
 	// Create the compiler service
 	CompilerService service(&network);
-	new CompilerServiceAdaptor(&service);
+	CompilerServiceAdaptor *serviceAdaptor = new CompilerServiceAdaptor(&service);
+	QObject::connect (serviceAdaptor,
+			 SIGNAL(onShutdownRequest()),
+			 &app,
+			 SLOT(quit())
+	);
 	// Create compiler network status interface
 	// TODO
 	// Connect compiler service and compiler network
