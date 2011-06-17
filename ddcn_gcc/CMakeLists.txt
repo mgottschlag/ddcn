@@ -10,15 +10,10 @@ include(${QT_USE_FILE})
 set(SRC
 	main.cpp
 	Application.cpp
-	CommandLineParser.cpp
-	ServiceConnection.cpp
-	Job.cpp
 )
 
 set(MOC_H
 	Application.h
-	ServiceConnection.h
-	Job.h
 )
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
