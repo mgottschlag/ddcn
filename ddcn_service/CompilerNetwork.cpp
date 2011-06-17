@@ -36,6 +36,9 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 	QString name = settings.value("general/name").toString();
 	QCA::PrivateKey key;
 	// TODO
+	if (key.isNull()) {
+		key = keyGenerator.createRSA(2048);
+	}
 	// Load trusted peers/groups etc from file
 	// TODO
 	// Initialize ariba
@@ -93,7 +96,9 @@ void CompilerNetwork::setKeys(QCA::PublicKey publicKey, QCA::PrivateKey privateK
 	emit privateKeyChanged(privateKey);
 }
 void CompilerNetwork::generateKeys() {
-	// TODO
+	// TODO: Let the user choose the key length
+	QCA::PrivateKey privateKey = keyGenerator.createRSA(2048);
+	setKeys(privateKey.toPublicKey(), privateKey);
 }
 QCA::PublicKey CompilerNetwork::getPublicKey() {
 	return publicKey;
@@ -116,6 +121,7 @@ void CompilerNetwork::addTrustedPeer(QString name, const QCA::PublicKey &publicK
 		trustedPeer->setNetworkNode(node);
 	}
 	saveSettings();
+	emit trustedPeersChanged(trustedPeers);
 }
 void CompilerNetwork::removeTrustedPeer(QString name, const QCA::PublicKey &publicKey) {
 	// TODO: Way too slow
@@ -130,6 +136,7 @@ void CompilerNetwork::removeTrustedPeer(QString name, const QCA::PublicKey &publ
 		}
 	}
 	saveSettings();
+	emit trustedPeersChanged(trustedPeers);
 }
 
 void CompilerNetwork::addTrustedGroup(QString name, const QCA::PublicKey &publicKey) {
@@ -144,6 +151,7 @@ void CompilerNetwork::addTrustedGroup(QString name, const QCA::PublicKey &public
 	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(publicKey);
 	trustedGroup->setMcpoGroup(network->joinGroup(serviceId));
 	saveSettings();
+	emit trustedGroupsChanged(trustedGroups);
 }
 void CompilerNetwork::removeTrustedGroup(QString name, const QCA::PublicKey &publicKey) {
 	// TODO: Way too slow
@@ -156,6 +164,7 @@ void CompilerNetwork::removeTrustedGroup(QString name, const QCA::PublicKey &pub
 		}
 	}
 	saveSettings();
+	emit trustedGroupsChanged(trustedGroups);
 }
 
 void CompilerNetwork::addGroupMembership(QString name, const QCA::PublicKey &publicKey, const QCA::PrivateKey &privateKey) {
@@ -170,6 +179,7 @@ void CompilerNetwork::addGroupMembership(QString name, const QCA::PublicKey &pub
 	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(publicKey);
 	groupMembership->setMcpoGroup(network->joinGroup(serviceId));
 	saveSettings();
+	emit groupMembershipsChanged(groupMemberships);
 }
 void CompilerNetwork::removeGroupMembership(QString name, const QCA::PublicKey &publicKey) {
 	// TODO: Way too slow
@@ -182,6 +192,7 @@ void CompilerNetwork::removeGroupMembership(QString name, const QCA::PublicKey &
 		}
 	}
 	saveSettings();
+	emit groupMembershipsChanged(groupMemberships);
 }
 
 void CompilerNetwork::delegateOutgoingJob(Job *job) {

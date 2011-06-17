@@ -53,6 +53,12 @@ Q_DECLARE_METATYPE(ariba::utility::NodeID);
 Q_DECLARE_METATYPE(ariba::utility::LinkID);
 Q_DECLARE_METATYPE(ariba::DataMessage);
 
+struct PacketHeader {
+	uint32_t size;
+	uint8_t type;
+	static void insertPacketHeaderLength(QByteArray &packet);
+} __attribute__((packed));
+
 /**
  * This class initializes Ariba and MCPO and does the communication between the
  * main thread and the Ariba system queue thread.
@@ -125,6 +131,10 @@ private slots:
 	void onAribaLinkChanged(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
 	void onAribaLinkFail(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
 	void onMcpoReceiveData(const ariba::DataMessage &msg);
+
+	void onNodeOutgoingDataAvailable(NetworkNode *node);
+	void onNodePacketReceived(NetworkNode *node, const QByteArray &packet);
+	void onNodeConnectionReady(NetworkNode *node);
 private:
 	void peerDiscovery();
 
@@ -134,13 +144,20 @@ private:
 	MCPO *mcpo;
 
 	QString name;
+	QCA::PrivateKey privateKey;
+	QCA::Certificate certificate;
 
 	QMap<ariba::ServiceID, McpoGroup*> mcpoGroups;
-	QMap<ariba::utility::NodeID, NetworkNode*> onlineNodes;
-	QMap<ariba::utility::NodeID, NetworkNode*> pendingNodes;
+	// TODO: Fix this!
+	//QMap<ariba::utility::NodeID, NetworkNode*> onlineNodes;
+	//QMap<ariba::utility::NodeID, NetworkNode*> pendingNodes;
+	QMap<QString, NetworkNode*> onlineNodes;
+	QMap<QString, NetworkNode*> pendingNodes;
 
 	QMutex knownNodesMutex;
-	QSet<ariba::utility::NodeID> knownNodes;
+	// TODO: Why doesn't this work?'
+	//QSet<ariba::utility::NodeID> knownNodes;
+	QSet<QString> knownNodes;
 
 	static const ariba::ServiceID SERVICE_ID;
 
@@ -160,6 +177,8 @@ private:
 
 	static const ariba::utility::SystemEventType JOIN_GROUP_EVENT;
 	static const ariba::utility::SystemEventType LEAVE_GROUP_EVENT;
+	static const ariba::utility::SystemEventType SEND_GROUP_MESSAGE_EVENT;
+	static const ariba::utility::SystemEventType SEND_PEER_MESSAGE_EVENT;
 };
 
 #endif

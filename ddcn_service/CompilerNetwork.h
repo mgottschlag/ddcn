@@ -138,6 +138,8 @@ private:
 
 	QList<FreeCompilerSlots> freeRemoteSlots;
 	unsigned int freeLocalSlots;
+
+	QCA::KeyGenerator keyGenerator;
 };
 
 #endif

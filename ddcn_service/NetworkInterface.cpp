@@ -28,15 +28,117 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ariba/utility/system/StartupWrapper.h>
 #include <QDebug>
+#include <QtEndian>
 
 uint qHash(ariba::utility::NodeID nodeId) {
 	return qHash(nodeId.toString().c_str());
 }
 
+struct GroupMessage {
+	ariba::utility::NodeID nodeId;
+	ariba::ServiceID serviceId;
+	QByteArray message;
+};
+struct PeerMessage {
+	ariba::utility::NodeID nodeId;
+	ariba::utility::LinkID linkId;
+	QByteArray message;
+};
+
+/*class DdcnMessage : public ariba::Message {
+	VSERIALIZEABLE;
+public:
+	DdcnMessage() : data(NULL), length(0) {
+	}
+	DdcnMessage(char *data, size_t length) : data(data), length(length) {
+	}
+	virtual ~DdcnMessage() {
+	}
+
+	size_t getLength() {
+		return length;
+	}
+	char *getData() {
+		return data;
+	}
+
+private:
+	char *data;
+	size_t length;
+};*/
+class DdcnMessage : public ariba::Message {
+	VSERIALIZEABLE;
+public:
+	DdcnMessage() {
+	}
+	DdcnMessage(std::string text) : text(text) {
+	}
+	virtual ~DdcnMessage() {
+	}
+
+	std::string getText() {
+		return text;
+	}
+private:
+	std::string text;
+};
+
+sznBeginDefault(DdcnMessage, X) {
+	X && T(text);
+} sznEnd();
+
+vsznDefault(DdcnMessage);
+
+class DdcnGroupMessage : public ariba::Message {
+	VSERIALIZEABLE;
+public:
+	DdcnGroupMessage() {
+	}
+	DdcnGroupMessage(std::string nodeId, std::string serviceId, std::string text)
+			: nodeId(nodeId), serviceId(serviceId), text(text) {
+	}
+	virtual ~DdcnGroupMessage() {
+	}
+
+	std::string getNodeId() {
+		return nodeId;
+	}
+	std::string getServiceId() {
+		return serviceId;
+	}
+	std::string getText() {
+		return text;
+	}
+private:
+	std::string nodeId;
+	std::string serviceId;
+	std::string text;
+};
+
+sznBeginDefault(DdcnGroupMessage, X) {
+	X && T(serviceId) && T(text);
+} sznEnd();
+
+vsznDefault(DdcnGroupMessage);
+
+
+void PacketHeader::insertPacketHeaderLength(QByteArray &packet) {
+	PacketHeader header;
+	memcpy(&header, packet.data(), sizeof(header));
+	header.size = qToBigEndian(packet.size());
+	memcpy(packet.data(), &header, sizeof(header));
+}
+
 const ariba::ServiceID NetworkInterface::SERVICE_ID = ariba::ServiceID(42);
 
 NetworkInterface::NetworkInterface(QString name,
-		const QCA::PrivateKey &privateKey) : name(name), discoveryTimer(this) {
+		const QCA::PrivateKey &privateKey) : name(name), privateKey(privateKey),
+		discoveryTimer(this) {
+	QCA::CertificateInfo certificateInfo;
+	certificateInfo.insert(QCA::CommonName, name);
+	QCA::CertificateOptions certificateOptions;
+	certificateOptions.setInfo(certificateInfo);
+	certificate = QCA::Certificate(certificateOptions, privateKey);
 	// We use signals/slots to pass data from the Ariba thread to the Qt thread
 	connect(this, SIGNAL(aribaMessage(ariba::DataMessage, ariba::utility::NodeID, ariba::utility::LinkID)),
 		SLOT(onAribaMessage(ariba::DataMessage, ariba::utility::NodeID, ariba::utility::LinkID)), Qt::QueuedConnection);
@@ -58,10 +160,19 @@ NetworkInterface::~NetworkInterface() {
 }
 
 void NetworkInterface::send(NetworkNode *node, const QByteArray &message) {
-	// TODO
+	node->sendPacket(message);
 }
 void NetworkInterface::send(McpoGroup *group, const QByteArray &message) {
-	// TODO
+	// Fix packet header
+	QByteArray packet;
+	PacketHeader::insertPacketHeaderLength(packet);
+	// Send the packet to the ariba thread
+	GroupMessage *groupMessage = new GroupMessage;
+	groupMessage->nodeId = node->getNodeId();
+	groupMessage->serviceId = group->getServiceId();
+	groupMessage->message = packet;
+	SystemQueue::instance().scheduleEvent(SystemEvent(this,
+		SEND_GROUP_MESSAGE_EVENT, groupMessage));
 }
 McpoGroup *NetworkInterface::joinGroup(ariba::ServiceID group) {
 	QMap<ariba::ServiceID, McpoGroup*>::Iterator it = mcpoGroups.find(group);
@@ -80,39 +191,54 @@ McpoGroup *NetworkInterface::joinGroup(ariba::ServiceID group) {
 	}
 }
 void NetworkInterface::leaveGroup(McpoGroup *group) {
-	// TODO
+	ariba::ServiceID serviceId = group->getServiceId();
+	if (!group->drop()) {
+		SystemQueue::instance().scheduleEvent(SystemEvent(this,
+			LEAVE_GROUP_EVENT, new ariba::ServiceID(serviceId)));
+	}
 }
 void NetworkInterface::setName(QString name) {
 	// TODO
 }
 
 NetworkNode *NetworkInterface::getNetworkNode(const QCA::PublicKey &publicKey) {
-	// TODO
+	// TODO: Too slow
+	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.begin();
+	while (it != onlineNodes.end()) {
+		if (it.value()->getPublicKey() == publicKey) {
+			return it.value();
+		}
+	}
 	return NULL;
 }
 
 bool NetworkInterface::onLinkRequest(const ariba::utility::NodeID &remote) {
+	// TODO: Do we want to do this? probably not.
+	if (knownNodes.contains(remote.toString().c_str())) {
+		return false;
+	}
+	knownNodes.insert(remote.toString().c_str());
 	return true;
 }
 void NetworkInterface::onMessage(const ariba::DataMessage &msg,
 		const ariba::utility::NodeID &remote, const ariba::utility::LinkID &link) {
-	std::cout << "Message received." << std::endl;
-	// TODO
+	emit aribaMessage(msg, remote, link);
 }
 void NetworkInterface::onLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
 	emit aribaLinkUp(link, remote);
 }
 void NetworkInterface::onLinkDown(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
+	qCritical("onLinkDown");
 	emit aribaLinkDown(link, remote);
-	knownNodes.remove(remote);
+	knownNodes.remove(remote.toString().c_str());
 }
 void NetworkInterface::onLinkChanged(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
 	emit aribaLinkChanged(link, remote);
-	std::cout << "Link changed." << std::endl;
 }
 void NetworkInterface::onLinkFail(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
+	qCritical("onLinkFail");
 	emit aribaLinkFail(link, remote);
-	knownNodes.remove(remote);
+	knownNodes.remove(remote.toString().c_str());
 }
 
 void NetworkInterface::onJoinCompleted(const ariba::SpoVNetID &vid) {
@@ -143,7 +269,6 @@ void NetworkInterface::startup() {
 	aribaModule->start();
 	// Create a new node
 	node = new ariba::Node(*aribaModule, nodeName);
-	// TODO: Initialize bootstrapping and names
 	// Bind listeners
 	if (!node->bind(this)) {
 		qFatal("Could not bind node listener.");
@@ -179,7 +304,7 @@ void NetworkInterface::shutdown() {
 }
 
 void NetworkInterface::receiveData(const ariba::DataMessage &msg) {
-	// TODO
+	emit mcpoReceiveData(msg);
 }
 void NetworkInterface::serviceIsReady() {
 	// TODO
@@ -194,6 +319,29 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 		ariba::ServiceID *serviceId = event.getData<ariba::ServiceID>();
 		mcpo->leaveGroup(*serviceId);
 		delete serviceId;
+	} else if (event.getType() == SEND_GROUP_MESSAGE_EVENT) {
+		GroupMessage *groupMessage = event.getData<GroupMessage>();
+		QByteArray data = groupMessage->message.toHex();
+		DdcnGroupMessage ddcnMessage(groupMessage->nodeId.toString(),
+				groupMessage->serviceId.toString(), data.data());
+		mcpo->sendToGroup(ddcnMessage, groupMessage->serviceId);
+		delete groupMessage;
+	} else if (event.getType() == SEND_PEER_MESSAGE_EVENT) {
+		PeerMessage *peerMessage = event.getData<PeerMessage>();
+		//ariba::DataMessage message(peerMessage->message.data(), peerMessage->message.size());
+		/*DataTpl<> data((unsigned char*)peerMessage->message.data(), peerMessage->message.size());
+		ariba::Message message(data);
+		ariba::DataMessage dataMessage(message);
+		qCritical("Sending message: %d", (int)dataMessage.getSize());
+		assert(!dataMessage.isData());
+		// TODO: Reliable packets?
+		node->sendMessage(dataMessage, peerMessage->linkId);*/
+		//DdcnMessage message(peerMessage->message.data(), peerMessage->message.size());
+		QByteArray text = peerMessage->message.toHex();
+		DdcnMessage message(text.data());
+		node->sendMessage(message, peerMessage->linkId);
+		//node->sendMessage( pingmsg, nid, PingPong::PINGPONG_SERVICEID );
+		delete peerMessage;
 	} else {
 		qCritical("NetworkInterface: Unknown event type.");
 	}
@@ -201,46 +349,150 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 
 void NetworkInterface::onAribaMessage(const ariba::DataMessage &msg,
 		const ariba::utility::NodeID &remote, const ariba::utility::LinkID &link) {
-	// TODO
+	qCritical("onAribaMessage");
+	NetworkNode *networkNode = NULL;
+	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.find(remote.toString().c_str());
+	if (it != onlineNodes.end()) {
+		networkNode = it.value();
+	} else {
+		it = pendingNodes.find(remote.toString().c_str());
+		if (it != pendingNodes.end()) {
+			networkNode = it.value();
+		}
+	}
+	if (!networkNode) {
+		return;
+	}
+	/*if (!msg.isData()) {
+		size_t msgLength = msg.getMessage()->getPayload().getLength();
+		char *msgData = (char*)msg.getMessage()->getPayload().getBuffer();
+		qCritical("writeIncoming: %d (no data message)", msgLength);
+		QByteArray message(msgData, msgLength);
+		networkNode->getTLS().writeIncoming(message);
+	} else {
+		qCritical("No data message.");
+		qCritical("writeIncoming: %d (data message)", (int)msg.getSize());
+		QByteArray message((char*)msg.getData(), msg.getSize());
+		networkNode->getTLS().writeIncoming(message);
+	}*/
+	/*DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
+	qCritical("writeIncoming: %d", (int)ddcnMessage->getLength());
+	QByteArray message(ddcnMessage->getData(), ddcnMessage->getLength());*/
+	DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
+	/*qCritical("writeIncoming: %d", (int)ddcnMessage->getLength());
+	QByteArray message(ddcnMessage->getData(), ddcnMessage->getLength());*/
+	QByteArray message = QByteArray::fromHex(ddcnMessage->getText().c_str());
+	qCritical("writeIncoming: %d", (int)message.size());
+	networkNode->getTLS().writeIncoming(message);
 }
 void NetworkInterface::onAribaLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
-	// TODO
+	qCritical("onAribaLinkUp");
+	NetworkNode *networkNode = new NetworkNode(remote, link);
+	connect(networkNode, SIGNAL(outgoingDataAvailable(NetworkNode*)),
+		this, SLOT(onNodeOutgoingDataAvailable(NetworkNode*)));
+	connect(networkNode, SIGNAL(packetReceived(NetworkNode*, QByteArray)),
+		this, SLOT(onNodePacketReceived(NetworkNode*, QByteArray)));
+	QCA::TLS *tls = &networkNode->getTLS();
+	tls->setCertificate(certificate, privateKey);
+	if (remote > node->getNodeId()) {
+		tls->startServer();
+	} else {
+		tls->startClient();
+	}
+	// Add the node to the pending nodes, we have to wait for encryption
+	pendingNodes.insert(remote.toString().c_str(), networkNode);
 }
 void NetworkInterface::onAribaLinkDown(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
-	// TODO
+	qCritical("onAribaLinkDown");
+	// Find NetworkNode for this node id
+	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.find(remote.toString().c_str());
+	if (it != onlineNodes.end()) {
+		emit peerDisconnected(it.value());
+		delete it.value();
+		onlineNodes.erase(it);
+		return;
+	}
+	it = pendingNodes.find(remote.toString().c_str());
+	if (it != pendingNodes.end()) {
+		delete it.value();
+		pendingNodes.erase(it);
+		return;
+	}
 }
 void NetworkInterface::onAribaLinkChanged(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
 	// TODO
 }
 void NetworkInterface::onAribaLinkFail(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
 	// TODO
+	onAribaLinkDown(link, remote);
 }
 void NetworkInterface::onMcpoReceiveData(const ariba::DataMessage &msg) {
-	// TODO
+	qCritical("Group message incoming.");
+	DdcnGroupMessage* ddcnMessage = msg.getMessage()->convert<DdcnGroupMessage>();
+	ariba::ServiceID groupId(std::atoi(ddcnMessage->getServiceId().c_str()));
+	QByteArray message = QByteArray::fromHex(ddcnMessage->getText().c_str());
+	// Find the sender
+	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.find(ddcnMessage->getNodeId().c_str());
+	if (it == onlineNodes.end()) {
+		return;
+	}
+	// Find the group
+	QMap<ariba::ServiceID, McpoGroup*>::Iterator it2 = mcpoGroups.find(groupId);
+	if (it2 == mcpoGroups.end()) {
+		return;
+	}
+	emit groupMessageReceived(it2.value(), it.value(), message);
+}
+
+void NetworkInterface::onNodeOutgoingDataAvailable(NetworkNode *node) {
+	QByteArray outgoingData = node->getTLS().readOutgoing();
+	qCritical("onNodeOutgoingDataAvailable: %d", (int)outgoingData.size());
+	// Inject data into the ariba thread
+	PeerMessage *peerMessage = new PeerMessage;
+	// TODO: This might be a security risk? We probably should encrypt the packet
+	peerMessage->nodeId = node->aribaNode;
+	peerMessage->linkId = node->aribaLink;
+	peerMessage->message = outgoingData;
+	SystemQueue::instance().scheduleEvent(SystemEvent(this,
+		SEND_PEER_MESSAGE_EVENT, peerMessage));
+}
+void NetworkInterface::onNodePacketReceived(NetworkNode *node, const QByteArray &packet) {
+	emit messageReceived(node, packet);
+}
+void NetworkInterface::onNodeConnectionReady(NetworkNode *node) {
+	QMap<QString, NetworkNode*>::Iterator it = pendingNodes.find(node->aribaNode.toString().c_str());
+	pendingNodes.erase(it);
+	onlineNodes.insert(node->aribaNode.toString().c_str(), node);
+	// TODO: Get the name of the peer
+	emit peerConnected(node, "", node->getPublicKey());
 }
 
 void NetworkInterface::peerDiscovery() {
-	std::cout << "Checking for new nodes..." << std::endl;
+	qCritical("Checking for new nodes...");
 	std::vector<ariba::utility::NodeID> nodes = node->getNeighborNodes();
 	knownNodesMutex.lock();
+	//qCritical("Known nodes before: %d", knownNodes.size());
 	BOOST_FOREACH(ariba::utility::NodeID nodeId, nodes) {
-		if (knownNodes.contains(nodeId)) {
+		if (knownNodes.contains(nodeId.toString().c_str())) {
+			//qCritical("Node already known: %s.", nodeId.toString().c_str());
 			continue;
 		}
-		std::cout << "New neighbor " << nodeId.toString() << std::endl;
 		if (nodeId == node->getNodeId()) {
 			qCritical("Duplicate node ids.");
 			continue;
 		}
-		// Only create the link once
-		knownNodes.insert(nodeId);
-		// Only one side of the connection shall create a link
-		if (nodeId > node->getNodeId()) {
+		if (nodeId >= node->getNodeId()) {
 			continue;
 		}
+		qCritical("New neighbor %s", nodeId.toString().c_str());
+		// Only create the link once
+		knownNodes.insert(nodeId.toString().c_str());
+		// Only one side of the connection shall create a link
 		// Establish link to the new node
 		node->establishLink(nodeId, SERVICE_ID);
+		assert(knownNodes.contains(nodeId.toString().c_str()));
 	}
+	//qCritical("Known nodes after: %d", knownNodes.size());
 	knownNodesMutex.unlock();
 }
 
@@ -250,3 +502,5 @@ void NetworkInterface::PeerDiscoveryTimer::eventFunction() {
 
 const ariba::utility::SystemEventType NetworkInterface::JOIN_GROUP_EVENT("JoinGroup");
 const ariba::utility::SystemEventType NetworkInterface::LEAVE_GROUP_EVENT("LeaveGroup");
+const ariba::utility::SystemEventType NetworkInterface::SEND_GROUP_MESSAGE_EVENT("SendGroupMessage");
+const ariba::utility::SystemEventType NetworkInterface::SEND_PEER_MESSAGE_EVENT("SendPeerMessage");
