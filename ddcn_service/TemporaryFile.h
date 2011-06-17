@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
 
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
+      documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -24,17 +24,23 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "JobAdaptor.h"
+#include <QObject>
+#include <QString>
+#include <QFile>
+#include <boost/concept_check.hpp>
 
-JobAdaptor::JobAdaptor(Job *job)
-		: QDBusAbstractAdaptor(job), job(job) {
-	connect(job,
-	        SIGNAL(finished(bool, QString)),
-	        this,
-	        SIGNAL(finished(bool, QString)));
-}
-
-void JobAdaptor::abort() {
-	job->abort();
-}
-
+class TemporaryFile : public QObject {
+public:
+	TemporaryFile(QString extension, QString templateName = "ddcn_tmp_",
+				  QString filename = "");
+	QString getFilename();
+	QString getExtension();
+	QFile *getFile();
+private:
+	QString generateFilename(QString templateName, QString proposedFilename);
+	QString randomize();
+	QString name;
+	QString path;
+	QString extension;
+	QFile *file;
+};

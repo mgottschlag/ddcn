@@ -25,35 +25,102 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "CompilerServiceAdaptor.h"
+#include <QDBusConnection>
+#include <QDBusMessage>
 
 CompilerServiceAdaptor::CompilerServiceAdaptor(CompilerService *service)
 		: QDBusAbstractAdaptor(service), service(service) {
 	connect(service,
-			SIGNAL(threadCountChanged(int)),
+			SIGNAL(currentThreadCountChanged(int)),
 			this,
-			SLOT(onThreadCountChanged(int)));
+			SLOT(onCurrentThreadCountChanged(int)));
+	connect(service,
+			SIGNAL(maxThreadCountChanged(int)),
+			this,
+			SLOT(onMaxThreadCountChanged(int)));
+	connect(service,
+			SIGNAL(localJobCompilationFinished(Job*)),
+			this,
+			SLOT(localCompilationJobFinished(Job*)));
 }
 
-void CompilerServiceAdaptor::setThreadCount(int threadCount) {
-	service->setThreadCount(threadCount);
-}
-int CompilerServiceAdaptor::getThreadCount() {
-	return service->getThreadCount();
+void CompilerServiceAdaptor::setMaxThreadCount(int threadCount) {
+	service->setMaxThreadCount(threadCount);
 }
 
-void CompilerServiceAdaptor::onThreadCountChanged(int threadCount) {
-	emit threadCountChanged(threadCount);
+int CompilerServiceAdaptor::getCurrentThreadCount() {
+	return service->getCurrentThreadCount();
 }
 
-QString CompilerServiceAdaptor::addJob(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain) {
+int CompilerServiceAdaptor::getMaxThreadCount() {
+	return service->getMaxThreadCount();
+}
+
+void CompilerServiceAdaptor::onCurrentThreadCountChanged(int threadCount) {
+	emit currentThreadCountChanged(threadCount);
+}
+
+void CompilerServiceAdaptor::onMaxThreadCountChanged(int threadCount) {
+	emit maxThreadCountChanged(threadCount);
+}
+
+JobResult CompilerServiceAdaptor::executeJob(QStringList inputFiles,
+										   QStringList parameters,
+									   QString toolChain, QDBusMessage &message) {
 	Job *job = new Job(inputFiles, parameters, toolChain, false);
+	QDBusMessage *dBusMessage(&message);
+	this->jobDBusMessageMap.insert(job, dBusMessage);
+	dBusMessage->setDelayedReply(true);
+	QDBusConnection::sessionBus().send(dBusMessage->createReply());
+	
 	service->addJob(job);
-	// TODO: Export job to D-Bus
-	return "";
+	return JobResult();
+}
+
+void CompilerServiceAdaptor::requestShutdown() {
+	shutdown();
 }
 
 void CompilerServiceAdaptor::shutdown() {
-	// TODO
+	//-> main
+	emit onShutdownRequest();
 }
 
+void CompilerServiceAdaptor::addToolChain(QString path) {
+	this->service->addToolChain(path);
+}
+
+void CompilerServiceAdaptor::removeToolChain(QString path) {
+	this->service->removeToolChain(path);
+}
+
+void CompilerServiceAdaptor::localCompilationJobFinished(Job *job) {
+	QDBusMessage *message(this->jobDBusMessageMap.value(job));
+	QDBusArgument argument;
+	argument << job->getJobResult();
+	//*message << job->getJobResult();
+	//*message << 5;
+	*message << argument.asVariant();
+	QDBusConnection::sessionBus().send(*message);
+	this->jobDBusMessageMap.remove(job);
+	delete message;
+}
+
+ToolChainInfo CompilerServiceAdaptor::toToolChainInfo(ToolChain toolChain) {
+	ToolChainInfo info;
+	info.path = toolChain.getPath();
+	info.version = toolChain.getVersion();
+	return info;
+}
+
+
+QList<ToolChainInfo> CompilerServiceAdaptor::getToolChains() {
+	QList<ToolChainInfo> toolChainInfoList;
+	QList<ToolChain> *toolChainsList = this->service->getToolChains();
+	for (int i = 0; i < toolChainsList->count(); i++) {
+		ToolChain toolChain = (*toolChainsList)[i];
+		toolChainInfoList.append(toToolChainInfo(toolChain));
+	}
+	return toolChainInfoList;
+}
 

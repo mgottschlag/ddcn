@@ -70,20 +70,38 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipIn
 	argument.endStructure();
 	return argument;
 }
-QDBusArgument &operator<<(QDBusArgument &argument, const ToolChain &info)
+QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info)
 {
 	argument.beginStructure();
-	argument << info.getVersion() << info.getPath();
+	argument << info.version << info.path;
 	argument.endStructure();
 	return argument;
 }
-const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChain &info)
+const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info)
 {
 	argument.beginStructure();
 	QString version;
 	QString path;
 	argument >> version >> path;
 	argument.endStructure();
-	info = ToolChain(version, path);
+	info.version = version;
+	info.path = path;
+	return argument;
+}
+
+QDBusArgument &operator<<(QDBusArgument &argument, const JobResult &jobResult) {
+	argument.beginStructure();
+	argument << jobResult.consoleOutput << jobResult.returnValue;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, JobResult &jobResult) {
+	argument.beginStructure();
+	QString consoleOutput;
+	int returnValue;
+	argument >> consoleOutput >> returnValue;
+	argument.endStructure();
+	jobResult.consoleOutput = consoleOutput;
+	jobResult.returnValue = returnValue;
 	return argument;
 }

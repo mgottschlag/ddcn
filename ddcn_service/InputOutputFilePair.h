@@ -32,6 +32,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QString>
 #include <QDir>
 
+
+//TODO this class could implement TemporaryFile!
 /**
  * This class holds a pair of files (input and output files).
  */
@@ -47,7 +49,8 @@ public:
 	 * @param templateName the templateName for the file. This helps to
 	 * identify the files as a file belonging to ddcn.
 	 */
-	InputOutputFilePair(QString extension1, QString extension2, QString templateName = "ddcn_tmp_");
+	InputOutputFilePair(QString extension1, QString extension2,
+						QString templateName = "ddcn_tmp_");
 	/**
 	 * Returns the input (source) file's extension.
 	 * @return the input file's extension.

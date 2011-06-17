@@ -26,22 +26,34 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerService.h"
 
-CompilerService::CompilerService(CompilerNetwork *network) : threadCount(1) {
+
+QString CompilerService::settingToolChains("toolChains");
+QString CompilerService::settingToolChainPath("path");
+QString CompilerService::settingToolChainVersion("version");
+QString CompilerService::settingMaxThreadCount("maxThreadCount");
+
+
+CompilerService::CompilerService(CompilerNetwork *network) : settings("ddcn", "ddcn") {
 	this->network = network;
-	//TODO Toolchains laden
+	setCurrentThreadCount(0);
+	determineAndSetMaxThreadCount();
+	loadToolChains();
 }
 
 void CompilerService::addJob(Job *job) {
-	if (job->isRemoteJob())
+	if (job->isRemoteJob()) {
 		this->localJobQueue.append(job);
-	else
+	} else {
 		this->remoteJobQueue.append(job);
+	}
 	manageJobs();
 }
 
+
 //SLOTS
 void CompilerService::onIncomingJob(Job *job) {
-	addJob(job);
+	job->setRemoteJob(true);
+	this->addJob(job);
 }
 
 void CompilerService::onRemoteCompileFinished(Job *job, bool executed) {
@@ -61,42 +73,102 @@ bool CompilerService::removeJob(Job *job) {
 	return (this->localJobQueue.removeOne(job)) ?  true : (this->remoteJobQueue.removeOne(job));
 }
 
-
-
 void CompilerService::manageJobs() {
-	//TODO in what case do jobs have to be distributed in the network?
-	if (this->getThreadCount() < this->localJobQueue.count()) {
-		Job *job = this->localJobQueue.last();
-		this->localJobQueue.removeLast();
-		this->delegatedJobQueue.append(job);
-		network->delegateOutgoingJob(job);
+	manageLocalJobs();
+	manageOutgoingJobs();
+}
+
+void CompilerService::manageLocalJobs() {
+	//compiles maxThreadCount jobs at the same time.
+	//if there are no more jobs to compile in the localJobQueue, get back enough jobs from the network in
+	//			order to compile maxThreadCount jobs locally
+	//if there are no more (own) jobs to compile at all, start to compile remoteJobs
+	while (this->maxThreadCount > this->currentThreadCount && this->localJobQueue.count() > 0) {
+		executeFirstJobFromList(&this->localJobQueue);
+	}
+	while (this->maxThreadCount > this->currentThreadCount && this->localJobQueue.count() == 0) {
+		Job *job = this->network->cancelOutgoingJob();
+		if (job != NULL) {
+			executeJobLocally(job);
+		} else {
+			break;
+		}
+	}
+	while (this->maxThreadCount > this->currentThreadCount && this->remoteJobQueue.count() > 0) {
+		executeFirstJobFromList(&this->remoteJobQueue);
 	}
 }
 
+void CompilerService::executeFirstJobFromList(QList<Job*> *jobList) {
+		Job *job = jobList->first();
+		jobList->removeFirst();
+		executeJobLocally(job);
+}
+
+
+void CompilerService::executeJobLocally(Job* job) {
+	connect(job,
+		SIGNAL(finished(Job*)),
+		this,
+		SLOT(onLocalCompileFinished(Job*))
+	);
+	job->execute();
+	setCurrentThreadCount(++this->currentThreadCount);
+}
+
+void CompilerService::manageOutgoingJobs() {
+	//delegates all jobs until only this->maxThreadCount * 2 Jobs remain in localJobQueue
+	//removes delegated Jobs from the delegatedJobQueue
+	while (this->maxThreadCount < this->localJobQueue.count()) {
+		Job *job = this->localJobQueue.last();
+		this->localJobQueue.removeLast();
+		this->delegatedJobQueue.append(job);
+		network->delegateOutgoingJob(this->delegatedJobQueue.first());
+		this->delegatedJobQueue.removeFirst();
+	}
+}
+
+
+
 void CompilerService::loadToolChains() {
-	QSettings settings("ddcn", "ddcn");
-	int size = settings.beginReadArray("toolChains");
+	int size = this->settings.beginReadArray(this->settingToolChains);
 	for (int i = 0; i < size; ++i) {
-		settings.setArrayIndex(i);
-		QString version = settings.value("version").toString();
-		QString path = settings.value("path").toString();
+		this->settings.setArrayIndex(i);
+		QString version = this->settings.value(this->settingToolChainVersion).toString();
+		QString path = this->settings.value(this->settingToolChainPath).toString();
 		if (QFile(path).exists()) {
 			ToolChain toolChain(version, path);
 			this->toolChains.append(toolChain);
 		}
 	}
-	settings.endArray();
+	if (this->toolChains.count() < 1) {
+		qFatal("No ToolChains available!");
+	}
+	this->settings.endArray();
 }
 
 void CompilerService::saveToolChains()  {
-	QSettings settings("ddcn", "ddcn");
-	settings.beginWriteArray("toolChans");
+	this->settings.beginWriteArray(this->settingToolChains);
 	for (int i = 0; i < this->toolChains.size(); ++i) {
-		settings.setArrayIndex(i);
-		settings.setValue("version", this->toolChains.at(i).getVersion());
-		settings.setValue("path", this->toolChains.at(i).getPath());
+		this->settings.setArrayIndex(i);
+		this->settings.setValue(this->settingToolChainVersion, this->toolChains.at(i).getVersion());
+		this->settings.setValue(this->settingToolChainPath, this->toolChains.at(i).getPath());
 	}
-	settings.endArray();
+	this->settings.endArray();
+}
+
+void CompilerService::determineAndSetMaxThreadCount() {
+	this->maxThreadCount = this->settings.value(this->settingMaxThreadCount, -1).toInt();
+	if (this->maxThreadCount == -1) {
+		setMaxThreadCount(-1);
+	}
+}
+
+void CompilerService::saveMaxThreadCount(int count) {
+	//int QThread::idealThreadCount () determines the number of cores (physically and virtually)
+	int systemCount = QThread::idealThreadCount();
+	this->currentThreadCount = (count >= systemCount || count < 1) ? systemCount : count;
+	this->settings.setValue(this->settingMaxThreadCount, this->maxThreadCount);
 }
 
 bool CompilerService::isToolChainAvailable(ToolChain target) {
@@ -106,4 +178,11 @@ bool CompilerService::isToolChainAvailable(ToolChain target) {
 		}
 	}
 	return false;
+}
+
+// PRIVATE SLOTS
+void CompilerService::onLocalCompileFinished(Job* job) {
+	emit localJobCompilationFinished(job);
+	setCurrentThreadCount(--this->currentThreadCount);
+	manageJobs();
 }

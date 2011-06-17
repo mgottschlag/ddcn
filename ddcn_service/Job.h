@@ -32,6 +32,14 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QProcess>
 #include "InputOutputFilePair.h"
 
+struct JobResult {
+	QString consoleOutput;
+	int returnValue;
+};
+
+
+
+
 /**
  * Class which contains a single compiler job which has either been received
  * from the network or produced locally.
@@ -39,24 +47,38 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class Job : public QObject {
 	Q_OBJECT
 public:
-	Job(QList<QByteArray> inputFiles, QStringList parameters, QString toolChain, bool isRemoteJob);
+	Job(QStringList inputFiles, QStringList parameters, QString toolChain,
+		bool isRemoteJob);
 	bool isRemoteJob() {
-		return remoteJob;
+		return this->remoteJob;
 	}
-public slots:
-	void abort();
+	void setRemoteJob(bool isRemoteJob) {
+		this->remoteJob = isRemoteJob;
+	}
+	JobResult getJobResult() {
+		return this->jobResult;
+	}
 	void execute();
+	void preProcess();
 signals:
-	void finished(bool executed, int resultValue, QString consoleOutput, QList<QByteArray> outputFiles);
+	void finished(Job *job);
+	void preProcessFinished(Job *job);
 private:
+	QString getQProcessErrorDescription(QProcess::ProcessError error);
 	QString consoleOutput;
-	QList<QByteArray> inputFiles;
-	QList<QByteArray> outputFiles;
+	QStringList inputFiles;
+	QStringList outputFiles;
 	QStringList parameters;
 	QString toolChain;
+	JobResult jobResult;
+	JobResult preProcessResult;
+	QProcess *gccPreProcess;
+	int preProcessListPosition;
 	QProcess *gccProcess;
 	bool remoteJob;
 private slots:
+	void onPreProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+	void onPreProcessExecuteError(QProcess::ProcessError error);
 	void onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus);
 	void onExecuteError(QProcess::ProcessError error);
 };
