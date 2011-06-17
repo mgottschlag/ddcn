@@ -38,11 +38,13 @@ public:
 	void grab() {
 		refCount++;
 	}
-	void drop() {
+	bool drop() {
 		if (--refCount) {
 			// Delete the object if it is not used any more
 			delete this;
+			return false;
 		}
+		return true;
 	}
 
 	ariba::ServiceID getServiceId() {

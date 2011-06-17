@@ -33,16 +33,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class TrustedPeer;
 
-class NetworkNode {
+class NetworkNode : public QObject {
+	Q_OBJECT
 public:
-	NetworkNode(NodeID nodeId, LinkID linkId) : aribaNode(nodeId),
-			aribaLink(linkId), load(0.0f) {
-	}
+	NetworkNode(NodeID nodeId, LinkID linkId);
 	QCA::PublicKey getPublicKey() {
 		return publicKey;
-	}
-	float getLoad() {
-		return load;
 	}
 	void setTrustedPeer(TrustedPeer *trustedPeer) {
 		this->trustedPeer = trustedPeer;
@@ -50,21 +46,32 @@ public:
 	TrustedPeer *getTrustedPeer() {
 		return trustedPeer;
 	}
-
+	void sendPacket(QByteArray packet);
+signals:
+	void outgoingDataAvailable(NetworkNode *node);
+	void packetReceived(NetworkNode *node, const QByteArray &packet);
+	void connectionReady(NetworkNode *node);
+private slots:
+	void onOutgoingDataAvailable();
+	void onIncomingDataAvailable();
+	void onHandshaken();
+private:
 	QCA::TLS &getTLS() {
 		return tls;
 	}
-private slots:
-	void outgoingTlsDataAvailable();
-private:
+
 	QString name;
 	ariba::NodeID aribaNode;
 	ariba::LinkID aribaLink;
 	QCA::PublicKey publicKey;
-	float load;
 	TrustedPeer *trustedPeer;
 
 	QCA::TLS tls;
+
+	QByteArray incomingData;
+
+	// TODO: Remove this
+	friend class NetworkInterface;
 };
 
-#endif /* ONLINEPEER_H_ */
+#endif

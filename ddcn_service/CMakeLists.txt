@@ -28,6 +28,7 @@ set(SRC
 	McpoGroup.cpp
 	ToolChain.cpp
 	BootstrapConfig.cpp
+	NetworkNode.cpp
 )
 
 set(MOC_H
@@ -41,6 +42,7 @@ set(MOC_H
 	JobAdaptor.h
 	NetworkInterface.h
 	BootstrapConfig.h
+	NetworkNode.h
 )
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})

@@ -43,8 +43,8 @@ int main(int argc, char **argv) {
 	qRegisterMetaType<ariba::utility::NodeID>();
 	qRegisterMetaType<ariba::utility::LinkID>();
 	qRegisterMetaType<ariba::DataMessage>();
-	// Load config file
-	// TODO
+	// Initialize crypto framework
+	QCA::Initializer qcaInitializer;
 	// Create the compiler network
 	CompilerNetwork network;
 	new CompilerNetworkAdaptor(&network);
