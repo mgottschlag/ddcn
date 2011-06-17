@@ -27,35 +27,42 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef APPLICATION_H_INCLUDED
 #define APPLICATION_H_INCLUDED
 
-#include "Job.h"
-
 #include <QCoreApplication>
+#include <QMetaType>
+#include <QDBusConnection>
+#include <QDBusMetaType>
+
+struct ToolChainInfo {
+	QString path;
+	QString version;
+};
+
+Q_DECLARE_METATYPE(ToolChainInfo)
+Q_DECLARE_METATYPE(QList<ToolChainInfo>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info);
+const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info);
+
+struct JobResult {
+	QString consoleOutput;
+	int returnValue;
+};
+
+Q_DECLARE_METATYPE(JobResult)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const JobResult &jobResult);
+const QDBusArgument &operator>>(const QDBusArgument &argument, JobResult &jobResult);
+
 
 /**
  * Main application class.
  */
-class Application : public QObject {
-	Q_OBJECT
+class Application {
 public:
-	Application(QCoreApplication *qtApp);
-
-	void run(int argc, char **argv);
-
-	bool wasFinished() {
-		return finished;
-	}
-	int getReturnValue() {
-		return returnValue;
-	}
-private slots:
-	void onFinished(int returnValue);
-	void onSendingFailed();
+	int run(int argc, char **argv);
 private:
-	QCoreApplication *qtApp;
-	Job *job;
-
-	bool finished;
-	int returnValue;
+	QStringList fetchToolChainList();
+	int executeJob(QString toolChain, QStringList parameters);
 };
 
 #endif

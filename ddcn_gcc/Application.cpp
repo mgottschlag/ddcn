@@ -25,42 +25,114 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "Application.h"
-#include "ServiceConnection.h"
 
-Application::Application(QCoreApplication *qtApp)
-		: QObject(qtApp), qtApp(qtApp) {
+#include <QDBusReply>
+#include <QDBusInterface>
+#include <cstdlib>
+#include <iostream>
+#include <QDir>
+
+QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info)
+{
+	argument.beginStructure();
+	argument << info.version << info.path;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info)
+{
+	argument.beginStructure();
+	QString version;
+	QString path;
+	argument >> version >> path;
+	argument.endStructure();
+	info.version = version;
+	info.path = path;
+	return argument;
 }
 
-void Application::run(int argc, char **argv) {
-	// Create the job
-	job = new Job(this);
-	// If the job is finished, this class shall just stop the program
-	connect(job, SIGNAL(finished(int)), this, SLOT(onFinished(int)));
-	// Run the job
-	job->initialize(argc, argv);
-	if (job->isRemoteExecutionPossible()) {
-		int returnValue = job->preprocess();
-		if (returnValue != 0) {
-			emit onFinished(returnValue);
-			return;
-		}
-		ServiceConnection *service = new ServiceConnection(this);
-		// If the service is unavailable, fall back
-		connect(service, SIGNAL(sendingFailed()), this, SLOT(onSendingFailed()));
-		service->sendJob(job);
-	} else {
-		job->executeLocally();
+QDBusArgument &operator<<(QDBusArgument &argument, const JobResult &jobResult) {
+	argument.beginStructure();
+	argument << jobResult.consoleOutput << jobResult.returnValue;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, JobResult &jobResult) {
+	argument.beginStructure();
+	QString consoleOutput;
+	int returnValue;
+	argument >> consoleOutput >> returnValue;
+	argument.endStructure();
+	jobResult.consoleOutput = consoleOutput;
+	jobResult.returnValue = returnValue;
+	return argument;
+}
+
+int Application::run(int argc, char **argv) {
+	// Fetch list of available tool chains
+	QStringList availableToolChains = fetchToolChainList();
+	if (availableToolChains.count() == 0) {
+		qCritical("Error: No tool chains available or service not available.");
+		return -1;
 	}
+	// Select a tool chain
+	QString toolChain = availableToolChains[0];
+	const char *toolChainEnv = getenv("DDCN_TOOLCHAIN");
+	if (toolChainEnv) {
+		bool toolchainFound = false;
+		for (int i = 0; i < availableToolChains.size(); i++) {
+			if (availableToolChains[i] == QString(toolChainEnv)) {
+				toolchainFound = true;
+				break;
+			}
+		}
+		if (!toolchainFound) {
+			qCritical("Error: Selected toolchain not supported by the service.");
+			return -1;
+		}
+	}
+	// Send the job
+	QStringList parameters;
+	for (int i = 1; i < argc; i++) {
+		parameters.append(argv[i]);
+	}
+	return executeJob(toolChain, parameters);
 }
 
-void Application::onFinished(int returnValue) {
-	qtApp->exit(returnValue);
-	finished = true;
-	this->returnValue = returnValue;
+QStringList Application::fetchToolChainList() {
+	QDBusInterface interface("org.ddcn.Service",
+	                         "/CompilerService",
+	                         "org.ddcn.CompilerService");
+	if (!interface.isValid()) {
+		return QStringList();
+	}
+	QDBusReply<QList<ToolChainInfo> > reply = interface.call("getToolChains");
+	if (!reply.isValid()) {
+		return QStringList();
+	}
+	QList<ToolChainInfo> toolChainInfo = reply.value();
+	QStringList toolChains;
+	foreach(ToolChainInfo info, toolChainInfo) {
+		toolChains.append(info.version);
+	}
+	return toolChains;
+}
+int Application::executeJob(QString toolChain, QStringList parameters) {
+	QDBusInterface interface("org.ddcn.Service",
+	                         "/CompilerService",
+	                         "org.ddcn.CompilerService");
+	if (!interface.isValid()) {
+		qCritical("Error: Compiler service not available.");
+		return -1;
+	}
+	QDBusReply<JobResult> reply = interface.call("executeJob", parameters,
+			toolChain, QDir::currentPath());
+	if (!reply.isValid()) {
+		qCritical("Error: Could not call compiler service.");
+		return -1;
+	}
+	JobResult result = reply.value();
+	std::cerr << result.consoleOutput.toStdString();
+	return result.returnValue;
 }
 
-void Application::onSendingFailed() {
-	// Fallback if remote execution is not possible
-	qDebug("Sending the job to the service failed, falling back.");
-	job->executeLocally();
-}

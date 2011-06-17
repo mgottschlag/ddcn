@@ -29,21 +29,14 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Application.h"
 
 int main(int argc, char **argv) {
+	qDBusRegisterMetaType<ToolChainInfo>();
+	qDBusRegisterMetaType<QList<ToolChainInfo> >();
 	// All our parameters are supposed to be gcc parameters, so do not pass any
 	// to Qt
 	// TODO: Actually only pass the first argument (program name)
 	QCoreApplication qtApp(argc, argv);
 
 	// Start the application
-	Application *app = new Application(&qtApp);
-	app->run(argc, argv);
-
-	// If the application already has finished, quit the process (this cannot
-	// be done by Qt yet as the main loop is not yet running)
-	if (app->wasFinished()) {
-		return app->getReturnValue();
-	}
-
-	// Start the event loop
-	return qtApp.exec();
+	Application app;
+	return app.run(argc, argv);
 }
