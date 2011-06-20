@@ -60,7 +60,7 @@ public slots:
 	 * @param toolChain The gcc target triple (platform, system and kernel (order may vary) /gcc-version: eg. i686-linux-gnu/4.4.5).
 	 */
 	JobResult executeJob(QStringList inputFiles, QStringList parameters,
-					   QString toolChain, QDBusMessage &message);
+					   QString toolChain, QString workingPath, QDBusMessage &message);
 	void addToolChain(QString path);
 	void removeToolChain(QString path);
 	void localCompilationJobFinished(Job *job);
