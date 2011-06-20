@@ -36,7 +36,7 @@ QString CompilerService::settingMaxThreadCount("maxThreadCount");
 CompilerService::CompilerService(CompilerNetwork *network) : settings("ddcn", "ddcn") {
 	this->network = network;
 	setCurrentThreadCount(0);
-	determineAndSetMaxThreadCount(); 
+	determineAndSetMaxThreadCount();
 	this->toolChains.append(ToolChain("/usr/bin/gcc"));//TODO Debug Only
 	loadToolChains();
 }

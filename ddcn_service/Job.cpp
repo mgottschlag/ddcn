@@ -50,8 +50,7 @@ void Job::preProcess() {
 			inputFile.left(inputFile.indexOf(".")));
 		preProcessParameter << "-E " << inputFile << "-o"
 									<< tmpFile.getFilename() << this->parameters;
-
-		//create a gcc process and submit the parameters
+		this->preProcessedFiles.append(tmpFile.getFilename());
 		gccPreProcess = new QProcess(this);
 		connect(gccPreProcess,
 			SIGNAL(finished(int, QProcess::ExitStatus)),
@@ -71,23 +70,11 @@ void Job::preProcess() {
 }
 
 void Job::execute() {
-	//TODO foreach (QByteArray fileContent, this->inputFiles) {
-	//gcc 
-
-
-
-
-		/*
-		QTemporaryFile file(this);
-		file.setFileTemplate();
-		file.setAutoRemove(true);
-		if (file.open()) {
-			file.write(fileContent);
-			file.close();
-		}
-		this->parameters.append(file.fileName());*/
-	//}
-
+	if (this->preProcessedFiles.count() > 0) {
+		this->parameters <<	(this->preProcessedFiles);
+	} else {
+		this->parameters << this->inputFiles;
+	}
 	//create a gcc process and submit the parameters
 	gccProcess = new QProcess(this);
 	connect(gccProcess,

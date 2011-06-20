@@ -68,6 +68,7 @@ private:
 	QString consoleOutput;
 	QStringList inputFiles;
 	QStringList outputFiles;
+	QStringList preProcessedFiles;
 	QStringList parameters;
 	QString toolChain;
 	JobResult jobResult;
