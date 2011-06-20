@@ -66,7 +66,7 @@ void CompilerServiceAdaptor::onMaxThreadCountChanged(int threadCount) {
 
 JobResult CompilerServiceAdaptor::executeJob(QStringList inputFiles,
 										   QStringList parameters,
-									   QString toolChain, QDBusMessage &message) {
+									   QString toolChain, QString workingPath, QDBusMessage &message) {
 	Job *job = new Job(inputFiles, parameters, toolChain, false);
 	QDBusMessage *dBusMessage(&message);
 	this->jobDBusMessageMap.insert(job, dBusMessage);
