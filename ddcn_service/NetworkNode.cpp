@@ -29,7 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QtEndian>
 
-NetworkNode::NetworkNode(NodeID nodeId, LinkID linkId) : aribaNode(nodeId),
+NetworkNode::NetworkNode(ariba::utility::NodeID nodeId, ariba::utility::LinkID linkId) : aribaNode(nodeId),
 		aribaLink(linkId) {
 	connect(&tls, SIGNAL(readyReadOutgoing()), this,
 		SLOT(onOutgoingDataAvailable()));

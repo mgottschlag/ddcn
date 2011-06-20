@@ -36,7 +36,7 @@ class TrustedPeer;
 class NetworkNode : public QObject {
 	Q_OBJECT
 public:
-	NetworkNode(NodeID nodeId, LinkID linkId);
+	NetworkNode(ariba::utility::NodeID nodeId, ariba::utility::LinkID linkId);
 	QCA::PublicKey getPublicKey() {
 		return publicKey;
 	}
