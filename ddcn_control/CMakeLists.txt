@@ -16,10 +16,12 @@ include(${QT_USE_FILE})
 set(SRC
 	MainWindow.cpp
 	main.cpp
+	SettingsDialog.cpp
 )
 
 set(MOC_H
 	MainWindow.h
+	SettingsDialog.h
 )
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
@@ -32,6 +34,7 @@ QT4_ADD_RESOURCES(QRC_SRC ${QRC})
 
 set(UIS
 	MainWindow.ui
+	SettingsDialog.ui
 )
 
 QT4_WRAP_UI(UIS_H ${UIS})

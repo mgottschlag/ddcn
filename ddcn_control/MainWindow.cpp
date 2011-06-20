@@ -30,6 +30,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMessageBox>
 #include <QUrl>
 #include <QProcess>
+#include <QDBusInterface>
+#include "SettingsDialog.h"
 
 MainWindow::MainWindow() {
 	ui.setupUi(this);
@@ -71,8 +73,25 @@ void MainWindow::stopService() {
 	// TODO
 }
 void MainWindow::showSettings() {
-	QMessageBox::critical(this, "Error!", "Not yet implemented.");
-	// TODO
+	if (!serviceActive) {
+		return;
+	}
+	SettingsDialog settings;
+	int result = settings.exec();
+	if (result == QDialog::Accepted) {
+		// Set peer name
+		if (settings.isPeerNameChanged()) {
+			// TODO
+		}
+		// Set number of active threads
+		if (settings.isThreadCountChanged()) {
+			// TODO
+		}
+		// Set private key if necessary
+		if (settings.isKeyChanged()) {
+			// TODO
+		}
+	}
 }
 void MainWindow::openHelp() {
 	if (!QDesktopServices::openUrl(QUrl("http://code.google.com/p/ddcn/wiki/Documentation"))) {
@@ -89,7 +108,16 @@ void MainWindow::removeToolChain() {
 }
 
 void MainWindow::pollServiceStatus() {
-	// TODO
+	QDBusInterface dbusInterface("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService");
+	bool active = dbusInterface.isValid();
+	if (active != serviceActive) {
+		serviceActive = active;
+		updateStatusText();
+		if (serviceTimeoutTimer.isActive()) {
+			serviceTimeoutTimer.stop();
+		}
+		emit serviceStatusChanged(active);
+	}
 }
 void MainWindow::serviceStartTimeout() {
 	QMessageBox::critical(this, "Error!", "Starting the service timed out.");
