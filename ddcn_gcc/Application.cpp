@@ -100,14 +100,16 @@ int Application::run(int argc, char **argv) {
 }
 
 QStringList Application::fetchToolChainList() {
-	QDBusInterface interface("org.ddcn.Service",
+	QDBusInterface interface("org.ddcn.service",
 	                         "/CompilerService",
 	                         "org.ddcn.CompilerService");
 	if (!interface.isValid()) {
+		qCritical("Error: Could not connect to compiler service.");
 		return QStringList();
 	}
 	QDBusReply<QList<ToolChainInfo> > reply = interface.call("getToolChains");
 	if (!reply.isValid()) {
+		qCritical("Error: Could not call compiler service (getToolChains()).");
 		return QStringList();
 	}
 	QList<ToolChainInfo> toolChainInfo = reply.value();
@@ -118,7 +120,7 @@ QStringList Application::fetchToolChainList() {
 	return toolChains;
 }
 int Application::executeJob(QString toolChain, QStringList parameters) {
-	QDBusInterface interface("org.ddcn.Service",
+	QDBusInterface interface("org.ddcn.service",
 	                         "/CompilerService",
 	                         "org.ddcn.CompilerService");
 	if (!interface.isValid()) {
@@ -128,7 +130,7 @@ int Application::executeJob(QString toolChain, QStringList parameters) {
 	QDBusReply<JobResult> reply = interface.call("executeJob", parameters,
 			toolChain, QDir::currentPath());
 	if (!reply.isValid()) {
-		qCritical("Error: Could not call compiler service.");
+		qCritical("Error: Could not call compiler service (executeJob()).");
 		return -1;
 	}
 	JobResult result = reply.value();
