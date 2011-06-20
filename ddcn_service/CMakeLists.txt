@@ -46,6 +46,8 @@ set(MOC_H
 	NetworkInterface.h
 	BootstrapConfig.h
 	NetworkNode.h
+	IncomingJob.h
+	OutgoingJob.h
 )
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
