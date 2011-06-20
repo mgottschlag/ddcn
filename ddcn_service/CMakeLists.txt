@@ -2,6 +2,8 @@
 project(ddcn_service)
 cmake_minimum_required(VERSION 2.4.0)
 
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/../bin)
+
 find_package(Boost REQUIRED COMPONENTS system)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Ariba REQUIRED)
@@ -29,6 +31,7 @@ set(SRC
 	ToolChain.cpp
 	BootstrapConfig.cpp
 	NetworkNode.cpp
+	ParameterParser.cpp
 )
 
 set(MOC_H
