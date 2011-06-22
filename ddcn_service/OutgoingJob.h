@@ -24,8 +24,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef TOOL_CHAIN_INCLUDED
-#define TOOL_CHAIN_INCLUDED
+#ifndef OUTGOINGJOB_H_INCLUDED
+#define OUTGOINGJOB_H_INCLUDED
 
 #include "NetworkNode.h"
 #include "Job.h"
@@ -35,9 +35,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class OutgoingJob {
 public:
 	OutgoingJob(NetworkNode* sourcePeer, Job* job, int id) {
-	  this.sourcePeer = sourcePeer;
-	  this.job = job;
-	  this.id = id;
+	  this->sourcePeer = sourcePeer;
+	  this->job = job;
+	  this->id = id;
 	}
 private:
 	NetworkNode* sourcePeer;

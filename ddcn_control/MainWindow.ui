@@ -28,11 +28,11 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
-        <string>Status</string>
+        <string>Local status</string>
        </attribute>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
@@ -254,6 +254,70 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab_6">
+       <attribute name="title">
+        <string>Network status</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>Online peers:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="2">
+         <widget class="QLabel" name="label_10">
+          <property name="text">
+           <string>Online groups:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QCheckBox" name="autoRefresh">
+          <property name="text">
+           <string>Periodically refresh every</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QSpinBox" name="refreshInterval">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="value">
+           <number>10</number>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="QLabel" name="label_8">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>seconds</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="3">
+         <widget class="QPushButton" name="refreshButton">
+          <property name="text">
+           <string>Refresh now</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="4">
+         <widget class="QTreeView" name="onlinePeerList"/>
+        </item>
+        <item row="3" column="0" colspan="4">
+         <widget class="QTreeView" name="onlineGroupList"/>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
         <string>Peers</string>
@@ -426,8 +490,8 @@
    <slot>showSettings()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>339</x>
-     <y>261</y>
+     <x>-1</x>
+     <y>-1</y>
     </hint>
     <hint type="destinationlabel">
      <x>339</x>
@@ -659,6 +723,102 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>autoRefresh</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>108</x>
+     <y>479</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>refreshInterval</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>239</x>
+     <y>480</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>refreshButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>607</x>
+     <y>480</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>onlineGroupList</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>378</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>onlinePeerList</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>185</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>refreshButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>refreshNetworkStatus()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>607</x>
+     <y>480</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>serviceStatusChanged(bool)</signal>
@@ -668,5 +828,6 @@
   <slot>openHelp()</slot>
   <slot>addToolChain()</slot>
   <slot>removeToolChain()</slot>
+  <slot>refreshNetworkStatus()</slot>
  </slots>
 </ui>

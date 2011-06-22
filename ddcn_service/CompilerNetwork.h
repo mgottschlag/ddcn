@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
 
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
+      documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY <COPYRIGHT HOLDER> ``AS IS'' AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -32,6 +32,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "GroupMembership.h"
 #include "Job.h"
 #include "NetworkInterface.h"
+#include "OutgoingJob.h"
+#include "NodeStatus.h"
 
 #include <QObject>
 #include "JobRequest.h"
@@ -94,6 +96,8 @@ public:
 
 	void setFreeLocalSlots(unsigned int localSlots);
 	unsigned int getFreeLocalSlots();
+
+	void queryNetworkStatus();
 private slots:
 	void onPeerConnected(NetworkNode *node, QString name,
 		const QCA::PublicKey &publicKey);
@@ -112,6 +116,7 @@ signals:
 	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
 	void receivedJob(Job *job);
 	void finishedJob(Job *job, bool executed, bool success);
+	void nodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups);
 private:
 	TrustedPeer *getTrustedPeer(const QCA::PublicKey &publicKey);
 	TrustedGroup *getTrustedGroup(const QCA::PublicKey &publicKey);
@@ -120,6 +125,11 @@ private:
 	void saveSettings();
 
 	void askForFreeSlots();
+
+	void reportNodeStatus(NetworkNode *node);
+	void reportNetworkResources(NetworkNode *node);
+
+	void onNodeStatusChanged(NetworkNode *node, const QByteArray &packetData);
 
 	QString peerName;
 	bool encryptionEnabled;
@@ -138,6 +148,8 @@ private:
 
 	QList<FreeCompilerSlots> freeRemoteSlots;
 	unsigned int freeLocalSlots;
+
+	QList<OutgoingJob*> delegatedJobs;
 
 	QCA::KeyGenerator keyGenerator;
 };

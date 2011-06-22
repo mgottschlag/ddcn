@@ -228,6 +228,17 @@ unsigned int CompilerNetwork::getFreeLocalSlots() {
 	return freeLocalSlots;
 }
 
+void CompilerNetwork::queryNetworkStatus() {
+	qDebug("queryNetworkStatus");
+	// Send network status requests to all connected peers
+	PacketHeader header;
+	header.type = PacketType::QueryNodeStatus;
+	QByteArray packet;
+	packet.resize(sizeof(PacketHeader));
+	memcpy(packet.data(), &header, sizeof(header));
+	network->sendToAll(packet);
+}
+
 void CompilerNetwork::onPeerConnected(NetworkNode *node, QString name,
 		const QCA::PublicKey &publicKey) {
 	TrustedPeer *trustedPeer = getTrustedPeer(publicKey);
@@ -249,11 +260,34 @@ void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
 	// TODO: Nothing to do here? Maybe update TrustedPeer name
 }
 void CompilerNetwork::onMessageReceived(NetworkNode *node, const QByteArray &message) {
-	// TODO
+	PacketHeader header;
+	memcpy(&header, message.data(), sizeof(header));
+	switch (header.type) {
+		case PacketType::QueryNodeStatus:
+			qDebug("Node asking for node status.");
+			reportNodeStatus(node);
+			break;
+		case PacketType::NodeStatus:
+			onNodeStatusChanged(node, message);
+			break;
+		default:
+			qWarning("Warning: Unknown package type received.");
+			break;
+	}
 }
 void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const QByteArray &message) {
-	// TODO
+	PacketHeader header;
+	memcpy(&header, message.data(), sizeof(header));
+	switch (header.type) {
+		case PacketType::QueryNetworkResources:
+			qDebug("Node asking for network resources.");
+			reportNetworkResources(node);
+			break;
+		default:
+			qWarning("Warning: Unknown group package type received.");
+			break;
+	}
 }
 
 TrustedPeer *CompilerNetwork::getTrustedPeer(const QCA::PublicKey &publicKey) {
@@ -289,5 +323,77 @@ void CompilerNetwork::saveSettings() {
 }
 
 void CompilerNetwork::askForFreeSlots() {
-	// TODO: Send a message to all trusted peers and trusted groups
+	//  Send a message to all trusted peers
+	PacketHeader header;
+	header.type = PacketType::QueryNetworkResources;
+	QByteArray packet;
+	packet.resize(sizeof(PacketHeader));
+	memcpy(packet.data(), &header, sizeof(header));
+	foreach (TrustedPeer *trustedPeer, trustedPeers) {
+		network->send(trustedPeer->getNetworkNode(), packet);
+	}
+	// The packet sent to the groups has to look different as we have to
+	// include the group key
+	foreach (TrustedGroup *trustedGroup, trustedGroups) {
+		// Create a new packet for each group containing the group key
+		QByteArray groupPacket = packet;
+		packet.append(trustedGroup->getPublicKey().toDER());
+		network->send(trustedGroup->getMcpoGroup(), groupPacket);
+	}
+}
+
+void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
+	NodeStatusPacket packet;
+	// TODO: Get real data
+	packet.maxThreads = 2;
+	packet.currentThreads = 1;
+	packet.delegatedJobs = 0;
+	packet.remoteJobs = 0;
+	packet.groupCount = groupMemberships.count();
+	QByteArray packetData;
+	packetData.resize(sizeof(packet));
+	memcpy(packetData.data(), &packet, sizeof(packet));
+	QDataStream stream(&packetData, QIODevice::Append);
+	foreach (GroupMembership *groupMembership, groupMemberships) {
+		QByteArray key = groupMembership->getPublicKey().toDER();
+		stream << (unsigned int)key.size();
+		stream << key;
+	}
+	network->send(node, packetData);
+}
+void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
+	// TODO
+}
+
+void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const QByteArray &packetData) {
+	if (packetData.size() < sizeof(NodeStatusPacket)) {
+		qWarning("Warning: Received too small packet.");
+		return;
+	}
+	// Parse node info
+	NodeStatusPacket packet;
+	memcpy(&packet, packetData.data(), sizeof(packet));
+	NodeStatus status;
+	status.currentThreads = packet.currentThreads;
+	status.maxThreads = packet.maxThreads;
+	status.delegatedJobs = packet.delegatedJobs;
+	status.localJobs = packet.localJobs;
+	status.remoteJobs = packet.remoteJobs;
+	// Parse group info
+	unsigned int groupCount = packet.groupCount;
+	QByteArray remaining = packetData.right(packetData.size() - sizeof(packet));
+	QDataStream stream(remaining);
+	QStringList groupKeys;
+	for (unsigned int i = 0; i < groupCount; i++) {
+		unsigned int keyLength = 0;
+		stream >> keyLength;
+		QByteArray keyData;
+		stream >> keyData;
+		if (stream.atEnd()) {
+			break;
+		}
+		QCA::PublicKey key = QCA::PublicKey::fromDER(keyData);
+		groupKeys.append(key.toPEM());
+	}
+	emit nodeStatusChanged(node->getPublicKey().toPEM(), status, groupKeys);
 }

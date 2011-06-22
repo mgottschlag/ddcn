@@ -105,3 +105,24 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, JobResult &jobRes
 	jobResult.returnValue = returnValue;
 	return argument;
 }
+
+QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo) {
+	argument.beginStructure();
+	argument << nodeStatusInfo.maxThreads;
+	argument << nodeStatusInfo.currentThreads;
+	argument << nodeStatusInfo.localJobs;
+	argument << nodeStatusInfo.delegatedJobs;
+	argument << nodeStatusInfo.remoteJobs;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo) {
+	argument.beginStructure();
+	argument >> nodeStatusInfo.maxThreads;
+	argument >> nodeStatusInfo.currentThreads;
+	argument >> nodeStatusInfo.localJobs;
+	argument >> nodeStatusInfo.delegatedJobs;
+	argument >> nodeStatusInfo.remoteJobs;
+	argument.endStructure();
+	return argument;
+}

@@ -24,35 +24,22 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef NETWORKSTATUSADAPTOR_H_INCLUDED
-#define NETWORKSTATUSADAPTOR_H_INCLUDED
+#ifndef ONLINEGROUPMODEL_H_INCLUDED
+#define ONLINEGROUPMODEL_H_INCLUDED
 
-#include "NetworkStatus.h"
-#include "DBusStructs.h"
+#include <QAbstractItemModel>
 
-#include <QDBusAbstractAdaptor>
-
-/**
- * Class which exports a CompilerNetwork object.
- */
-class NetworkStatusAdaptor : public QDBusAbstractAdaptor {
-	Q_OBJECT
-	Q_CLASSINFO("D-Bus Interface", "org.ddcn.NetworkStatus")
-	Q_PROPERTY(float networkLoad
-	           READ getNetworkLoad
-	           NOTIFY networkLoadChanged)
+class OnlineGroupModel : public QAbstractItemModel {
 public:
-	/**
-	 * Creates a dbus adaptor for the network status
-	 * @param status Network status object to export.
-	 */
-	explicit NetworkStatusAdaptor(NetworkStatus *networkStatus);
-public slots:
-private slots:
-signals:
+	virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
+	virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+	virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+	virtual QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+	virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
+	virtual QModelIndex parent(const QModelIndex &index) const {
+		return QModelIndex();
+	}
 private:
-	NetworkStatus *networkStatus;
 };
 
 #endif
-

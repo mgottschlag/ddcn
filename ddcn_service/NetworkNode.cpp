@@ -41,6 +41,7 @@ NetworkNode::NetworkNode(ariba::utility::NodeID nodeId, ariba::utility::LinkID l
 
 void NetworkNode::sendPacket(QByteArray packet) {
 	if ((size_t)packet.size() < sizeof(PacketHeader)) {
+		qCritical("Sending packet without packet header.");
 		return;
 	}
 	PacketHeader::insertPacketHeaderLength(packet);;

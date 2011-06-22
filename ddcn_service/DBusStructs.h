@@ -28,6 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DBUSSTRUCTS_H_INCLUDED
 
 #include "ToolChain.h"
+#include "NodeStatus.h"
 #include <QString>
 #include <QDBusMetaType>
 #include "Job.h"
@@ -82,5 +83,10 @@ Q_DECLARE_METATYPE(JobResult)
 
 QDBusArgument &operator<<(QDBusArgument &argument, const JobResult &jobResult);
 const QDBusArgument &operator>>(const QDBusArgument &argument, JobResult &jobResult);
+
+Q_DECLARE_METATYPE(NodeStatus)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo);
+const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo);
 
 #endif

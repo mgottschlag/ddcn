@@ -17,6 +17,8 @@ set(SRC
 	MainWindow.cpp
 	main.cpp
 	SettingsDialog.cpp
+	OnlinePeerModel.cpp
+	OnlineGroupModel.cpp
 )
 
 set(MOC_H
