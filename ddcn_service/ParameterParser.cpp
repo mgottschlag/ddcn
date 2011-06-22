@@ -130,9 +130,15 @@ QStringList ParameterParser::getOriginalParameters() {
 }
 
 QStringList ParameterParser::getPreprocessingParameters() {
+	if (!isDelegatable()) {
+		return QStringList();
+	}
 	return preprocessingParameters;
 }
 QStringList ParameterParser::getCompilerParameters() {
+	if (!isDelegatable()) {
+		return originalParameters;
+	}
 	return compilerParameters;
 }
 
