@@ -74,6 +74,8 @@ public slots:
 	void addGroupMembership(QString name, QString publicKey, QString privateKey);
 	void removeGroupMembership(QString name, QString publicKey);
 	QList<GroupMembershipInfo> getGroupMemberships();
+
+	void queryNetworkStatus();
 private slots:
 	// These slots just emit the corresponding signals of this class, they are
 	// used to forward the signals of the encapsulated class to dbus
@@ -83,6 +85,7 @@ private slots:
 	void onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers);
 	void onTrustedGroupsChanged(const QList<TrustedGroup*> &trustedGroups);
 	void onGroupMembershipsChanged(const QList<GroupMembership*> &groupMemberships);
+	void onNodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
@@ -90,6 +93,7 @@ signals:
 	void trustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers);
 	void trustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups);
 	void groupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships);
+	void nodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups);
 private:
 	static TrustedPeerInfo toTrustedPeerInfo(TrustedPeer *trustedPeer);
 	static TrustedGroupInfo toTrustedGroupInfo(TrustedGroup *trustedGroup);

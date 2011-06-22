@@ -24,63 +24,37 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAINWINDOW_H_INCLUDED
-#define MAINWINDOW_H_INCLUDED
-
-#include "OnlinePeerModel.h"
 #include "OnlineGroupModel.h"
 
-#include <QMainWindow>
-#include <QTimer>
-#include <QDBusArgument>
-
-#include "ui_MainWindow.h"
-
-struct NodeStatus {
-	int maxThreads;
-	int currentThreads;
-	int localJobs;
-	int delegatedJobs;
-	int remoteJobs;
-};
-
-Q_DECLARE_METATYPE(NodeStatus)
-
-QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo);
-const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo);
-
-class MainWindow : public QMainWindow {
-	Q_OBJECT
-public:
-	MainWindow();
-public slots:
-	void startService();
-	void stopService();
-	void showSettings();
-	void openHelp();
-	void addToolChain();
-	void removeToolChain();
-	void refreshNetworkStatus();
-private slots:
-	void pollServiceStatus();
-	void serviceStartTimeout();
-	void updateStatusText();
-	void onNodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups);
-signals:
-	void serviceStatusChanged(bool active);
-private:
-
-	Ui::MainWindow ui;
-
-	QTimer serviceStatusTimer;
-	QTimer serviceTimeoutTimer;
-
-	bool serviceActive;
-
-	QLabel statusLabel;
-
-	OnlinePeerModel onlinePeerModel;
-	OnlineGroupModel onlineGroupModel;
-};
-
-#endif
+int OnlineGroupModel::columnCount(const QModelIndex &parent) const {
+	// Columns: Trusted status, name, key fingerprint, member count, load, member of trusted group
+	return 6;
+}
+QVariant OnlineGroupModel::data(const QModelIndex &index, int role) const {
+	// TODO
+}
+QVariant OnlineGroupModel::headerData(int section, Qt::Orientation orientation, int role) const {
+	switch (section) {
+		case 0:
+			return QVariant();
+		case 1:
+			return QString("Name");
+		case 2:
+			return QString("Key fingerprint");
+		case 3:
+			return QString("Members");
+		case 4:
+			return QString("Load");
+		case 5:
+			return QString("Group membership");
+		default:
+			return QVariant();
+	}
+}
+QModelIndex OnlineGroupModel::index(int row, int column, const QModelIndex &parent) const {
+	return QModelIndex();
+	// TODO
+}
+int OnlineGroupModel::rowCount(const QModelIndex &parent) const {
+	return 0;
+}

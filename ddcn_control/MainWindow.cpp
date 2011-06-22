@@ -33,6 +33,27 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDBusInterface>
 #include "SettingsDialog.h"
 
+QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo) {
+	argument.beginStructure();
+	argument << nodeStatusInfo.maxThreads;
+	argument << nodeStatusInfo.currentThreads;
+	argument << nodeStatusInfo.localJobs;
+	argument << nodeStatusInfo.delegatedJobs;
+	argument << nodeStatusInfo.remoteJobs;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo) {
+	argument.beginStructure();
+	argument >> nodeStatusInfo.maxThreads;
+	argument >> nodeStatusInfo.currentThreads;
+	argument >> nodeStatusInfo.localJobs;
+	argument >> nodeStatusInfo.delegatedJobs;
+	argument >> nodeStatusInfo.remoteJobs;
+	argument.endStructure();
+	return argument;
+}
+
 MainWindow::MainWindow() {
 	ui.setupUi(this);
 	serviceActive = false;
@@ -48,6 +69,23 @@ MainWindow::MainWindow() {
 	serviceStatusTimer.setInterval(1000);
 	serviceStatusTimer.setSingleShot(false);
 	serviceStatusTimer.start();
+	// Set list models
+	ui.onlinePeerList->setModel(&onlinePeerModel);
+	ui.onlinePeerList->setColumnWidth(0, 40);
+	ui.onlinePeerList->setColumnWidth(1, 150);
+	ui.onlinePeerList->setColumnWidth(2, 200);
+	ui.onlinePeerList->setColumnWidth(3, 40);
+	ui.onlineGroupList->setModel(&onlineGroupModel);
+	ui.onlineGroupList->setColumnWidth(0, 40);
+	ui.onlineGroupList->setColumnWidth(1, 150);
+	ui.onlineGroupList->setColumnWidth(2, 200);
+	ui.onlineGroupList->setColumnWidth(3, 80);
+	ui.onlineGroupList->setColumnWidth(4, 40);
+	// We can already connect the signals here, even if the service is not yet
+	// running
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
+			"org.ddcn.CompilerNetwork", "nodeStatusChanged", this,
+			SLOT(onNodeStatusChanged(QString, NodeStatus, QStringList)));
 }
 
 void MainWindow::startService() {
@@ -106,6 +144,14 @@ void MainWindow::removeToolChain() {
 	QMessageBox::critical(this, "Error!", "Not yet implemented.");
 	// TODO
 }
+void MainWindow::refreshNetworkStatus() {
+	onlinePeerModel.clear();
+	QDBusInterface dbusInterface("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork");
+	if (!dbusInterface.isValid()) {
+		return;
+	}
+	dbusInterface.call("queryNetworkStatus");
+}
 
 void MainWindow::pollServiceStatus() {
 	QDBusInterface dbusInterface("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService");
@@ -130,4 +176,9 @@ void MainWindow::updateStatusText() {
 	} else {
 		statusLabel.setText("Service inactive.");
 	}
+}
+
+void MainWindow::onNodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups) {
+	qDebug("onNodeStatusChanged");
+	// TODO
 }

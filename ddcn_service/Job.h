@@ -38,7 +38,8 @@ struct JobResult {
 };
 
 
-
+class OutgoingJob;
+class IncomingJob;
 
 /**
  * Class which contains a single compiler job which has either been received
@@ -60,6 +61,19 @@ public:
 	}
 	void execute();
 	void preProcess();
+
+	void setOutgoingJob(OutgoingJob *outgoingJob) {
+		this->outgoingJob = outgoingJob;
+	}
+	OutgoingJob *getOutgoingJob() {
+		return outgoingJob;
+	}
+	void setIncomingJob(IncomingJob *incomingJob) {
+		this->incomingJob = incomingJob;
+	}
+	IncomingJob *getIncomingJob() {
+		return incomingJob;
+	}
 signals:
 	void finished(Job *job);
 	void preProcessFinished(Job *job);
@@ -82,6 +96,9 @@ private slots:
 	void onPreProcessExecuteError(QProcess::ProcessError error);
 	void onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus);
 	void onExecuteError(QProcess::ProcessError error);
+private:
+	IncomingJob *incomingJob;
+	OutgoingJob *outgoingJob;
 };
 
 #endif

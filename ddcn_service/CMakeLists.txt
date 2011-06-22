@@ -46,8 +46,6 @@ set(MOC_H
 	NetworkInterface.h
 	BootstrapConfig.h
 	NetworkNode.h
-	IncomingJob.h
-	OutgoingJob.h
 )
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
@@ -55,4 +53,4 @@ QT4_WRAP_CPP(MOC_SRC ${MOC_H})
 include_directories(${ARIBA_INCLUDE_DIR} ${MCPO_INCLUDE_DIR} ${Boost_INCLUDE_DIR} ${QCA2_INCLUDE_DIR})
 
 add_executable(ddcn_service ${SRC} ${MOC_SRC})
-target_link_libraries(ddcn_service ${QT_LIBRARIES} ${ARIBA_LIBRARY} ${PTHREAD_LIBRARY} ${MCPO_LIBRARY} ${Boost_LIBRARIES} ${QCA2_LIBRARY})
+target_link_libraries(ddcn_service ${QT_LIBRARIES} ${ARIBA_LIBRARY} ${PTHREAD_LIBRARY} ${MCPO_LIBRARY} ${Boost_LIBRARIES} ${QCA2_LIBRARY} log4cxx)

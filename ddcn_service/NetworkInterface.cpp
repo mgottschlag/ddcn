@@ -160,6 +160,7 @@ NetworkInterface::~NetworkInterface() {
 }
 
 void NetworkInterface::send(NetworkNode *node, const QByteArray &message) {
+	qDebug("Sending packet.");
 	node->sendPacket(message);
 }
 void NetworkInterface::send(McpoGroup *group, const QByteArray &message) {
@@ -173,6 +174,13 @@ void NetworkInterface::send(McpoGroup *group, const QByteArray &message) {
 	groupMessage->message = packet;
 	SystemQueue::instance().scheduleEvent(SystemEvent(this,
 		SEND_GROUP_MESSAGE_EVENT, groupMessage));
+}
+void NetworkInterface::sendToAll(const QByteArray &message) {
+	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.begin();
+	while (it != onlineNodes.end()) {
+		send(it.value(), message);
+		it++;
+	}
 }
 McpoGroup *NetworkInterface::joinGroup(ariba::ServiceID group) {
 	QMap<ariba::ServiceID, McpoGroup*>::Iterator it = mcpoGroups.find(group);
@@ -337,6 +345,7 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 		// TODO: Reliable packets?
 		node->sendMessage(dataMessage, peerMessage->linkId);*/
 		//DdcnMessage message(peerMessage->message.data(), peerMessage->message.size());
+		qDebug("Ariba: Sending data packet.");
 		QByteArray text = peerMessage->message.toHex();
 		DdcnMessage message(text.data());
 		node->sendMessage(message, peerMessage->linkId);
@@ -392,6 +401,8 @@ void NetworkInterface::onAribaLinkUp(const ariba::utility::LinkID &link, const a
 		this, SLOT(onNodeOutgoingDataAvailable(NetworkNode*)));
 	connect(networkNode, SIGNAL(packetReceived(NetworkNode*, QByteArray)),
 		this, SLOT(onNodePacketReceived(NetworkNode*, QByteArray)));
+	connect(networkNode, SIGNAL(connectionReady(NetworkNode*)),
+		this, SLOT(onNodeConnectionReady(NetworkNode*)));
 	QCA::TLS *tls = &networkNode->getTLS();
 	tls->setCertificate(certificate, privateKey);
 	if (remote > node->getNodeId()) {

@@ -27,9 +27,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MainWindow.h"
 
 #include <QApplication>
+#include <QDBusMetaType>
 
 int main(int argc, char **argv) {
 	Q_INIT_RESOURCE(icons);
+	qDBusRegisterMetaType<NodeStatus>();
 	QApplication app(argc, argv);
 
 	// Show main window
