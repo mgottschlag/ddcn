@@ -29,7 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 		freeLocalSlots(0) {
 	// Load peer name and public key from configuration
-	QSettings settings("ddcn", "ddcn");
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn");
 	if (!settings.value("general/name").isValid()) {
 		settings.setValue("general/name", "ddcn_node");
 	}

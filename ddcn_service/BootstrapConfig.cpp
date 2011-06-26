@@ -26,7 +26,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "BootstrapConfig.h"
 
-BootstrapConfig::BootstrapConfig() : settings("ddcn", "ddcn") {
+BootstrapConfig::BootstrapConfig() : settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	if (!settings.value("network/bootstrap_hints").isValid()) {
 		settings.setValue("network/bootstrap_hints", "ddcn{ip{127.0.0.1};tcp{5005}}");
 	}
