@@ -33,7 +33,8 @@ QString CompilerService::settingToolChainVersion("version");
 QString CompilerService::settingMaxThreadCount("maxThreadCount");
 
 
-CompilerService::CompilerService(CompilerNetwork *network) : settings("ddcn", "ddcn") {
+CompilerService::CompilerService(CompilerNetwork *network)
+		: settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	this->network = network;
 	setCurrentThreadCount(0);
 	determineAndSetMaxThreadCount();
@@ -122,7 +123,7 @@ void CompilerService::executeJobLocally(Job* job) {
 	);
 	//TODO DEBUG:qCritical("job.execute");
 	job->execute();
-	setCurrentThreadCount(++this->currentThreadCount);
+	setCurrentThreadCount(this->currentThreadCount + 1);
 }
 
 void CompilerService::manageOutgoingJobs() {
@@ -193,6 +194,6 @@ bool CompilerService::isToolChainAvailable(ToolChain target) {
 void CompilerService::onLocalCompileFinished(Job* job) {
 	//TODO DEBUG:qCritical("Compiler finished");
 	emit localJobCompilationFinished(job);
-	setCurrentThreadCount(--this->currentThreadCount);
+	setCurrentThreadCount(this->currentThreadCount - 1);
 	manageJobs();
 }
