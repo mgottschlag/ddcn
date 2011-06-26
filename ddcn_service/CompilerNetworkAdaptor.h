@@ -85,7 +85,7 @@ private slots:
 	void onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers);
 	void onTrustedGroupsChanged(const QList<TrustedGroup*> &trustedGroups);
 	void onGroupMembershipsChanged(const QList<GroupMembership*> &groupMemberships);
-	void onNodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups);
+	void onNodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
@@ -93,7 +93,7 @@ signals:
 	void trustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers);
 	void trustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups);
 	void groupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships);
-	void nodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups);
+	void nodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups);
 private:
 	static TrustedPeerInfo toTrustedPeerInfo(TrustedPeer *trustedPeer);
 	static TrustedGroupInfo toTrustedGroupInfo(TrustedGroup *trustedGroup);

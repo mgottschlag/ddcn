@@ -366,6 +366,7 @@ void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
 }
 
 void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const QByteArray &packetData) {
+	qDebug("onNodeStatusChanged");
 	if (packetData.size() < sizeof(NodeStatusPacket)) {
 		qWarning("Warning: Received too small packet.");
 		return;
@@ -395,5 +396,6 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const QByteArray &p
 		QCA::PublicKey key = QCA::PublicKey::fromDER(keyData);
 		groupKeys.append(key.toPEM());
 	}
-	emit nodeStatusChanged(node->getPublicKey().toPEM(), status, groupKeys);
+	QString fingerprint = QCA::Hash("sha1").hashToString(node->getPublicKey().toDER());
+	emit nodeStatusChanged(node->getPublicKey().toPEM(), fingerprint, status, groupKeys);
 }

@@ -72,7 +72,7 @@ JobResult CompilerServiceAdaptor::executeJob(QStringList inputFiles,
 	this->jobDBusMessageMap.insert(job, dBusMessage);
 	dBusMessage->setDelayedReply(true);
 	QDBusConnection::sessionBus().send(dBusMessage->createReply());
-	
+
 	service->addJob(job);
 	return JobResult();
 }

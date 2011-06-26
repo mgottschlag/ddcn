@@ -46,10 +46,15 @@ QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusI
 const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo) {
 	argument.beginStructure();
 	argument >> nodeStatusInfo.maxThreads;
+	qDebug("maxThreads: %d", nodeStatusInfo.maxThreads);
 	argument >> nodeStatusInfo.currentThreads;
+	qDebug("currentThreads: %d", nodeStatusInfo.currentThreads);
 	argument >> nodeStatusInfo.localJobs;
+	qDebug("localJobs: %d", nodeStatusInfo.localJobs);
 	argument >> nodeStatusInfo.delegatedJobs;
+	qDebug("delegatedJobs: %d", nodeStatusInfo.delegatedJobs);
 	argument >> nodeStatusInfo.remoteJobs;
+	qDebug("remoteJobs: %d", nodeStatusInfo.remoteJobs);
 	argument.endStructure();
 	return argument;
 }
@@ -71,21 +76,24 @@ MainWindow::MainWindow() {
 	serviceStatusTimer.start();
 	// Set list models
 	ui.onlinePeerList->setModel(&onlinePeerModel);
-	ui.onlinePeerList->setColumnWidth(0, 40);
+	ui.onlinePeerList->setColumnWidth(0, 22);
 	ui.onlinePeerList->setColumnWidth(1, 150);
 	ui.onlinePeerList->setColumnWidth(2, 200);
 	ui.onlinePeerList->setColumnWidth(3, 40);
+	ui.onlinePeerList->setUniformRowHeights(true);
+	ui.onlinePeerList->setItemDelegate(&onlinePeerItemDelegate);
 	ui.onlineGroupList->setModel(&onlineGroupModel);
-	ui.onlineGroupList->setColumnWidth(0, 40);
+	ui.onlineGroupList->setColumnWidth(0, 22);
 	ui.onlineGroupList->setColumnWidth(1, 150);
 	ui.onlineGroupList->setColumnWidth(2, 200);
 	ui.onlineGroupList->setColumnWidth(3, 80);
 	ui.onlineGroupList->setColumnWidth(4, 40);
+	ui.onlineGroupList->setUniformRowHeights(true);
 	// We can already connect the signals here, even if the service is not yet
 	// running
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
 			"org.ddcn.CompilerNetwork", "nodeStatusChanged", this,
-			SLOT(onNodeStatusChanged(QString, NodeStatus, QStringList)));
+			SLOT(onNodeStatusChanged(QString, QString, NodeStatus, QStringList)));
 }
 
 void MainWindow::startService() {
@@ -178,7 +186,12 @@ void MainWindow::updateStatusText() {
 	}
 }
 
-void MainWindow::onNodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups) {
+void MainWindow::onNodeStatusChanged(QString publicKey, QString fingerprint,
+		NodeStatus nodeStatus, QStringList groups) {
 	qDebug("onNodeStatusChanged");
+	// TODO: Trusted, group membership, load
+	//onlinePeerModel.updateNode("unknown", publicKey.left(32), false, 0.0f, false);
+	onlinePeerModel.updateNode("unknown", fingerprint, false,
+			(float)nodeStatus.currentThreads / nodeStatus.maxThreads, false);
 	// TODO
 }

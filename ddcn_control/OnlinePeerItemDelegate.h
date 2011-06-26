@@ -24,41 +24,21 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef ONLINEPEERITEMDELEGATE_H_INCLUDED
+#define ONLINEPEERITEMDELEGATE_H_INCLUDED
 
-#include <QProcess>
-#include <QString>
-#include <QFile>
-#include "ToolChain.h"
+#include <QStyledItemDelegate>
 
-ToolChain::ToolChain(QString path) {
-	if (QFile(path).exists()) {
-		//TODO zurückgeändert
-		QProcess *compiler = new QProcess();
-		QProcessEnvironment environment = compiler->processEnvironment();
-		environment.value("LANG", "C");
-		compiler->setProcessEnvironment(environment);
+class OnlinePeerItemDelegate : public QStyledItemDelegate {
+public:
+	OnlinePeerItemDelegate();
 
-		QString version = "/";
-		compiler->start(path, QStringList("-v"));
-		compiler->waitForStarted(500);
-		compiler->waitForFinished(500);
-		while (!compiler->atEnd()) {
-			QString line = compiler->readLine(1000);
-			if (line.startsWith("Target: ")) {
-				version = line.right(line.indexOf(":") + 1).append(version);
-			} else if (line.startsWith(line.startsWith("gcc version"))) {
-				version.append(line.mid(11, line.indexOf("(") - 13));
-			}
-		}
-		delete compiler;
-	}
-}
+	virtual void paint(QPainter *painter,
+			const QStyleOptionViewItem &option, const QModelIndex &index) const;
+	virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+private:
+	QPixmap trustedIcon;
+	QPixmap untrustedIcon;
+};
 
-
-QString ToolChain::getVersion() const {
-	return this->version;
-}
-
-QString ToolChain::getPath() const {
-	return this->path;
-}
+#endif
