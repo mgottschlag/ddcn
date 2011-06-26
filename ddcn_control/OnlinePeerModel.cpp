@@ -26,8 +26,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "OnlinePeerModel.h"
 
+OnlinePeerModel::OnlinePeerModel() {
+}
+
 void OnlinePeerModel::clear() {
 	onlinePeers.clear();
+	// TODO: Emit proper change signal
 	reset();
 }
 
@@ -57,11 +61,17 @@ void OnlinePeerModel::updateNode(QString name, QString key, bool trusted,
 }
 
 int OnlinePeerModel::columnCount(const QModelIndex &parent) const {
+	if (parent.isValid()) {
+		return 0;
+	}
 	// Columns: Trusted status, name, key fingerprint, peer load, member of trusted group
 	return 5;
 }
 QVariant OnlinePeerModel::data(const QModelIndex &index, int role) const {
 	if (index.row() < 0 || index.row() >= onlinePeers.size()) {
+		return QVariant();
+	}
+	if (role != Qt::DisplayRole) {
 		return QVariant();
 	}
 	OnlinePeerInfo peer = onlinePeers[index.row()];
@@ -75,10 +85,20 @@ QVariant OnlinePeerModel::data(const QModelIndex &index, int role) const {
 		case 3:
 			return peer.load;
 		case 4:
-			return peer.inTrustedGroup;
+			if (peer.inTrustedGroup) {
+				return "yes";
+			} else {
+				return "no";
+			}
 		default:
 			return QVariant();
 	}
+}
+Qt::ItemFlags OnlinePeerModel::flags(const QModelIndex &index) const {
+	if (!index.isValid()) {
+		return 0;
+	}
+	return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 QVariant OnlinePeerModel::headerData(int section, Qt::Orientation orientation, int role) const {
 	switch (section) {
@@ -100,8 +120,16 @@ QModelIndex OnlinePeerModel::index(int row, int column, const QModelIndex &paren
 	return createIndex(row, column);
 }
 int OnlinePeerModel::rowCount(const QModelIndex &parent) const {
-	if (!parent.isValid()) {
+	if (parent.isValid()) {
 		return 0;
 	}
 	return onlinePeers.count();
+}
+bool OnlinePeerModel::hasChildren(const QModelIndex &parent) const {
+	// The root has children
+	if (!parent.isValid()) {
+		return true;
+	} else {
+		return false;
+	}
 }

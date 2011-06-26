@@ -116,7 +116,7 @@ signals:
 	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
 	void receivedJob(Job *job);
 	void finishedJob(Job *job, bool executed, bool success);
-	void nodeStatusChanged(QString publicKey, NodeStatus nodeStatus, QStringList groups);
+	void nodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups);
 private:
 	TrustedPeer *getTrustedPeer(const QCA::PublicKey &publicKey);
 	TrustedGroup *getTrustedGroup(const QCA::PublicKey &publicKey);

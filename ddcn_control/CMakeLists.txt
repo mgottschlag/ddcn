@@ -19,6 +19,7 @@ set(SRC
 	SettingsDialog.cpp
 	OnlinePeerModel.cpp
 	OnlineGroupModel.cpp
+	OnlinePeerItemDelegate.cpp
 )
 
 set(MOC_H

@@ -24,67 +24,48 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAINWINDOW_H_INCLUDED
-#define MAINWINDOW_H_INCLUDED
-
-#include "OnlinePeerModel.h"
-#include "OnlineGroupModel.h"
 #include "OnlinePeerItemDelegate.h"
 
-#include <QMainWindow>
-#include <QTimer>
-#include <QDBusArgument>
+#include <QApplication>
+#include <QPainter>
 
-#include "ui_MainWindow.h"
+OnlinePeerItemDelegate::OnlinePeerItemDelegate() {
+	if (!trustedIcon.load(":/icons/icons/security-high.png")) {
+		qCritical("Could not load trusted icon.");
+	}
+	untrustedIcon.load(":/icons/icons/security-low.png");
+}
 
-struct NodeStatus {
-	int maxThreads;
-	int currentThreads;
-	int localJobs;
-	int delegatedJobs;
-	int remoteJobs;
-};
+void OnlinePeerItemDelegate::paint(QPainter *painter,
+		const QStyleOptionViewItem &option, const QModelIndex &index) const {
+	if (index.column() == 0) {
+		bool trusted = index.data().toBool();
+		if (trusted) {
+			painter->drawPixmap(0, 0, trustedIcon);
+		} else {
+			painter->drawPixmap(0, 0, untrustedIcon);
+		}
+	} else if (index.column() == 3) {
+		float load = index.data().toFloat();
 
-Q_DECLARE_METATYPE(NodeStatus)
+		QStyleOptionProgressBar progressBarOption;
+		progressBarOption.rect = option.rect;
+		progressBarOption.minimum = 0;
+		progressBarOption.maximum = 100;
+		progressBarOption.progress = qRound(load * 100.0f);
+		progressBarOption.text = QString::number(progressBarOption.progress) + "%";
+		progressBarOption.textVisible = true;
 
-QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo);
-const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo);
-
-class MainWindow : public QMainWindow {
-	Q_OBJECT
-public:
-	MainWindow();
-public slots:
-	void startService();
-	void stopService();
-	void showSettings();
-	void openHelp();
-	void addToolChain();
-	void removeToolChain();
-	void refreshNetworkStatus();
-private slots:
-	void pollServiceStatus();
-	void serviceStartTimeout();
-	void updateStatusText();
-	void onNodeStatusChanged(QString publicKey, QString fingerprint,
-			NodeStatus nodeStatus, QStringList groups);
-signals:
-	void serviceStatusChanged(bool active);
-private:
-
-	Ui::MainWindow ui;
-
-	QTimer serviceStatusTimer;
-	QTimer serviceTimeoutTimer;
-
-	bool serviceActive;
-
-	QLabel statusLabel;
-
-	OnlinePeerModel onlinePeerModel;
-	OnlineGroupModel onlineGroupModel;
-
-	OnlinePeerItemDelegate onlinePeerItemDelegate;
-};
-
-#endif
+		QApplication::style()->drawControl(QStyle::CE_ProgressBar,
+				&progressBarOption, painter);
+	} else {
+		QStyledItemDelegate::paint(painter, option, index);
+	}
+}
+QSize OnlinePeerItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+	if (index.column() == 0) {
+		return QSize(22, 22);
+	} else {
+		return QStyledItemDelegate::sizeHint(option, index);
+	}
+}

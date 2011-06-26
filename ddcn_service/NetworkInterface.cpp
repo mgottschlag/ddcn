@@ -387,6 +387,7 @@ void NetworkInterface::onAribaMessage(const ariba::DataMessage &msg,
 	/*DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
 	qCritical("writeIncoming: %d", (int)ddcnMessage->getLength());
 	QByteArray message(ddcnMessage->getData(), ddcnMessage->getLength());*/
+	assert(msg.isMessage());
 	DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
 	/*qCritical("writeIncoming: %d", (int)ddcnMessage->getLength());
 	QByteArray message(ddcnMessage->getData(), ddcnMessage->getLength());*/

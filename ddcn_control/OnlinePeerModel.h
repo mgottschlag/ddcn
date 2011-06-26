@@ -39,18 +39,22 @@ struct OnlinePeerInfo {
 
 class OnlinePeerModel : public QAbstractItemModel {
 public:
+	OnlinePeerModel();
+
 	void clear();
 
 	void updateNode(QString name, QString key, bool trusted, float load, bool inTrustedGroup);
 
 	virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
 	virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+	virtual Qt::ItemFlags flags(const QModelIndex &index) const;
 	virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
 	virtual QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
 	virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
 	virtual QModelIndex parent(const QModelIndex &index) const {
 		return QModelIndex();
 	}
+	bool hasChildren(const QModelIndex &parent = QModelIndex()) const;
 private:
 	QList<OnlinePeerInfo> onlinePeers;
 };
