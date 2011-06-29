@@ -59,8 +59,8 @@ public slots:
 	 * @param parameters The compilation parameters.
 	 * @param toolChain The gcc target triple (platform, system and kernel (order may vary) /gcc-version: eg. i686-linux-gnu/4.4.5).
 	 */
-	JobResult executeJob(QStringList inputFiles, QStringList parameters,
-					   QString toolChain, QString workingPath, QDBusMessage &message);
+	JobResult executeJob(QStringList parameters, QString toolChain,
+						QString workingPath, const QDBusMessage &message);
 	void addToolChain(QString path);
 	void removeToolChain(QString path);
 	void localCompilationJobFinished(Job *job);

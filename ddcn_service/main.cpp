@@ -43,6 +43,7 @@ int main(int argc, char **argv) {
 	qDBusRegisterMetaType<ToolChainInfo>();
 	qDBusRegisterMetaType<QList<ToolChainInfo> >();
 	qDBusRegisterMetaType<NodeStatus>();
+	qDBusRegisterMetaType<JobResult>();
 	qRegisterMetaType<ariba::utility::NodeID>();
 	qRegisterMetaType<ariba::utility::LinkID>();
 	qRegisterMetaType<ariba::DataMessage>();
@@ -51,7 +52,7 @@ int main(int argc, char **argv) {
 	// Create the compiler network
 	CompilerNetwork network;
 	new CompilerNetworkAdaptor(&network);
-	//logging_rootlevel_warn();
+	logging_rootlevel_error();
 	// Create the compiler service
 	CompilerService service(&network);
 	CompilerServiceAdaptor *serviceAdaptor = new CompilerServiceAdaptor(&service);

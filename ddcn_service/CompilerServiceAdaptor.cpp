@@ -25,8 +25,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "CompilerServiceAdaptor.h"
+#include "ParameterParser.h"
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QVariant>
 
 CompilerServiceAdaptor::CompilerServiceAdaptor(CompilerService *service)
 		: QDBusAbstractAdaptor(service), service(service) {
@@ -64,15 +66,23 @@ void CompilerServiceAdaptor::onMaxThreadCountChanged(int threadCount) {
 	emit maxThreadCountChanged(threadCount);
 }
 
-JobResult CompilerServiceAdaptor::executeJob(QStringList inputFiles,
-										   QStringList parameters,
-									   QString toolChain, QString workingPath, QDBusMessage &message) {
-	Job *job = new Job(inputFiles, parameters, toolChain, false);
-	QDBusMessage *dBusMessage(&message);
+JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
+									   QString toolChain, QString workingPath,
+									   const QDBusMessage &message) {
+	//TODO DEBUG:qCritical("DBus anfrage");
+	ParameterParser parser(parameters);
+	//TODO DEBUG:qCritical("Parser durch");
+	Job *job = new Job(parser.getInputFiles(), parser.getCompilerParameters(),
+					   parser.getPreprocessingParameters(),
+					   toolChain, workingPath, false, parser.isDelegatable());
+	//TODO DEBUG:qCritical("job erzeugt");
+	message.setDelayedReply(true);
+	//TODO DEBUG:qCritical("setDelayedReply");
+	QDBusMessage *dBusMessage = new QDBusMessage(message.createReply());
+	//TODO DEBUG:qCritical("Reply created");
 	this->jobDBusMessageMap.insert(job, dBusMessage);
-	dBusMessage->setDelayedReply(true);
-	QDBusConnection::sessionBus().send(dBusMessage->createReply());
-
+	
+	//TODO DEBUG:qCritical("DBus anfrage bearbeitet");
 	service->addJob(job);
 	return JobResult();
 }
@@ -97,10 +107,8 @@ void CompilerServiceAdaptor::removeToolChain(QString path) {
 void CompilerServiceAdaptor::localCompilationJobFinished(Job *job) {
 	QDBusMessage *message(this->jobDBusMessageMap.value(job));
 	QDBusArgument argument;
-	argument << job->getJobResult();
-	//*message << job->getJobResult();
-	//*message << 5;
-	*message << argument.asVariant();
+	QVariant variant = QVariant::fromValue(job->getJobResult());
+	*message << variant;
 	QDBusConnection::sessionBus().send(*message);
 	this->jobDBusMessageMap.remove(job);
 	delete message;
@@ -112,7 +120,6 @@ ToolChainInfo CompilerServiceAdaptor::toToolChainInfo(ToolChain toolChain) {
 	info.version = toolChain.getVersion();
 	return info;
 }
-
 
 QList<ToolChainInfo> CompilerServiceAdaptor::getToolChains() {
 	QList<ToolChainInfo> toolChainInfoList;

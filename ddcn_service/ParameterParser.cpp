@@ -28,6 +28,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ParameterParser::ParameterParser(const QStringList &rawParameters) {
 	parse(rawParameters);
+	qCritical("Parser, input: %d", this->inputFiles.count());
+	qCritical("Parser, compile parameter: %d", this->compilerParameters.count());
+	qCritical("Parser, perProParameter: %d", this->preprocessingParameters.count());
 }
 ParameterParser::ParameterParser() : delegatable(false) {
 }
@@ -51,22 +54,20 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 		// If we are supposed to optimize for the host architecture, this cannot
 		// easily be done on other computers, so leave this out for now
 		if (parameter == "-mcpu=native") {
-			compilingOnly = true;
+			nativeOptimization = true;
 		}
 		if (parameter == "-mtune=native") {
-			compilingOnly = true;
+			nativeOptimization = true;
 		}
-		delegatable = compilingOnly && !nativeOptimization;
 	}
-	if (!delegatable) {
-		return;
-	}
+	delegatable = compilingOnly && !nativeOptimization;
+	
 	for (int i = 0; i < rawParameters.size(); i++) {
 		QString parameter = rawParameters[i];
 		if (parameter == "-I" || parameter == "-iquote") {
 			if (i == parameter.count() - 1) {
 				delegatable = false;
-				return;
+				continue;
 			}
 			preprocessingParameters.append(parameter);
 			i++;
@@ -77,7 +78,7 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 			// We do not need to care about any linker paths
 			if (i == parameter.count() - 1) {
 				delegatable = false;
-				return;
+				continue;
 			}
 			i++;
 		} else if (parameter.startsWith("-L")) {
@@ -85,7 +86,7 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 		} else if (parameter == "-o") {
 			if (i == parameter.count() - 1) {
 				delegatable = false;
-				return;
+				continue;
 			}
 			i++;
 			outputFiles.append(rawParameters[i]);
@@ -105,7 +106,6 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 	if (inputFiles.empty() || outputFiles.count() > 1
 			|| (!outputFiles.empty() && inputFiles.count() != 1)) {
 		delegatable = false;
-		return;
 	}
 	if (outputFiles.empty()) {
 		// No output file was specified, so we have to derive output names from

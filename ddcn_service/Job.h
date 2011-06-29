@@ -48,8 +48,9 @@ class IncomingJob;
 class Job : public QObject {
 	Q_OBJECT
 public:
-	Job(QStringList inputFiles, QStringList parameters, QString toolChain,
-		bool isRemoteJob);
+	Job(QStringList inputFiles, QStringList parameters,
+		 QStringList preprocessorParameters, QString toolChain, QString workingDir,
+		bool isRemoteJob, bool delegatable);
 	bool isRemoteJob() {
 		return this->remoteJob;
 	}
@@ -58,6 +59,9 @@ public:
 	}
 	JobResult getJobResult() {
 		return this->jobResult;
+	}
+	bool isDelegatable() {
+		return this->delegatable;
 	}
 	void execute();
 	void preProcess();
@@ -82,9 +86,13 @@ private:
 	QString consoleOutput;
 	QStringList inputFiles;
 	QStringList outputFiles;
+	bool delegatable;
+	QStringList preprocessorParameters;
 	QStringList preProcessedFiles;
 	QStringList parameters;
 	QString toolChain;
+	QString workingDir;
+// 	bool delegatable;
 	JobResult jobResult;
 	JobResult preProcessResult;
 	QProcess *gccPreProcess;
