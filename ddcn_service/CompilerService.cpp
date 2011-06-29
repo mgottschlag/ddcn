@@ -47,6 +47,7 @@ void CompilerService::addJob(Job *job) {
 	} else {
 		this->remoteJobQueue.append(job);
 	}
+	//TODO DEBUG:qCritical("Job hinzugefuegt");
 	manageJobs();
 }
 
@@ -75,6 +76,7 @@ bool CompilerService::removeJob(Job *job) {
 }
 
 void CompilerService::manageJobs() {
+	//TODO DEBUG: qCritical("Managing gestartet");
 	manageLocalJobs();
 	manageOutgoingJobs();
 }
@@ -84,10 +86,12 @@ void CompilerService::manageLocalJobs() {
 	//if there are no more jobs to compile in the localJobQueue, get back enough jobs from the network in
 	//			order to compile maxThreadCount jobs locally
 	//if there are no more (own) jobs to compile at all, start to compile remoteJobs
-	while (this->maxThreadCount > this->currentThreadCount && this->localJobQueue.count() > 0) {
+	while (this->maxThreadCount > this->currentThreadCount
+		&& this->localJobQueue.count() > 0) {
 		executeFirstJobFromList(&this->localJobQueue);
 	}
-	while (this->maxThreadCount > this->currentThreadCount && this->localJobQueue.count() == 0) {
+	while (this->maxThreadCount > this->currentThreadCount
+		&& this->localJobQueue.count() == 0) {
 		Job *job = this->network->cancelOutgoingJob();
 		if (job != NULL) {
 			executeJobLocally(job);
@@ -95,12 +99,14 @@ void CompilerService::manageLocalJobs() {
 			break;
 		}
 	}
-	while (this->maxThreadCount > this->currentThreadCount && this->remoteJobQueue.count() > 0) {
+	while (this->maxThreadCount > this->currentThreadCount
+		&& this->remoteJobQueue.count() > 0) {
 		executeFirstJobFromList(&this->remoteJobQueue);
 	}
 }
 
 void CompilerService::executeFirstJobFromList(QList<Job*> *jobList) {
+		//TODO DEBUG:qCritical("executeFirstJobFromList");
 		Job *job = jobList->first();
 		jobList->removeFirst();
 		executeJobLocally(job);
@@ -108,11 +114,13 @@ void CompilerService::executeFirstJobFromList(QList<Job*> *jobList) {
 
 
 void CompilerService::executeJobLocally(Job* job) {
+	//TODO DEBUG:qCritical("executeJobLocally");
 	connect(job,
 		SIGNAL(finished(Job*)),
 		this,
 		SLOT(onLocalCompileFinished(Job*))
 	);
+	//TODO DEBUG:qCritical("job.execute");
 	job->execute();
 	setCurrentThreadCount(++this->currentThreadCount);
 }
@@ -160,7 +168,7 @@ void CompilerService::saveToolChains()  {
 
 void CompilerService::determineAndSetMaxThreadCount() {
 	this->maxThreadCount = this->settings.value(this->settingMaxThreadCount, -1).toInt();
-	if (this->maxThreadCount == -1) {
+	if (this->maxThreadCount <= 0) {
 		setMaxThreadCount(-1);
 	}
 }
@@ -168,7 +176,7 @@ void CompilerService::determineAndSetMaxThreadCount() {
 void CompilerService::saveMaxThreadCount(int count) {
 	//int QThread::idealThreadCount () determines the number of cores (physically and virtually)
 	int systemCount = QThread::idealThreadCount();
-	this->currentThreadCount = (count >= systemCount || count < 1) ? systemCount : count;
+	this->maxThreadCount = ((count >= systemCount || count < 1) ? systemCount : count);
 	this->settings.setValue(this->settingMaxThreadCount, this->maxThreadCount);
 }
 
@@ -183,6 +191,7 @@ bool CompilerService::isToolChainAvailable(ToolChain target) {
 
 // PRIVATE SLOTS
 void CompilerService::onLocalCompileFinished(Job* job) {
+	//TODO DEBUG:qCritical("Compiler finished");
 	emit localJobCompilationFinished(job);
 	setCurrentThreadCount(--this->currentThreadCount);
 	manageJobs();

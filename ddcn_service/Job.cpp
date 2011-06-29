@@ -33,14 +33,25 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 Job::Job(QStringList inputFiles, QStringList parameters,
-		 QString toolChain, bool isRemoteJob) : preProcessListPosition(0),
-		 incomingJob(NULL), outgoingJob(NULL) {
+		QStringList preprocessorParameters,
+		QString toolChain, QString workingDir, bool isRemoteJob, bool delegatable) :
+		incomingJob(NULL), outgoingJob(NULL),
+		preProcessListPosition(0) {
+	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
+			  (inputFiles.count() <= 0) ? "[no inputFiles]" : inputFiles[0].toAscii().data(),
+			  (parameters.count() <= 0) ? "[no parameters]" : parameters[0].toAscii().data(),
+			  toolChain.toAscii().data(), (int)this->delegatable);
 	this->inputFiles = inputFiles;
 	this->parameters = parameters;
 	this->toolChain = toolChain;
 	this->remoteJob = isRemoteJob;
+	this->preprocessorParameters = preprocessorParameters;
+	this->delegatable = delegatable;
+	this->workingDir = workingDir;
 }
 
+
+//will be called by the CompilerNetwork
 void Job::preProcess() {
 	QStringList preProcessParameter;
 	if (this->preProcessListPosition < this->inputFiles.count()) {
@@ -50,9 +61,9 @@ void Job::preProcess() {
 			"ddcn_tmp_",
 			inputFile.left(inputFile.indexOf(".")));
 		preProcessParameter << "-E " << inputFile << "-o"
-									<< tmpFile.getFilename() << this->parameters;
-
-		//create a gcc process and submit the parameters
+									<< tmpFile.getFilename()
+									<< this->preprocessorParameters;
+		this->preProcessedFiles.append(tmpFile.getFilename());
 		gccPreProcess = new QProcess(this);
 		connect(gccPreProcess,
 			SIGNAL(finished(int, QProcess::ExitStatus)),
@@ -72,23 +83,13 @@ void Job::preProcess() {
 }
 
 void Job::execute() {
-	//TODO foreach (QByteArray fileContent, this->inputFiles) {
-	//gcc
-
-
-
-
-		/*
-		QTemporaryFile file(this);
-		file.setFileTemplate();
-		file.setAutoRemove(true);
-		if (file.open()) {
-			file.write(fileContent);
-			file.close();
-		}
-		this->parameters.append(file.fileName());*/
-	//}
-
+	if (this->preProcessedFiles.count() > 0) {
+		this->parameters <<	(this->preProcessedFiles);
+	} else {
+		this->parameters << this->preprocessorParameters;
+		this->parameters << this->inputFiles;
+	}
+	qCritical(QDir::currentPath().toAscii().data());
 	//create a gcc process and submit the parameters
 	gccProcess = new QProcess(this);
 	connect(gccProcess,
@@ -97,25 +98,31 @@ void Job::execute() {
 		SLOT(onExecuteFinished(int, QProcess::ExitStatus))
 	);
 	connect(gccProcess,
-		SIGNAL(error(int, QProcess::ExitStatus)),
+		SIGNAL(error(QProcess::ProcessError)),
 		this,
 		SLOT(onExecuteError(QProcess::ProcessError))
 	);
+	//TODO DEBUG:qCritical("Start Compiling");
+	gccProcess->setWorkingDirectory(this->workingDir);
+	gccProcess->setProcessChannelMode(QProcess::MergedChannels);
 	gccProcess->start("gcc", this->parameters);
 }
 
 void Job::onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+	qCritical("%d, %d, %s", (int)gccProcess->canReadLine(),
+			  gccProcess->exitCode(),
+			  gccProcess->readAll().data());
 	jobResult.consoleOutput = gccProcess->readAll();
 	jobResult.returnValue = exitCode;
 	emit finished(this);
 }
 
 void Job::onExecuteError(QProcess::ProcessError error) {
-
+	
 	jobResult.consoleOutput = gccProcess->readLine() + "\n"
 											+ getQProcessErrorDescription(error);
 	jobResult.returnValue = -1; //= Error!
-
+	
 	emit finished(this);
 }
 
@@ -129,13 +136,13 @@ void Job::onPreProcessExecuteError(QProcess::ProcessError error) {
 	preProcessResult.consoleOutput = gccProcess->readLine() + "\n"
 											+ getQProcessErrorDescription(error);
 	preProcessResult.returnValue = -1; //= Error!
-
+	
 	emit finished(this);
 }
 
 QString Job::getQProcessErrorDescription(QProcess::ProcessError error) {
 	//finished signal: finished(bool executed, int resultValue, QString consoleOutput, QList<QByteArray> outputFiles);
-	QString errorString = "Error: An unresolveable error occured.\n"; //TODO
+	QString errorString = "Error: An unresolveable error occured.\n"; //TODO 
 	switch(error) {
 		case 0: errorString = "Error: Could not start gcc process.\n"; break;
 		case 1: errorString = "Error: gcc process started successfully but crashed.\n"; break;

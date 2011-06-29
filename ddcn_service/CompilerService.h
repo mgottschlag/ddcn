@@ -34,6 +34,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QList>
 #include <QObject>
 #include <QSettings>
+#include <QThread>
 
 using namespace std;
 
@@ -47,6 +48,7 @@ public:
     void addJob(Job *job);
 
     QList<ToolChain> *getToolChains() {
+		qCritical("GetToolchains, %d", this->toolChains.count());
         return &this->toolChains;
     }
 
@@ -55,7 +57,8 @@ public:
     }
 
     int getMaxThreadCount() {
-        return this->maxThreadCount;
+       // return this->maxThreadCount;
+       return QThread::idealThreadCount();
     }
     
     void addToolChain(QString path) {

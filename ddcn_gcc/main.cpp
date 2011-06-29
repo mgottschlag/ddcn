@@ -29,6 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Application.h"
 
 int main(int argc, char **argv) {
+	qDBusRegisterMetaType<JobResult>();
 	qDBusRegisterMetaType<ToolChainInfo>();
 	qDBusRegisterMetaType<QList<ToolChainInfo> >();
 	// All our parameters are supposed to be gcc parameters, so do not pass any
