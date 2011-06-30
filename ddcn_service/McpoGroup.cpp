@@ -26,13 +26,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "McpoGroup.h"
 
-ariba::ServiceID McpoGroup::getServiceIdFromPublicKey(QCA::PublicKey publicKey) {
-	QByteArray data = publicKey.toDER();
-	uint32_t serviceId = 0;
-	for (int i = 0; i < data.count() / 4; i++) {
-		uint32_t v = (data[i * 4] << 24) + (data[i * 4 + 1] << 26)
-			+ (data[i * 4 + 2] << 8) + data[i * 4 + 3];
-		serviceId ^= v;
-	}
-	return ariba::ServiceID(serviceId);
+ariba::ServiceID McpoGroup::getServiceIdFromPublicKey(PublicKey publicKey) {
+	// TODO: Delete this function?
+	return ariba::ServiceID(publicKey.hash());
 }

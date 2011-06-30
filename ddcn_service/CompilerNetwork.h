@@ -67,25 +67,24 @@ public:
 	void setEncryption(bool encryptionEnabled);
 	bool getEncryption();
 
-	void setKeys(QCA::PublicKey publicKey, QCA::PrivateKey privateKey);
-	void generateKeys();
-	QCA::PublicKey getPublicKey();
-	QCA::PrivateKey getPrivateKey();
+	void setLocalKey(const PrivateKey &privateKey);
+	void generateLocalKey();
+	PrivateKey getLocalKey();
 
-	void addTrustedPeer(QString name, const QCA::PublicKey &publicKey);
-	void removeTrustedPeer(QString name, const QCA::PublicKey &publicKey);
+	void addTrustedPeer(QString name, const PublicKey &publicKey);
+	void removeTrustedPeer(QString name, const PublicKey &publicKey);
 	QList<TrustedPeer*> getTrustedPeers() {
 		return trustedPeers;
 	}
 
-	void addTrustedGroup(QString name, const QCA::PublicKey &publicKey);
-	void removeTrustedGroup(QString name, const QCA::PublicKey &publicKey);
+	void addTrustedGroup(QString name, const PublicKey &publicKey);
+	void removeTrustedGroup(QString name, const PublicKey &publicKey);
 	QList<TrustedGroup*> getTrustedGroups() {
 		return trustedGroups;
 	}
 
-	void addGroupMembership(QString name, const QCA::PublicKey &publicKey, const QCA::PrivateKey &privateKey);
-	void removeGroupMembership(QString name, const QCA::PublicKey &publicKey);
+	void addGroupMembership(QString name, const PrivateKey &privateKey);
+	void removeGroupMembership(QString name, const PublicKey &publicKey);
 	QList<GroupMembership*> getGroupMemberships() {
 		return groupMemberships;
 	}
@@ -100,7 +99,7 @@ public:
 	void queryNetworkStatus();
 private slots:
 	void onPeerConnected(NetworkNode *node, QString name,
-		const QCA::PublicKey &publicKey);
+		const PublicKey &publicKey);
 	void onPeerDisconnected(NetworkNode *node);
 	void onPeerChanged(NetworkNode *node, QString name);
 	void onMessageReceived(NetworkNode *node, const QByteArray &message);
@@ -109,8 +108,7 @@ private slots:
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
-	void publicKeyChanged(const QCA::PublicKey &publicKey);
-	void privateKeyChanged(const QCA::PrivateKey &privateKey);
+	void localKeyChanged(const PrivateKey &privateKey);
 	void trustedPeersChanged(QList<TrustedPeer*> trustedPeers);
 	void trustedGroupsChanged(QList<TrustedGroup*> trustedGroups);
 	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
@@ -118,9 +116,9 @@ signals:
 	void finishedJob(Job *job, bool executed, bool success);
 	void nodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups);
 private:
-	TrustedPeer *getTrustedPeer(const QCA::PublicKey &publicKey);
-	TrustedGroup *getTrustedGroup(const QCA::PublicKey &publicKey);
-	GroupMembership *getGroupMembership(const QCA::PublicKey &publicKey);
+	TrustedPeer *getTrustedPeer(const PublicKey &publicKey);
+	TrustedGroup *getTrustedGroup(const PublicKey &publicKey);
+	GroupMembership *getGroupMembership(const PublicKey &publicKey);
 
 	void saveSettings();
 
@@ -133,8 +131,7 @@ private:
 
 	QString peerName;
 	bool encryptionEnabled;
-	QCA::PublicKey publicKey;
-	QCA::PrivateKey privateKey;
+	PrivateKey localKey;
 
 	// TODO: Do we need much lookups here? A hash map then would be faster.
 	// We could need public-key based lookups a lot.
@@ -150,8 +147,6 @@ private:
 	unsigned int freeLocalSlots;
 
 	QList<OutgoingJob*> delegatedJobs;
-
-	QCA::KeyGenerator keyGenerator;
 };
 
 #endif

@@ -132,13 +132,9 @@ void PacketHeader::insertPacketHeaderLength(QByteArray &packet) {
 const ariba::ServiceID NetworkInterface::SERVICE_ID = ariba::ServiceID(42);
 
 NetworkInterface::NetworkInterface(QString name,
-		const QCA::PrivateKey &privateKey) : name(name), privateKey(privateKey),
+		const PrivateKey &privateKey) : name(name), privateKey(privateKey),
 		discoveryTimer(this) {
-	QCA::CertificateInfo certificateInfo;
-	certificateInfo.insert(QCA::CommonName, name);
-	QCA::CertificateOptions certificateOptions;
-	certificateOptions.setInfo(certificateInfo);
-	certificate = QCA::Certificate(certificateOptions, privateKey);
+	certificate = Certificate::createSelfSigned(privateKey);
 	// We use signals/slots to pass data from the Ariba thread to the Qt thread
 	connect(this, SIGNAL(aribaMessage(ariba::DataMessage, ariba::utility::NodeID, ariba::utility::LinkID)),
 		SLOT(onAribaMessage(ariba::DataMessage, ariba::utility::NodeID, ariba::utility::LinkID)), Qt::QueuedConnection);
@@ -209,7 +205,7 @@ void NetworkInterface::setName(QString name) {
 	// TODO
 }
 
-NetworkNode *NetworkInterface::getNetworkNode(const QCA::PublicKey &publicKey) {
+NetworkNode *NetworkInterface::getNetworkNode(const PublicKey &publicKey) {
 	// TODO: Too slow
 	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.begin();
 	while (it != onlineNodes.end()) {
@@ -404,8 +400,9 @@ void NetworkInterface::onAribaLinkUp(const ariba::utility::LinkID &link, const a
 		this, SLOT(onNodePacketReceived(NetworkNode*, QByteArray)));
 	connect(networkNode, SIGNAL(connectionReady(NetworkNode*)),
 		this, SLOT(onNodeConnectionReady(NetworkNode*)));
-	QCA::TLS *tls = &networkNode->getTLS();
-	tls->setCertificate(certificate, privateKey);
+	TLS *tls = &networkNode->getTLS();
+	tls->setPrivateKey(privateKey);
+	tls->setCertificate(certificate);
 	if (remote > node->getNodeId()) {
 		tls->startServer();
 	} else {

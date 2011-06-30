@@ -33,7 +33,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class TrustedGroup {
 public:
-	TrustedGroup(QString name, const QCA::PublicKey &publicKey) : name(name),
+	TrustedGroup(QString name, const PublicKey &publicKey) : name(name),
 			publicKey(publicKey), mcpoGroup(0) {
 	}
 
@@ -43,7 +43,7 @@ public:
 	QString getName() {
 		return name;
 	}
-	QCA::PublicKey getPublicKey() {
+	PublicKey getPublicKey() {
 		return publicKey;
 	}
 
@@ -55,7 +55,7 @@ public:
 	}
 private:
 	QString name;
-	QCA::PublicKey publicKey;
+	PublicKey publicKey;
 	McpoGroup *mcpoGroup;
 };
 
