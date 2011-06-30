@@ -30,6 +30,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "McpoGroup.h"
 #include "NetworkNode.h"
 #include "BootstrapConfig.h"
+#include "Protocol.h"
 
 #include <ariba/ariba.h>
 #include <ariba/utility/system/StartupInterface.h>
@@ -41,44 +42,9 @@ uint qHash(ariba::utility::NodeID nodeId);
 
 using ariba::services::mcpo::MCPO;
 
-struct PacketType {
-	enum List {
-		JobRequest,
-		JobRequestAccepted,
-		JobRequestRejected,
-		JobData,
-		JobFinished,
-		QueryNetworkResources,
-		NetworkResourcesAvailable,
-		QueryNodeStatus,
-		NodeStatus
-	};
-};
-
 Q_DECLARE_METATYPE(ariba::utility::NodeID);
 Q_DECLARE_METATYPE(ariba::utility::LinkID);
 Q_DECLARE_METATYPE(ariba::DataMessage);
-
-struct PacketHeader {
-	uint32_t size;
-	uint8_t type;
-	static void insertPacketHeaderLength(QByteArray &packet);
-} __attribute__((packed));
-
-struct NodeStatusPacket {
-	PacketHeader header;
-	unsigned short maxThreads;
-	unsigned short currentThreads;
-	unsigned short localJobs;
-	unsigned short delegatedJobs;
-	unsigned short remoteJobs;
-	unsigned short groupCount;
-
-	NodeStatusPacket() {
-		header.type = PacketType::NodeStatus;
-	}
-} __attribute__((packed));
-
 
 /**
  * This class initializes Ariba and MCPO and does the communication between the
@@ -95,9 +61,9 @@ public:
 	NetworkInterface(QString name, const PrivateKey &privateKey);
 	~NetworkInterface();
 
-	void send(NetworkNode *node, const QByteArray &message);
-	void send(McpoGroup *group, const QByteArray &message);
-	void sendToAll(const QByteArray &message);
+	void send(NetworkNode *node, const Packet &packet);
+	void send(McpoGroup *group, const Packet &packet);
+	void sendToAll(const Packet &packet);
 	McpoGroup *joinGroup(ariba::ServiceID group);
 	void leaveGroup(McpoGroup *group);
 	void setName(QString name);
@@ -108,9 +74,9 @@ signals:
 		const PublicKey &publicKey);
 	void peerDisconnected(NetworkNode *node);
 	void peerChanged(NetworkNode *node, QString name);
-	void messageReceived(NetworkNode *node, const QByteArray &message);
+	void messageReceived(NetworkNode *node, const Packet &packet);
 	void groupMessageReceived(McpoGroup *group, NetworkNode *node,
-		const QByteArray &message);
+		const Packet &packet);
 protected:
 	// Communication listener interface
 	virtual bool onLinkRequest(const ariba::utility::NodeID &remote);
@@ -155,7 +121,7 @@ private slots:
 	void onMcpoReceiveData(const ariba::DataMessage &msg);
 
 	void onNodeOutgoingDataAvailable(NetworkNode *node);
-	void onNodePacketReceived(NetworkNode *node, const QByteArray &packet);
+	void onNodePacketReceived(NetworkNode *node, const Packet &packet);
 	void onNodeConnectionReady(NetworkNode *node);
 private:
 	void peerDiscovery();

@@ -59,13 +59,13 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 	        this,
 	        SLOT(onPeerChanged(NetworkNode*, QString)));
 	connect(network,
-	        SIGNAL(messageReceived(NetworkNode*, QByteArray)),
+	        SIGNAL(messageReceived(NetworkNode*, Packet)),
 	        this,
-	        SLOT(onMessageReceived(NetworkNode*, QByteArray)));
+	        SLOT(onMessageReceived(NetworkNode*, Packet)));
 	connect(network,
-	        SIGNAL(groupMessageReceived(McpoGroup*, NetworkNode*, QByteArray)),
+	        SIGNAL(groupMessageReceived(McpoGroup*, NetworkNode*, Packet)),
 	        this,
-	        SLOT(onGroupMessageReceived(McpoGroup*, NetworkNode*, QByteArray)));
+	        SLOT(onGroupMessageReceived(McpoGroup*, NetworkNode*, Packet)));
 }
 CompilerNetwork::~CompilerNetwork() {
 	delete network
@@ -234,11 +234,7 @@ unsigned int CompilerNetwork::getFreeLocalSlots() {
 void CompilerNetwork::queryNetworkStatus() {
 	qDebug("queryNetworkStatus");
 	// Send network status requests to all connected peers
-	PacketHeader header;
-	header.type = PacketType::QueryNodeStatus;
-	QByteArray packet;
-	packet.resize(sizeof(PacketHeader));
-	memcpy(packet.data(), &header, sizeof(header));
+	Packet packet(PacketType::QueryNodeStatus);
 	network->sendToAll(packet);
 }
 
@@ -262,16 +258,14 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
 	// TODO: Nothing to do here? Maybe update TrustedPeer name
 }
-void CompilerNetwork::onMessageReceived(NetworkNode *node, const QByteArray &message) {
-	PacketHeader header;
-	memcpy(&header, message.data(), sizeof(header));
-	switch (header.type) {
+void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet) {
+	switch (packet.getType()) {
 		case PacketType::QueryNodeStatus:
 			qDebug("Node asking for node status.");
 			reportNodeStatus(node);
 			break;
 		case PacketType::NodeStatus:
-			onNodeStatusChanged(node, message);
+			onNodeStatusChanged(node, packet);
 			break;
 		default:
 			qWarning("Warning: Unknown package type received.");
@@ -279,10 +273,8 @@ void CompilerNetwork::onMessageReceived(NetworkNode *node, const QByteArray &mes
 	}
 }
 void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
-		const QByteArray &message) {
-	PacketHeader header;
-	memcpy(&header, message.data(), sizeof(header));
-	switch (header.type) {
+		const Packet &packet) {
+	switch (packet.getType()) {
 		case PacketType::QueryNetworkResources:
 			qDebug("Node asking for network resources.");
 			reportNetworkResources(node);
@@ -327,11 +319,7 @@ void CompilerNetwork::saveSettings() {
 
 void CompilerNetwork::askForFreeSlots() {
 	//  Send a message to all trusted peers
-	PacketHeader header;
-	header.type = PacketType::QueryNetworkResources;
-	QByteArray packet;
-	packet.resize(sizeof(PacketHeader));
-	memcpy(packet.data(), &header, sizeof(header));
+	Packet packet(PacketType::QueryNetworkResources);
 	foreach (TrustedPeer *trustedPeer, trustedPeers) {
 		network->send(trustedPeer->getNetworkNode(), packet);
 	}
@@ -339,53 +327,54 @@ void CompilerNetwork::askForFreeSlots() {
 	// include the group key
 	foreach (TrustedGroup *trustedGroup, trustedGroups) {
 		// Create a new packet for each group containing the group key
-		QByteArray groupPacket = packet;
-		packet.append(trustedGroup->getPublicKey().toDER());
-		network->send(trustedGroup->getMcpoGroup(), groupPacket);
+		QByteArray payload = trustedGroup->getPublicKey().toDER();
+		packet = Packet(PacketType::QueryNetworkResources, payload);
+		network->send(trustedGroup->getMcpoGroup(), packet);
 	}
 }
 
 void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
-	NodeStatusPacket packet;
+	NodeStatusPacket nodeStatus;
 	// TODO: Get real data
-	packet.maxThreads = 2;
-	packet.currentThreads = 1;
-	packet.delegatedJobs = 0;
-	packet.remoteJobs = 0;
-	packet.groupCount = groupMemberships.count();
+	nodeStatus.maxThreads = 2;
+	nodeStatus.currentThreads = 1;
+	nodeStatus.delegatedJobs = 0;
+	nodeStatus.remoteJobs = 0;
+	nodeStatus.groupCount = groupMemberships.count();
 	QByteArray packetData;
-	packetData.resize(sizeof(packet));
-	memcpy(packetData.data(), &packet, sizeof(packet));
+	packetData.resize(sizeof(nodeStatus));
+	memcpy(packetData.data(), &nodeStatus, sizeof(nodeStatus));
 	QDataStream stream(&packetData, QIODevice::Append);
 	foreach (GroupMembership *groupMembership, groupMemberships) {
 		QByteArray key = groupMembership->getPrivateKey().toDER();
 		stream << (unsigned int)key.size();
 		stream << key;
 	}
-	network->send(node, packetData);
+	Packet packet(PacketType::NodeStatus, packetData);
+	network->send(node, packet);
 }
 void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
 	// TODO
 }
 
-void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const QByteArray &packetData) {
+void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packet) {
 	qDebug("onNodeStatusChanged");
-	if ((size_t)packetData.size() < sizeof(NodeStatusPacket)) {
-		qWarning("Warning: Received too small packet.");
+	// Parse node info
+	const NodeStatusPacket *nodeStatus = packet.getPayload<NodeStatusPacket>();
+	if (!nodeStatus) {
+		qWarning("Warning: Received too small packet (%d/%d).", packet.getPayloadSize(), sizeof(*nodeStatus));
 		return;
 	}
-	// Parse node info
-	NodeStatusPacket packet;
-	memcpy(&packet, packetData.data(), sizeof(packet));
 	NodeStatus status;
-	status.currentThreads = packet.currentThreads;
-	status.maxThreads = packet.maxThreads;
-	status.delegatedJobs = packet.delegatedJobs;
-	status.localJobs = packet.localJobs;
-	status.remoteJobs = packet.remoteJobs;
+	status.currentThreads = nodeStatus->currentThreads;
+	status.maxThreads =nodeStatus->maxThreads;
+	status.delegatedJobs = nodeStatus->delegatedJobs;
+	status.localJobs = nodeStatus->localJobs;
+	status.remoteJobs = nodeStatus->remoteJobs;
 	// Parse group info
-	unsigned int groupCount = packet.groupCount;
-	QByteArray remaining = packetData.right(packetData.size() - sizeof(packet));
+	unsigned int groupCount = nodeStatus->groupCount;
+	char *groupData = (char*)packet.getPayloadData() + sizeof(NodeStatusPacket);
+	QByteArray remaining(groupData, packet.getPayloadSize() - sizeof(NodeStatusPacket));
 	QDataStream stream(remaining);
 	QStringList groupKeys;
 	for (unsigned int i = 0; i < groupCount; i++) {
