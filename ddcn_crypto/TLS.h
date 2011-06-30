@@ -82,6 +82,8 @@ private:
 	AcceptConnectState::List nonBlockigConnectAccept(int status);
 	bool doRead();
 	bool doWrite();
+	bool checkOutgoing();
+	void continueHandshake();
 
 	Certificate cert;
 	Certificate peerCert;

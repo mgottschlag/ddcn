@@ -30,6 +30,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Certificate::Certificate() : certData(NULL) {
 }
+Certificate::Certificate(const Certificate &cert) : certData(cert.certData) {
+	if (certData) {
+		certData->grab();
+	}
+}
 Certificate::~Certificate() {
 	if (certData) {
 		certData->drop();
@@ -73,6 +78,20 @@ PublicKey Certificate::getPublicKey() {
 
 bool Certificate::isValid() {
 	return certData != NULL;
+}
+
+Certificate &Certificate::operator=(const Certificate &cert) {
+	if (this == &cert) {
+		return *this;
+	}
+	if (certData) {
+		certData->drop();
+	}
+	certData = cert.certData;
+	if (certData) {
+		certData->grab();
+	}
+	return *this;
 }
 
 Certificate::Certificate(CertificateData *certData) {

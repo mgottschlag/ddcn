@@ -54,6 +54,11 @@ PublicKey::PublicKey(const PublicKey &other) : keyData(other.keyData) {
 		keyData->grab();
 	}
 }
+PublicKey::PublicKey(const PrivateKey &other) : keyData(other.keyData) {
+	if (keyData) {
+		keyData->grab();
+	}
+}
 PublicKey::~PublicKey() {
 	if (keyData) {
 		keyData->drop();
@@ -222,7 +227,7 @@ PrivateKey PrivateKey::generate(unsigned int bits) {
 		EVP_PKEY_CTX_free(context);
 		return PrivateKey();
 	}
-	EVP_PKEY *pkey;
+	EVP_PKEY *pkey = NULL;
 	if (EVP_PKEY_keygen(context, &pkey) <= 0) {
 		EVP_PKEY_CTX_free(context);
 		return PrivateKey();
