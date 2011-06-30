@@ -37,6 +37,7 @@ class PublicKey {
 public:
 	PublicKey();
 	PublicKey(const PublicKey &other);
+	PublicKey(const PrivateKey &other);
 	~PublicKey();
 
 	static PublicKey fromPEM(QString data);

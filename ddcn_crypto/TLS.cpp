@@ -60,11 +60,13 @@ bool TLS::startServer() {
 		qFatal("Could not initialize TLS context.");
 	}
 	SSL_set_bio(ssl, rbio, wbio);
-	if (doHandshake() == AcceptConnectState::Error) {
+	AcceptConnectState::List handshakeState = doHandshake();
+	if (handshakeState == AcceptConnectState::Error) {
 		return false;
-	} else {
+	} else if (handshakeState == AcceptConnectState::Finished) {
 		emit handshakeComplete();
 	}
+	checkOutgoing();
 	return true;
 }
 bool TLS::startClient() {
@@ -80,11 +82,13 @@ bool TLS::startClient() {
 		qFatal("Could not initialize TLS context.");
 	}
 	SSL_set_bio(ssl, rbio, wbio);
-	if (doHandshake() == AcceptConnectState::Error) {
+	AcceptConnectState::List handshakeState = doHandshake();
+	if (handshakeState == AcceptConnectState::Error) {
 		return false;
-	} else {
+	} else if (handshakeState == AcceptConnectState::Finished) {
 		emit handshakeComplete();
 	}
+	checkOutgoing();
 	return true;
 }
 
@@ -107,9 +111,7 @@ void TLS::write(const QByteArray &data) {
 	}
 	writeBuffer.append(data);
 	doWrite();
-	if (writeBuffer.size() > 0) {
-		emit readyReadOutgoing();
-	}
+	checkOutgoing();
 }
 QByteArray TLS::read() {
 	if (!handshaken) {
@@ -131,11 +133,7 @@ Certificate TLS::getPeerCertificate() {
 void TLS::writeIncoming(const QByteArray &data) {
 	BIO_write(rbio, data.data(), data.size());
 	if (!handshaken) {
-		if (doHandshake() == AcceptConnectState::Error) {
-			emit error();
-		} else {
-			emit handshakeComplete();
-		}
+		continueHandshake();
 	}
 	if (handshaken) {
 		doRead();
@@ -148,6 +146,11 @@ QByteArray TLS::readOutgoing() {
 	QByteArray data = toNetwork;
 	toNetwork.clear();
 	return data;
+}
+
+static int tlsVerifyCallback(X509_STORE_CTX *context, void *userdata) {
+	// TODO: At least check whether we have a certificate
+	return 1;
 }
 
 bool TLS::init(const SSL_METHOD *method) {
@@ -171,6 +174,8 @@ bool TLS::init(const SSL_METHOD *method) {
 	}
 	// Enable client authentication
 	SSL_CTX_set_verify(context, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
+	// Do not actually check the certificate, we only need the public key
+	SSL_CTX_set_cert_verify_callback(context, tlsVerifyCallback, NULL);
 	SSL_CTX_set_mode(context, SSL_MODE_ENABLE_PARTIAL_WRITE);
 	// Create SSL instance
 	ssl = SSL_new(context);
@@ -198,14 +203,16 @@ TLS::AcceptConnectState::List TLS::doHandshake() {
 }
 
 TLS::AcceptConnectState::List TLS::nonBlockigConnectAccept(int status) {
-	if (status < 0) {
-		int x = SSL_get_error(ssl, status);
-		if(x == SSL_ERROR_WANT_CONNECT || x == SSL_ERROR_WANT_READ || x == SSL_ERROR_WANT_WRITE) {
+	if (status <= 0) {
+		int error = SSL_get_error(ssl, status);
+		if (error == SSL_ERROR_WANT_CONNECT || error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE) {
 			return AcceptConnectState::TryAgain;
 		} else {
+			qDebug("Error while doing handshake: %s", ERR_error_string(ERR_get_error(), NULL));
 			return AcceptConnectState::Error;
 		}
 	} else {
+		handshaken = true;
 		// Fetch remote certificate
 		CertificateData *certData = new CertificateData();
 		certData->setCert(SSL_get_peer_certificate(ssl));
@@ -251,4 +258,32 @@ bool TLS::doWrite() {
 		}
 	}
 	return true;
+}
+bool TLS::checkOutgoing() {
+	int size = BIO_pending(wbio);
+	if (size <= 0) {
+		return false;
+	}
+	QByteArray outgoing;
+	outgoing.resize(size);
+	BIO_read(wbio, outgoing.data(), outgoing.size());
+	toNetwork.append(outgoing);
+	emit readyReadOutgoing();
+	return outgoing.size() > 0;
+}
+
+void TLS::continueHandshake() {
+	AcceptConnectState::List handshakeState = doHandshake();
+	if (handshakeState == AcceptConnectState::Error) {
+		emit error();
+	} else if (handshakeState == AcceptConnectState::Finished) {
+		emit handshakeComplete();
+		// TODO: Debug
+		//write(QString("test").toAscii());
+	}
+	if (checkOutgoing() && !handshaken) {
+		// The handshake might end with this peer sending data, in which case
+		// we have to check again whether the handshake is finished
+		continueHandshake();
+	}
 }
