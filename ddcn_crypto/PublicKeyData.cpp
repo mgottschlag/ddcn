@@ -73,8 +73,8 @@ QString PublicKeyData::getFingerprint() {
 	EVP_DigestUpdate(&context, keyData.data(), keyData.size());
 	uint digestSize = 0;
 	EVP_DigestFinal(&context, (unsigned char*)fingerprint.data(), &digestSize);
-	this->fingerprint = fingerprint;
-	return fingerprint.left(digestSize).toHex();
+	this->fingerprint = QString::fromAscii(fingerprint.left(digestSize).toHex());
+	return this->fingerprint;
 }
 
 unsigned int PublicKeyData::getHash() {
