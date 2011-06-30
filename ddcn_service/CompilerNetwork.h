@@ -102,9 +102,9 @@ private slots:
 		const PublicKey &publicKey);
 	void onPeerDisconnected(NetworkNode *node);
 	void onPeerChanged(NetworkNode *node, QString name);
-	void onMessageReceived(NetworkNode *node, const QByteArray &message);
+	void onMessageReceived(NetworkNode *node, const Packet &packet);
 	void onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
-		const QByteArray &message);
+		const Packet &packet);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
@@ -127,7 +127,7 @@ private:
 	void reportNodeStatus(NetworkNode *node);
 	void reportNetworkResources(NetworkNode *node);
 
-	void onNodeStatusChanged(NetworkNode *node, const QByteArray &packetData);
+	void onNodeStatusChanged(NetworkNode *node, const Packet &packet);
 
 	QString peerName;
 	bool encryptionEnabled;

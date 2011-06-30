@@ -28,6 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define NETWORKNODE_H_INCLUDED
 
 #include "TLS.h"
+#include "Protocol.h"
 
 #include <QString>
 #include <ariba/ariba.h>
@@ -47,10 +48,10 @@ public:
 	TrustedPeer *getTrustedPeer() {
 		return trustedPeer;
 	}
-	void sendPacket(QByteArray packet);
+	void sendPacket(const Packet &packet);
 signals:
 	void outgoingDataAvailable(NetworkNode *node);
-	void packetReceived(NetworkNode *node, const QByteArray &packet);
+	void packetReceived(NetworkNode *node, const Packet &packet);
 	void connectionReady(NetworkNode *node);
 private slots:
 	void onOutgoingDataAvailable();

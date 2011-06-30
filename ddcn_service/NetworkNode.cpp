@@ -40,13 +40,15 @@ NetworkNode::NetworkNode(ariba::utility::NodeID nodeId, ariba::utility::LinkID l
 	// TODO: Connect to TLS error signal?
 }
 
-void NetworkNode::sendPacket(QByteArray packet) {
-	if ((size_t)packet.size() < sizeof(PacketHeader)) {
-		qCritical("Sending packet without packet header.");
-		return;
+void NetworkNode::sendPacket(const Packet &packet) {
+	if (!packet.isValid()) {
+		// This must not happen, so crash here
+		qFatal("Sending invalid packet.");
 	}
-	PacketHeader::insertPacketHeaderLength(packet);;
-	tls.write(packet);
+	// TODO: We can optimize away one or two data copies here
+	// (the second one would be within TLS)
+	QByteArray packetData((const char*)packet.getRawData(), packet.getRawSize());
+	tls.write(packetData);
 }
 
 void NetworkNode::onOutgoingDataAvailable() {
@@ -56,18 +58,22 @@ void NetworkNode::onIncomingDataAvailable() {
 	incomingData += tls.read();
 	// Read packets until not enough data is left
 	PacketHeader header;
-	while ((size_t)incomingData.size() > sizeof(PacketHeader)) {
+	while ((size_t)incomingData.size() >= sizeof(PacketHeader)) {
 		uint32_t dataSize = incomingData.size();
 		memcpy(&header, incomingData.data(), sizeof(header));
 		uint32_t packetSize = qFromBigEndian(header.size);
 		if (dataSize >= packetSize) {
 			if (dataSize == packetSize) {
-				emit packetReceived(this, incomingData);
+				Packet packet = Packet::fromRawData(incomingData.left(sizeof(header) + packetSize));
+				// TODO: Disconnect if packet is invalid
+				emit packetReceived(this, packet);
 				incomingData = QByteArray();
 			} else {
 				// Leave bytes which do not form a complete packet in the queue
-				emit packetReceived(this, incomingData.left(packetSize));
-				incomingData = incomingData.right(dataSize - packetSize);
+				Packet packet = Packet::fromRawData(incomingData.left(sizeof(header) + packetSize));
+				// TODO: Disconnect if packet is invalid
+				emit packetReceived(this, packet);
+				incomingData = incomingData.mid(sizeof(header) + packetSize);
 			}
 		} else {
 			break;

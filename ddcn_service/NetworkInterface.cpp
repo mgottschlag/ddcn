@@ -37,11 +37,12 @@ uint qHash(ariba::utility::NodeID nodeId) {
 struct GroupMessage {
 	ariba::utility::NodeID nodeId;
 	ariba::ServiceID serviceId;
-	QByteArray message;
+	Packet packet;
 };
 struct PeerMessage {
 	ariba::utility::NodeID nodeId;
 	ariba::utility::LinkID linkId;
+	// This is an encrypted stream, so no Packet here
 	QByteArray message;
 };
 
@@ -155,26 +156,24 @@ NetworkInterface::~NetworkInterface() {
 	ariba::utility::StartupWrapper::stopSystem();
 }
 
-void NetworkInterface::send(NetworkNode *node, const QByteArray &message) {
+void NetworkInterface::send(NetworkNode *node, const Packet &packet) {
 	qDebug("Sending packet.");
-	node->sendPacket(message);
+	node->sendPacket(packet);
 }
-void NetworkInterface::send(McpoGroup *group, const QByteArray &message) {
-	// Fix packet header
-	QByteArray packet;
-	PacketHeader::insertPacketHeaderLength(packet);
+void NetworkInterface::send(McpoGroup *group, const Packet &packet) {
 	// Send the packet to the ariba thread
 	GroupMessage *groupMessage = new GroupMessage;
 	groupMessage->nodeId = node->getNodeId();
 	groupMessage->serviceId = group->getServiceId();
-	groupMessage->message = packet;
+	groupMessage->packet = packet;
 	SystemQueue::instance().scheduleEvent(SystemEvent(this,
 		SEND_GROUP_MESSAGE_EVENT, groupMessage));
 }
-void NetworkInterface::sendToAll(const QByteArray &message) {
+void NetworkInterface::sendToAll(const Packet &packet) {
+	// TODO: Use an MCPO broadcast here?
 	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.begin();
 	while (it != onlineNodes.end()) {
-		send(it.value(), message);
+		send(it.value(), packet);
 		it++;
 	}
 }
@@ -325,7 +324,9 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 		delete serviceId;
 	} else if (event.getType() == SEND_GROUP_MESSAGE_EVENT) {
 		GroupMessage *groupMessage = event.getData<GroupMessage>();
-		QByteArray data = groupMessage->message.toHex();
+		// TODO: Optimize aray these unnecessary copies
+		QByteArray packetData((const char*)groupMessage->packet.getRawData(), groupMessage->packet.getRawSize());
+		QByteArray data = packetData.toHex();
 		DdcnGroupMessage ddcnMessage(groupMessage->nodeId.toString(),
 				groupMessage->serviceId.toString(), data.data());
 		mcpo->sendToGroup(ddcnMessage, groupMessage->serviceId);
@@ -396,8 +397,8 @@ void NetworkInterface::onAribaLinkUp(const ariba::utility::LinkID &link, const a
 	NetworkNode *networkNode = new NetworkNode(remote, link);
 	connect(networkNode, SIGNAL(outgoingDataAvailable(NetworkNode*)),
 		this, SLOT(onNodeOutgoingDataAvailable(NetworkNode*)));
-	connect(networkNode, SIGNAL(packetReceived(NetworkNode*, QByteArray)),
-		this, SLOT(onNodePacketReceived(NetworkNode*, QByteArray)));
+	connect(networkNode, SIGNAL(packetReceived(NetworkNode*, Packet)),
+		this, SLOT(onNodePacketReceived(NetworkNode*, Packet)));
 	connect(networkNode, SIGNAL(connectionReady(NetworkNode*)),
 		this, SLOT(onNodeConnectionReady(NetworkNode*)));
 	TLS *tls = &networkNode->getTLS();
@@ -439,7 +440,14 @@ void NetworkInterface::onMcpoReceiveData(const ariba::DataMessage &msg) {
 	qCritical("Group message incoming.");
 	DdcnGroupMessage* ddcnMessage = msg.getMessage()->convert<DdcnGroupMessage>();
 	ariba::ServiceID groupId(std::atoi(ddcnMessage->getServiceId().c_str()));
-	QByteArray message = QByteArray::fromHex(ddcnMessage->getText().c_str());
+	QByteArray packetData = QByteArray::fromHex(ddcnMessage->getText().c_str());
+	// TODO: Once we get correct binary data instead of a string, we can pass a
+	// char* in here instead of QByteArray
+	Packet packet = Packet::fromRawData(packetData);
+	if (!packet.isValid()) {
+		qWarning("Received invalid group message.");
+		return;
+	}
 	// Find the sender
 	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.find(ddcnMessage->getNodeId().c_str());
 	if (it == onlineNodes.end()) {
@@ -450,7 +458,7 @@ void NetworkInterface::onMcpoReceiveData(const ariba::DataMessage &msg) {
 	if (it2 == mcpoGroups.end()) {
 		return;
 	}
-	emit groupMessageReceived(it2.value(), it.value(), message);
+	emit groupMessageReceived(it2.value(), it.value(), packet);
 }
 
 void NetworkInterface::onNodeOutgoingDataAvailable(NetworkNode *node) {
@@ -465,7 +473,7 @@ void NetworkInterface::onNodeOutgoingDataAvailable(NetworkNode *node) {
 	SystemQueue::instance().scheduleEvent(SystemEvent(this,
 		SEND_PEER_MESSAGE_EVENT, peerMessage));
 }
-void NetworkInterface::onNodePacketReceived(NetworkNode *node, const QByteArray &packet) {
+void NetworkInterface::onNodePacketReceived(NetworkNode *node, const Packet &packet) {
 	emit messageReceived(node, packet);
 }
 void NetworkInterface::onNodeConnectionReady(NetworkNode *node) {
