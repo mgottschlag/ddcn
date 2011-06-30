@@ -28,15 +28,14 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define GROUPMEMBERSHIP_H_INCLUDED
 
 #include "McpoGroup.h"
+#include "PublicKey.h"
 
 #include <QString>
-#include <qca.h>
 
 class GroupMembership {
 public:
-	GroupMembership(QString name, const QCA::PublicKey &publicKey,
-			const QCA::PrivateKey &privateKey) : name(name),
-			publicKey(publicKey), privateKey(privateKey) {
+	GroupMembership(QString name, const PrivateKey &privateKey) : name(name),
+			privateKey(privateKey) {
 	}
 	void setName(QString name) {
 		this->name = name;
@@ -44,10 +43,7 @@ public:
 	QString getName() {
 		return name;
 	}
-	QCA::PublicKey getPublicKey() {
-		return publicKey;
-	}
-	QCA::PrivateKey getPrivateKey() {
+	PrivateKey getPrivateKey() {
 		return privateKey;
 	}
 	void setMcpoGroup(McpoGroup *mcpoGroup) {
@@ -58,8 +54,7 @@ public:
 	}
 private:
 	QString name;
-	QCA::PublicKey publicKey;
-	QCA::PrivateKey privateKey;
+	PrivateKey privateKey;
 	McpoGroup *mcpoGroup;
 };
 

@@ -34,19 +34,19 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 		settings.setValue("general/name", "ddcn_node");
 	}
 	QString name = settings.value("general/name").toString();
-	QCA::PrivateKey key;
+	PrivateKey key;
 	// TODO
-	if (key.isNull()) {
-		key = keyGenerator.createRSA(2048);
+	if (!key.isValid()) {
+		key = PrivateKey::generate(2048);
 	}
 	// Load trusted peers/groups etc from file
 	// TODO
 	// Initialize ariba
 	network = new NetworkInterface(name, key);
 	connect(network,
-	        SIGNAL(peerConnected(NetworkNode*, QString, QCA::PublicKey)),
+	        SIGNAL(peerConnected(NetworkNode*, QString, PublicKey)),
 	        this,
-	        SLOT(onPeerConnected(NetworkNode*, QString, QCA::PublicKey)));
+	        SLOT(onPeerConnected(NetworkNode*, QString, PublicKey)));
 	connect(network,
 	        SIGNAL(peerDisconnected(NetworkNode*)),
 	        this,
@@ -87,27 +87,22 @@ bool CompilerNetwork::getEncryption() {
 	return encryptionEnabled;
 }
 
-void CompilerNetwork::setKeys(QCA::PublicKey publicKey, QCA::PrivateKey privateKey) {
-	this->publicKey = publicKey;
-	this->privateKey = privateKey;
+void CompilerNetwork::setLocalKey(const PrivateKey &privateKey) {
+	localKey = privateKey;
 	// TODO
 	//network->changeIdentity(peerName, publicKey);
-	emit publicKeyChanged(publicKey);
-	emit privateKeyChanged(privateKey);
+	emit localKeyChanged(privateKey);
 }
-void CompilerNetwork::generateKeys() {
+void CompilerNetwork::generateLocalKey() {
 	// TODO: Let the user choose the key length
-	QCA::PrivateKey privateKey = keyGenerator.createRSA(2048);
-	setKeys(privateKey.toPublicKey(), privateKey);
+	PrivateKey privateKey = PrivateKey::generate(2048);
+	setLocalKey(privateKey);
 }
-QCA::PublicKey CompilerNetwork::getPublicKey() {
-	return publicKey;
-}
-QCA::PrivateKey CompilerNetwork::getPrivateKey() {
-	return privateKey;
+PrivateKey CompilerNetwork::getLocalKey() {
+	return localKey;
 }
 
-void CompilerNetwork::addTrustedPeer(QString name, const QCA::PublicKey &publicKey) {
+void CompilerNetwork::addTrustedPeer(QString name, const PublicKey &publicKey) {
 	TrustedPeer *existing = getTrustedPeer(publicKey);
 	if (existing) {
 		existing->setName(name);
@@ -123,7 +118,7 @@ void CompilerNetwork::addTrustedPeer(QString name, const QCA::PublicKey &publicK
 	saveSettings();
 	emit trustedPeersChanged(trustedPeers);
 }
-void CompilerNetwork::removeTrustedPeer(QString name, const QCA::PublicKey &publicKey) {
+void CompilerNetwork::removeTrustedPeer(QString name, const PublicKey &publicKey) {
 	// TODO: Way too slow
 	foreach (TrustedPeer *trustedPeer, trustedPeers) {
 		if (trustedPeer->getPublicKey() == publicKey) {
@@ -139,7 +134,7 @@ void CompilerNetwork::removeTrustedPeer(QString name, const QCA::PublicKey &publ
 	emit trustedPeersChanged(trustedPeers);
 }
 
-void CompilerNetwork::addTrustedGroup(QString name, const QCA::PublicKey &publicKey) {
+void CompilerNetwork::addTrustedGroup(QString name, const PublicKey &publicKey) {
 	TrustedGroup *existing = getTrustedGroup(publicKey);
 	if (existing) {
 		existing->setName(name);
@@ -153,7 +148,7 @@ void CompilerNetwork::addTrustedGroup(QString name, const QCA::PublicKey &public
 	saveSettings();
 	emit trustedGroupsChanged(trustedGroups);
 }
-void CompilerNetwork::removeTrustedGroup(QString name, const QCA::PublicKey &publicKey) {
+void CompilerNetwork::removeTrustedGroup(QString name, const PublicKey &publicKey) {
 	// TODO: Way too slow
 	foreach (TrustedGroup *trustedGroup, trustedGroups) {
 		if (trustedGroup->getPublicKey() == publicKey) {
@@ -167,24 +162,24 @@ void CompilerNetwork::removeTrustedGroup(QString name, const QCA::PublicKey &pub
 	emit trustedGroupsChanged(trustedGroups);
 }
 
-void CompilerNetwork::addGroupMembership(QString name, const QCA::PublicKey &publicKey, const QCA::PrivateKey &privateKey) {
-	GroupMembership *existing = getGroupMembership(publicKey);
+void CompilerNetwork::addGroupMembership(QString name, const PrivateKey &privateKey) {
+	GroupMembership *existing = getGroupMembership(privateKey);
 	if (existing) {
 		existing->setName(name);
 		return;
 	}
-	GroupMembership *groupMembership = new GroupMembership(name, publicKey, privateKey);
+	GroupMembership *groupMembership = new GroupMembership(name, privateKey);
 	groupMemberships.append(groupMembership);
 	// Join the group
-	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(publicKey);
+	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(privateKey);
 	groupMembership->setMcpoGroup(network->joinGroup(serviceId));
 	saveSettings();
 	emit groupMembershipsChanged(groupMemberships);
 }
-void CompilerNetwork::removeGroupMembership(QString name, const QCA::PublicKey &publicKey) {
+void CompilerNetwork::removeGroupMembership(QString name, const PublicKey &publicKey) {
 	// TODO: Way too slow
 	foreach (GroupMembership *groupMembership, groupMemberships) {
-		if (groupMembership->getPublicKey() == publicKey) {
+		if (groupMembership->getPrivateKey() == publicKey) {
 			network->leaveGroup(groupMembership->getMcpoGroup());
 			groupMemberships.removeOne(groupMembership);
 			delete groupMembership;
@@ -240,7 +235,7 @@ void CompilerNetwork::queryNetworkStatus() {
 }
 
 void CompilerNetwork::onPeerConnected(NetworkNode *node, QString name,
-		const QCA::PublicKey &publicKey) {
+		const PublicKey &publicKey) {
 	TrustedPeer *trustedPeer = getTrustedPeer(publicKey);
 	if (trustedPeer) {
 		trustedPeer->setNetworkNode(node);
@@ -290,7 +285,7 @@ void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node
 	}
 }
 
-TrustedPeer *CompilerNetwork::getTrustedPeer(const QCA::PublicKey &publicKey) {
+TrustedPeer *CompilerNetwork::getTrustedPeer(const PublicKey &publicKey) {
 	// TODO: Way too slow
 	foreach (TrustedPeer *trustedPeer, trustedPeers) {
 		if (trustedPeer->getPublicKey() == publicKey) {
@@ -299,7 +294,7 @@ TrustedPeer *CompilerNetwork::getTrustedPeer(const QCA::PublicKey &publicKey) {
 	}
 	return NULL;
 }
-TrustedGroup *CompilerNetwork::getTrustedGroup(const QCA::PublicKey &publicKey) {
+TrustedGroup *CompilerNetwork::getTrustedGroup(const PublicKey &publicKey) {
 	// TODO: Way too slow
 	foreach (TrustedGroup *trustedGroup, trustedGroups) {
 		if (trustedGroup->getPublicKey() == publicKey) {
@@ -308,10 +303,10 @@ TrustedGroup *CompilerNetwork::getTrustedGroup(const QCA::PublicKey &publicKey) 
 	}
 	return NULL;
 }
-GroupMembership *CompilerNetwork::getGroupMembership(const QCA::PublicKey &publicKey) {
+GroupMembership *CompilerNetwork::getGroupMembership(const PublicKey &publicKey) {
 	// TODO: Way too slow
 	foreach (GroupMembership *groupMembership, groupMemberships) {
-		if (groupMembership->getPublicKey() == publicKey) {
+		if (groupMembership->getPrivateKey() == publicKey) {
 			return groupMembership;
 		}
 	}
@@ -355,7 +350,7 @@ void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	memcpy(packetData.data(), &packet, sizeof(packet));
 	QDataStream stream(&packetData, QIODevice::Append);
 	foreach (GroupMembership *groupMembership, groupMemberships) {
-		QByteArray key = groupMembership->getPublicKey().toDER();
+		QByteArray key = groupMembership->getPrivateKey().toDER();
 		stream << (unsigned int)key.size();
 		stream << key;
 	}
@@ -367,7 +362,7 @@ void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
 
 void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const QByteArray &packetData) {
 	qDebug("onNodeStatusChanged");
-	if (packetData.size() < sizeof(NodeStatusPacket)) {
+	if ((size_t)packetData.size() < sizeof(NodeStatusPacket)) {
 		qWarning("Warning: Received too small packet.");
 		return;
 	}
@@ -393,9 +388,9 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const QByteArray &p
 		if (stream.atEnd()) {
 			break;
 		}
-		QCA::PublicKey key = QCA::PublicKey::fromDER(keyData);
+		PublicKey key = PublicKey::fromDER(keyData);
 		groupKeys.append(key.toPEM());
 	}
-	QString fingerprint = QCA::Hash("sha1").hashToString(node->getPublicKey().toDER());
+	QString fingerprint = node->getPublicKey().fingerprint();
 	emit nodeStatusChanged(node->getPublicKey().toPEM(), fingerprint, status, groupKeys);
 }

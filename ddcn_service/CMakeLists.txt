@@ -8,7 +8,6 @@ find_package(Boost REQUIRED COMPONENTS system)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Ariba REQUIRED)
 find_package(MCPO REQUIRED)
-find_package(QCA2 REQUIRED)
 find_package(Log4cxx REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter")
@@ -51,7 +50,7 @@ set(MOC_H
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})
 
-include_directories(${ARIBA_INCLUDE_DIR} ${MCPO_INCLUDE_DIR} ${Boost_INCLUDE_DIR} ${QCA2_INCLUDE_DIR} ${LOG4CXX_INCLUDE_DIR})
+include_directories(${ARIBA_INCLUDE_DIR} ${MCPO_INCLUDE_DIR} ${Boost_INCLUDE_DIR} ${LOG4CXX_INCLUDE_DIR} ../ddcn_crypto)
 
 add_executable(ddcn_service ${SRC} ${MOC_SRC})
-target_link_libraries(ddcn_service ${QT_LIBRARIES} ${ARIBA_LIBRARY} ${PTHREAD_LIBRARY} ${MCPO_LIBRARY} ${Boost_LIBRARIES} ${QCA2_LIBRARY} ${LOG4CXX_LIBRARY})
+target_link_libraries(ddcn_service ${QT_LIBRARIES} ${ARIBA_LIBRARY} ${PTHREAD_LIBRARY} ${MCPO_LIBRARY} ${Boost_LIBRARIES} ${LOG4CXX_LIBRARY} ddcn_crypto)

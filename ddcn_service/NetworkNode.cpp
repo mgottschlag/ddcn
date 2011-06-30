@@ -30,13 +30,14 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QtEndian>
 
 NetworkNode::NetworkNode(ariba::utility::NodeID nodeId, ariba::utility::LinkID linkId) : aribaNode(nodeId),
-		aribaLink(linkId) {
+		aribaLink(linkId), trustedPeer(NULL) {
 	connect(&tls, SIGNAL(readyReadOutgoing()), this,
 		SLOT(onOutgoingDataAvailable()));
 	connect(&tls, SIGNAL(readyRead()), this,
 		SLOT(onIncomingDataAvailable()));
-	connect(&tls, SIGNAL(handshaken()), this,
-		SLOT(onHandshaken()));
+	connect(&tls, SIGNAL(handshakeComplete()), this,
+		SLOT(onHandshakeComplete()));
+	// TODO: Connect to TLS error signal?
 }
 
 void NetworkNode::sendPacket(QByteArray packet) {
@@ -74,15 +75,13 @@ void NetworkNode::onIncomingDataAvailable() {
 	}
 }
 
-void NetworkNode::onHandshaken() {
+void NetworkNode::onHandshakeComplete() {
 	qCritical("Handshaken!");
-	tls.continueAfterStep();
-	const QCA::Certificate &cert = tls.peerCertificateChain().primary();
-	if (cert.isNull()) {
-		// TODO: Fix this, we need to use a client-authenticated TLS handshake
+	Certificate cert = tls.getPeerCertificate();
+	if (!cert.isValid()) {
 		qCritical("Remote cert is null!");
 	} else {
-		publicKey = cert.subjectPublicKey();
+		publicKey = cert.getPublicKey();
 	}
 	// TODO: Peer name
 	emit connectionReady(this);

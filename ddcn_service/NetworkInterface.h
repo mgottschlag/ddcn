@@ -34,7 +34,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ariba/ariba.h>
 #include <ariba/utility/system/StartupInterface.h>
 #include <mcpo/MCPO.h>
-#include <QtCrypto>
 #include <QMutex>
 #include <QSet>
 
@@ -93,7 +92,7 @@ class NetworkInterface : public QObject,
 		public ariba::utility::SystemEventListener {
 	Q_OBJECT
 public:
-	NetworkInterface(QString name, const QCA::PrivateKey &privateKey);
+	NetworkInterface(QString name, const PrivateKey &privateKey);
 	~NetworkInterface();
 
 	void send(NetworkNode *node, const QByteArray &message);
@@ -103,10 +102,10 @@ public:
 	void leaveGroup(McpoGroup *group);
 	void setName(QString name);
 
-	NetworkNode *getNetworkNode(const QCA::PublicKey &publicKey);
+	NetworkNode *getNetworkNode(const PublicKey &publicKey);
 signals:
 	void peerConnected(NetworkNode *node, QString name,
-		const QCA::PublicKey &publicKey);
+		const PublicKey &publicKey);
 	void peerDisconnected(NetworkNode *node);
 	void peerChanged(NetworkNode *node, QString name);
 	void messageReceived(NetworkNode *node, const QByteArray &message);
@@ -167,8 +166,8 @@ private:
 	MCPO *mcpo;
 
 	QString name;
-	QCA::PrivateKey privateKey;
-	QCA::Certificate certificate;
+	PrivateKey privateKey;
+	Certificate certificate;
 
 	QMap<ariba::ServiceID, McpoGroup*> mcpoGroups;
 	// TODO: Fix this!

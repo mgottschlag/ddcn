@@ -26,6 +26,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerService.h"
 
+#include <QThread>
 
 QString CompilerService::settingToolChains("toolChains");
 QString CompilerService::settingToolChainPath("path");

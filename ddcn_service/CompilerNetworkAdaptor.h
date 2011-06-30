@@ -59,9 +59,9 @@ public slots:
 	void setEncryption(bool encryptionEnabled);
 	bool getEncryption();
 
-	void setKeys(QString publicKey, QString privateKey);
-	void generateKeys();
-	QString getPublicKey();
+	void setLocalKey(QString privateKey);
+	void generateLocalKey();
+	QString getLocalKey();
 
 	void addTrustedPeer(QString name, QString publicKey);
 	void removeTrustedPeer(QString name, QString publicKey);
@@ -71,7 +71,7 @@ public slots:
 	void removeTrustedGroup(QString name, QString publicKey);
 	QList<TrustedGroupInfo> getTrustedGroups();
 
-	void addGroupMembership(QString name, QString publicKey, QString privateKey);
+	void addGroupMembership(QString name, QString privateKey);
 	void removeGroupMembership(QString name, QString publicKey);
 	QList<GroupMembershipInfo> getGroupMemberships();
 
@@ -81,7 +81,7 @@ private slots:
 	// used to forward the signals of the encapsulated class to dbus
 	void onPeerNameChanged(QString peerName);
 	void onEncryptionChanged(bool encryptionEnabled);
-	void onPublicKeyChanged(const QCA::PublicKey &publicKey);
+	void onLocalKeyChanged(const PrivateKey &privateKey);
 	void onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers);
 	void onTrustedGroupsChanged(const QList<TrustedGroup*> &trustedGroups);
 	void onGroupMembershipsChanged(const QList<GroupMembership*> &groupMemberships);

@@ -27,9 +27,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef NETWORKNODE_H_INCLUDED
 #define NETWORKNODE_H_INCLUDED
 
+#include "TLS.h"
+
 #include <QString>
 #include <ariba/ariba.h>
-#include <qca.h>
 
 class TrustedPeer;
 
@@ -37,7 +38,7 @@ class NetworkNode : public QObject {
 	Q_OBJECT
 public:
 	NetworkNode(ariba::utility::NodeID nodeId, ariba::utility::LinkID linkId);
-	QCA::PublicKey getPublicKey() {
+	PublicKey getPublicKey() {
 		return publicKey;
 	}
 	void setTrustedPeer(TrustedPeer *trustedPeer) {
@@ -54,19 +55,18 @@ signals:
 private slots:
 	void onOutgoingDataAvailable();
 	void onIncomingDataAvailable();
-	void onHandshaken();
+	void onHandshakeComplete();
 private:
-	QCA::TLS &getTLS() {
+	TLS &getTLS() {
 		return tls;
 	}
 
-	QString name;
 	ariba::NodeID aribaNode;
 	ariba::LinkID aribaLink;
-	QCA::PublicKey publicKey;
+	PublicKey publicKey;
 	TrustedPeer *trustedPeer;
 
-	QCA::TLS tls;
+	TLS tls;
 
 	QByteArray incomingData;
 

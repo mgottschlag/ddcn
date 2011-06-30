@@ -27,8 +27,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MCPOGROUP_H_INCLUDED
 #define MCPOGROUP_H_INCLUDED
 
+#include "PublicKey.h"
+
 #include <ariba/ariba.h>
-#include <QtCrypto>
 
 class McpoGroup {
 public:
@@ -51,7 +52,7 @@ public:
 		return serviceId;
 	}
 
-	static ariba::ServiceID getServiceIdFromPublicKey(QCA::PublicKey publicKey);
+	static ariba::ServiceID getServiceIdFromPublicKey(PublicKey publicKey);
 private:
 	int refCount;
 	ariba::ServiceID serviceId;

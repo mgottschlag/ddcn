@@ -27,14 +27,15 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef TRUSTEDPEER_H_INCLUDED
 #define TRUSTEDPEER_H_INCLUDED
 
+#include "PublicKey.h"
+
 #include <QString>
-#include <qca.h>
 
 class NetworkNode;
 
 class TrustedPeer {
 public:
-	TrustedPeer(QString name, const QCA::PublicKey &publicKey) : name(name),
+	TrustedPeer(QString name, const PublicKey &publicKey) : name(name),
 			publicKey(publicKey), node(NULL) {
 	}
 
@@ -44,7 +45,7 @@ public:
 	QString getName() {
 		return name;
 	}
-	QCA::PublicKey getPublicKey() {
+	PublicKey getPublicKey() {
 		return publicKey;
 	}
 
@@ -56,7 +57,7 @@ public:
 	}
 private:
 	QString name;
-	QCA::PublicKey publicKey;
+	PublicKey publicKey;
 	NetworkNode *node;
 };
 

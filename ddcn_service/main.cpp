@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 	qRegisterMetaType<ariba::utility::LinkID>();
 	qRegisterMetaType<ariba::DataMessage>();
 	// Initialize crypto framework
-	QCA::Initializer qcaInitializer;
+	TLS::initialize();
 	// Create the compiler network
 	CompilerNetwork network;
 	new CompilerNetworkAdaptor(&network);
