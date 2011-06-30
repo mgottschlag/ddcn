@@ -27,17 +27,20 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CompilerNetwork.h"
 
 CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
-		freeLocalSlots(0) {
+		freeLocalSlots(0), settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	// Load peer name and public key from configuration
-	QSettings settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn");
-	if (!settings.value("general/name").isValid()) {
-		settings.setValue("general/name", "ddcn_node");
+	if (!settings.value("name").isValid()) {
+		settings.setValue("name", "ddcn_node");
 	}
 	QString name = settings.value("general/name").toString();
-	PrivateKey key;
-	// TODO
+	// Load key from file in the settings directory
+	QString keyFile = QFileInfo(settings.fileName()).absolutePath() + "/privkey.pem";
+	PrivateKey key = PrivateKey::load(keyFile);
 	if (!key.isValid()) {
 		key = PrivateKey::generate(2048);
+		if (!key.save(keyFile)) {
+			qWarning("Warning: Could not save local private key!");
+		}
 	}
 	// Load trusted peers/groups etc from file
 	// TODO
@@ -89,8 +92,13 @@ bool CompilerNetwork::getEncryption() {
 
 void CompilerNetwork::setLocalKey(const PrivateKey &privateKey) {
 	localKey = privateKey;
-	// TODO
+	// TODO: Change key in NetworkInterface
 	//network->changeIdentity(peerName, publicKey);
+	// Save key
+	QString keyFile = QFileInfo(settings.fileName()).absolutePath() + "/privkey.pem";
+	if (!privateKey.save(keyFile)) {
+		qWarning("Warning: Could not save local private key!");
+	}
 	emit localKeyChanged(privateKey);
 }
 void CompilerNetwork::generateLocalKey() {

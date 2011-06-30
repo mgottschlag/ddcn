@@ -147,6 +147,8 @@ private:
 	unsigned int freeLocalSlots;
 
 	QList<OutgoingJob*> delegatedJobs;
+
+	QSettings settings;
 };
 
 #endif
