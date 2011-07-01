@@ -26,8 +26,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerNetwork.h"
 
-CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
-		freeLocalSlots(0), settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
+CompilerNetwork::CompilerNetwork() : encryptionEnabled(true), freeLocalSlots(0),
+		lastJobId(0), settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	// Load peer name and public key from configuration
 	if (!settings.value("name").isValid()) {
 		settings.setValue("name", "ddcn_node");
@@ -68,8 +68,13 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 	        SLOT(onGroupMessageReceived(McpoGroup*, NetworkNode*, Packet)));
 }
 CompilerNetwork::~CompilerNetwork() {
-	delete network
-;
+	foreach (OutgoingJobRequest *request, outgoingJobRequests) {
+		delete request;
+	}
+	foreach (IncomingJobRequest *request, incomingJobRequests) {
+		delete request;
+	}
+	delete network;
 }
 
 void CompilerNetwork::setPeerName(QString peerName) {
@@ -201,7 +206,8 @@ void CompilerNetwork::removeGroupMembership(QString name, const PublicKey &publi
 void CompilerNetwork::delegateOutgoingJob(Job *job) {
 	waitingJobs.append(job);
 	if (freeRemoteSlots.size() > 0) {
-		// TODO: Delegate the job
+		// Create a job request for the job
+		createJobRequests();
 		// If the free remote slots are too little, ask all nodes for free slots
 		// TODO: Better threshold here, like 0.5 * maxFreeRemoteSlots
 		if (freeRemoteSlots.count() < 4) {
@@ -254,6 +260,8 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	// TODO
 	// Abort remote jobs from this node
 	// TODO
+	// Abort job requests directed to this node
+	// TODO
 }
 void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
 	// TODO: Nothing to do here? Maybe update TrustedPeer name
@@ -261,10 +269,20 @@ void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
 void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet) {
 	switch (packet.getType()) {
 		case PacketType::JobRequest:
+			onIncomingJobRequest(node, packet);
+			break;
 		case PacketType::JobRequestAccepted:
+			// Really delegate the first job in the queue now
+			// TODO
+			break;
 		case PacketType::JobRequestRejected:
+			// Remove outgoing job request
+			// TODO
+			break;
 		case PacketType::JobData:
+		case PacketType::JobDataReceived:
 		case PacketType::JobFinished:
+		case PacketType::AbortJob:
 			// TODO
 			break;
 		case PacketType::QueryNetworkResources:
@@ -431,4 +449,57 @@ void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packe
 	freeSlots.node = node;
 	freeSlots.slotCount = availableCount;
 	freeRemoteSlots.append(freeSlots);
+	// If we have waiting jobs which can now be sent out, create a request
+	createJobRequests();
+}
+
+void CompilerNetwork::createJobRequests() {
+	// Send job requests for waiting jobs as long as there are free slots available
+	while (freeRemoteSlots.size() > 0 && outgoingJobRequests.size() < waitingJobs.size()) {
+		FreeCompilerSlots &nextSlots = freeRemoteSlots[0];
+		// Create request
+		// TODO: The request needs a timeout so that we do not wait forever
+		OutgoingJobRequest *request = new OutgoingJobRequest;
+		request->target = nextSlots.node;
+		request->id = generateJobId();
+		outgoingJobRequests.append(request);
+		Packet packet(PacketType::JobRequest, qToBigEndian(request->id));
+		network->send(request->target, packet);
+		// Remove one free slot from the list
+		nextSlots.slotCount--;
+		if (nextSlots.slotCount == 0) {
+			freeRemoteSlots.removeFirst();
+		}
+	}
+}
+
+void CompilerNetwork::onIncomingJobRequest(NetworkNode *node, const Packet &packet) {
+	qDebug("onIncomingJobRequest");
+	// Get job id
+	bool parsingError = false;
+	unsigned int id = 0;
+	const unsigned int *idPtr = packet.getPayload<unsigned int>();
+	if (idPtr) {
+		id = qFromBigEndian(*idPtr);
+	} else {
+		parsingError = true;
+	}
+	// Reject the request if necessary
+	if (freeLocalSlots == 0 || parsingError) {
+		// Request request
+		Packet reply(PacketType::JobRequestRejected);
+		network->send(node, reply);
+		return;
+	}
+	// Create an incoming job request
+	// TODO: Create a timeout so that we do not wait forever
+	IncomingJobRequest *request = new IncomingJobRequest;
+	request->source = node;
+	request->id = id;
+	incomingJobRequests.append(request);
+	// Send a positive reply
+	Packet reply(PacketType::JobRequestAccepted, qToBigEndian(id));
+	network->send(node, reply);
+	// Consume one local slot
+	// TODO: Should this already be done here, or only later when the Job is created?
 }
