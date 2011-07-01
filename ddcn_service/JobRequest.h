@@ -24,77 +24,20 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef JOBREQUEST_H_
-#define JOBREQUEST_H_
+#ifndef JOBREQUEST_H_INCLUDED
+#define JOBREQUEST_H_INCLUDED
 
-#include "NetworkNode.h"
-#include "Job.h"
-#include "ToolChain.h"
+class NetworkNode;
 
-#include <QList>
-
-
-class JobRequest{
-
-public:
-	/**
-	 * Creates a new JobRequest.
-	 * @param sourcePeer the OnlinePeer that is responsible (that created the request).
-	 * @param maxNumberOfAcceptedJobs the maximum number of jobs the peer accepts.
-	 */
-	JobRequest(NetworkNode *sourcePeer, int maxNumberOfAcceptedJobs);
-	/**
-	 * Returns the target peer of the request.
-	 * @return the target peer of the request.
-	 */
-	NetworkNode *getTargetPeer();
-	/**
-	 * Returns the source peer of the request.
-	 * @return the source peer of the request.
-	 */
-	NetworkNode *getSourcePeer();
-	/**
-	 * Returns the number of jobs accepted by this peer.
-	 * @return the number of jobs accepted by this peer.
-	 */
-	int getNumberOfAcceptedJobs();
-	/**
-	 * Returns the List of jobs.
-	 * @return the List of jobs.
-	 */
-	QList<Job*> getJobList();
-	/**
-	 * Returns the Tool chain for this jobs.
-	 * @return the Tool chain for this jobs.
-	 */
-	ToolChain *getToolChain();
-	/**
-	 * Sets the target peer where to send this request to.
-	 * @param targetPeer  the target peer where to send this request to.
-	 */
-	void setTargetPeer(NetworkNode *targetPeer);
-	/**
-	 * Sets the job list to pass with this job request.
-	 * If a job list with a number of entries greater than the number of maximum accepted requests is entered,
-	 * only the first maxNumberOfAcceptedJobs Jobs are accepted.
-	 * @param jobList the job list to pass with this job request.
-	 * @return true, if the job list has been added.
-	 */
-	bool addJobList(QList<Job*> jobList);
-	/**
-	 * Adds a given job to the job list and returns the success of the operation.
-	 * Adding a job will fail, if the number of jobs in the list already reached maxNumberOfAcceptedJobs.
-	 * @param the job to add to the list.
-	 * @return true if the job has been added.
-	 */
-	bool addJob(Job *job);
-
-private:
-	NetworkNode *targetPeer;
-	NetworkNode *sourcePeer;
-	ToolChain *toolChain;
-	int maxNumberOfAcceptedJobs;
-	QList<Job*> jobList;
+struct IncomingJobRequest {
+	NetworkNode *source;
+	unsigned int id;
 };
 
-#endif /* JOBREQUEST_H_ */
+struct OutgoingJobRequest {
+	NetworkNode *target;
+	unsigned int id;
+};
+
+
+#endif

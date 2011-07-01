@@ -130,6 +130,13 @@ private:
 	void onNodeStatusChanged(NetworkNode *node, const Packet &packet);
 	void onNetworkResourcesAvailable(NetworkNode *node, const Packet &packet);
 
+	void createJobRequests();
+	void onIncomingJobRequest(NetworkNode *node, const Packet &packet);
+
+	unsigned int generateJobId() {
+		return ++lastJobId;
+	}
+
 	QString peerName;
 	bool encryptionEnabled;
 	PrivateKey localKey;
@@ -148,6 +155,11 @@ private:
 	unsigned int freeLocalSlots;
 
 	QList<OutgoingJob*> delegatedJobs;
+
+	QList<OutgoingJobRequest*> outgoingJobRequests;
+	QList<IncomingJobRequest*> incomingJobRequests;
+
+	unsigned int lastJobId;
 
 	QSettings settings;
 };

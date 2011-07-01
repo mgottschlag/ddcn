@@ -23,7 +23,6 @@ set(SRC
 	CompilerServiceAdaptor.cpp
 	InputOutputFilePair.cpp
 	Job.cpp
-	JobRequest.cpp
 	DBusStructs.cpp
 	NetworkInterface.cpp
 	McpoGroup.cpp
@@ -40,7 +39,6 @@ set(MOC_H
 	CompilerNetwork.h
 	CompilerNetworkAdaptor.h
 	InputOutputFilePair.h
-	JobRequest.h
 	Job.h
 	TemporaryFile.h
 	NetworkInterface.h
