@@ -128,6 +128,7 @@ private:
 	void reportNetworkResources(NetworkNode *node);
 
 	void onNodeStatusChanged(NetworkNode *node, const Packet &packet);
+	void onNetworkResourcesAvailable(NetworkNode *node, const Packet &packet);
 
 	QString peerName;
 	bool encryptionEnabled;

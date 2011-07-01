@@ -260,6 +260,20 @@ void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
 }
 void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet) {
 	switch (packet.getType()) {
+		case PacketType::JobRequest:
+		case PacketType::JobRequestAccepted:
+		case PacketType::JobRequestRejected:
+		case PacketType::JobData:
+		case PacketType::JobFinished:
+			// TODO
+			break;
+		case PacketType::QueryNetworkResources:
+			qDebug("Node asking for available resources.");
+			reportNetworkResources(node);
+			break;
+		case PacketType::NetworkResourcesAvailable:
+			onNetworkResourcesAvailable(node, packet);
+			break;
 		case PacketType::QueryNodeStatus:
 			qDebug("Node asking for node status.");
 			reportNodeStatus(node);
@@ -318,7 +332,9 @@ void CompilerNetwork::saveSettings() {
 }
 
 void CompilerNetwork::askForFreeSlots() {
-	//  Send a message to all trusted peers
+	// Send a message to all trusted peers
+	// TODO: Maybe include the toolchain version here? Might reduce overall
+	// traffic generated
 	Packet packet(PacketType::QueryNetworkResources);
 	foreach (TrustedPeer *trustedPeer, trustedPeers) {
 		network->send(trustedPeer->getNetworkNode(), packet);
@@ -354,7 +370,8 @@ void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	network->send(node, packet);
 }
 void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
-	// TODO
+	Packet packet(PacketType::NetworkResourcesAvailable, freeLocalSlots);
+	network->send(node, packet);
 }
 
 void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packet) {
@@ -362,7 +379,8 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 	// Parse node info
 	const NodeStatusPacket *nodeStatus = packet.getPayload<NodeStatusPacket>();
 	if (!nodeStatus) {
-		qWarning("Warning: Received too small packet (%d/%d).", packet.getPayloadSize(), sizeof(*nodeStatus));
+		qWarning("Warning: Received too small packet (%d instead of %d).",
+				packet.getPayloadSize(), (int)sizeof(*nodeStatus));
 		return;
 	}
 	NodeStatus status;
@@ -390,4 +408,27 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 	}
 	QString fingerprint = node->getPublicKey().fingerprint();
 	emit nodeStatusChanged(node->getPublicKey().toPEM(), fingerprint, status, groupKeys);
+}
+
+void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packet &packet) {
+	qDebug("onNetworkResourcesAvailable");
+	if (packet.getPayloadSize() != sizeof(unsigned int)) {
+		qWarning("Wrong packet size (onNetworkResourcesAvailable(): %d instead of %d).",
+				packet.getPayloadSize(), (int)sizeof(unsigned int));
+		return;
+	}
+	unsigned int availableCount = qFromBigEndian(*(unsigned int*)packet.getPayloadData());
+	if (availableCount == 0) {
+		return;
+	}
+	// TODO: It is possible to DOS the client here by passing in a huge value
+	// This is not a proper fix as the peer can just send the packet repeatedly
+	if (availableCount > 16) {
+		availableCount = 16;
+	}
+	// Register free remote slots for later use
+	FreeCompilerSlots freeSlots;
+	freeSlots.node = node;
+	freeSlots.slotCount = availableCount;
+	freeRemoteSlots.append(freeSlots);
 }
