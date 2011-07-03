@@ -27,7 +27,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CompilerNetwork.h"
 
 CompilerNetwork::CompilerNetwork() : encryptionEnabled(true), freeLocalSlots(0),
-		lastJobId(0), settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
+		freeRemoteSlotCount(0), maxFreeRemoteSlotCount(0), lastJobId(0),
+		settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	// Load peer name and public key from configuration
 	if (!settings.value("name").isValid()) {
 		settings.setValue("name", "ddcn_node");
@@ -205,17 +206,8 @@ void CompilerNetwork::removeGroupMembership(QString name, const PublicKey &publi
 
 void CompilerNetwork::delegateOutgoingJob(Job *job) {
 	addWaitingJob(job);
-	if (freeRemoteSlots.size() > 0) {
-		// Create a job request for the job
-		createJobRequests();
-		// If the free remote slots are too little, ask all nodes for free slots
-		// TODO: Better threshold here, like 0.5 * maxFreeRemoteSlots
-		if (freeRemoteSlots.count() < 4) {
-			askForFreeSlots();
-		}
-	} else {
-		askForFreeSlots();
-	}
+	// Create a job request for the job
+	createJobRequests();
 }
 Job *CompilerNetwork::cancelOutgoingJob() {
 	// Cancel a job which has not yet been delegated
@@ -256,11 +248,17 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	if (node->getTrustedPeer()) {
 		node->getTrustedPeer()->setNetworkNode(NULL);
 	}
-	// Reject local jobs delegated to this node
+	// Local jobs delegated to this node have been rejected
 	for (int i = delegatedJobs.size() - 1; i >= 0; i--) {
 		if (delegatedJobs[i]->getTargetPeer() == node) {
-			emit finishedJob(delegatedJobs[i]->getJob(), false, false);
+			// Move job to waiting list
+			delegatedJobs[i]->getJob()->setOutgoingJob(NULL);
+			waitingPreprocessedJobs.append(delegatedJobs[i]->getJob());
+			delete delegatedJobs[i];
 			delegatedJobs.removeAt(i);
+			// We might have to create more job requests
+			// TODO: Also ask for free remote slots?
+			createJobRequests();
 		}
 	}
 	// Abort remote jobs from this node
@@ -514,11 +512,18 @@ void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packe
 	freeSlots.node = node;
 	freeSlots.slotCount = availableCount;
 	freeRemoteSlots.append(freeSlots);
+	freeRemoteSlotCount += availableCount;
+	// As soon as the remote slot count grows, set the new maximum
+	maxFreeRemoteSlotCount = freeRemoteSlotCount;
 	// If we have waiting jobs which can now be sent out, create a request
 	createJobRequests();
 }
 
 void CompilerNetwork::createJobRequests() {
+	// Ask for more remote slots as soon as we have spent 75% of the previous slots
+	if (freeRemoteSlotCount <= maxFreeRemoteSlotCount / 4) {
+		askForFreeSlots();
+	}
 	// Send job requests for waiting jobs as long as there are free slots available
 	while (freeRemoteSlots.size() > 0 && outgoingJobRequests.size() < (int)getWaitingJobCount()) {
 		FreeCompilerSlots &nextSlots = freeRemoteSlots[0];
@@ -541,6 +546,7 @@ void CompilerNetwork::createJobRequests() {
 		if (nextSlots.slotCount == 0) {
 			freeRemoteSlots.removeFirst();
 		}
+		freeRemoteSlotCount--;
 	}
 }
 
