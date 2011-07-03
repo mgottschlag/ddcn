@@ -257,7 +257,6 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 			delete delegatedJobs[i];
 			delegatedJobs.removeAt(i);
 			// We might have to create more job requests
-			// TODO: Also ask for free remote slots?
 			createJobRequests();
 		}
 	}
@@ -275,6 +274,7 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	}
 	for (int i = incomingJobRequests.size() - 1; i >= 0; i--) {
 		if (incomingJobRequests[i]->source == node) {
+			delete incomingJobRequests[i];
 			incomingJobRequests.removeAt(i);
 		}
 	}
@@ -353,8 +353,7 @@ void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node
 	}
 }
 
-void CompilerNetwork::onPreprocessingFinished(Job *job, int returnValue,
-		const QByteArray &stdout, const QByteArray &stderr) {
+void CompilerNetwork::onPreprocessingFinished(Job *job) {
 	int waitingJobIndex = -1;
 	for (int i = 0; i < waitingPreprocessingJobs.count(); i++) {
 		if (waitingPreprocessingJobs[i] == job) {
@@ -367,8 +366,9 @@ void CompilerNetwork::onPreprocessingFinished(Job *job, int returnValue,
 		return;
 	}
 	// If an error occurred, the job is finished
-	if (returnValue != 0) {
-		job->setFinished(returnValue, stdout, stderr);
+	JobResult result = job->getPreprocessingResult();
+	if (result.returnValue != 0) {
+		job->setFinished(result.returnValue, result.stdout, result.stderr);
 		return;
 	}
 	// Insert job into waitingPreprocessedJobs if it is in waitingPreprocessingJobs
@@ -649,12 +649,55 @@ void CompilerNetwork::onJobRequestRejected(NetworkNode *node, const Packet &pack
 
 void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 	qDebug("onJobData");
+	QByteArray packetData((const char*)packet.getPayloadData(), packet.getPayloadSize());
+	QDataStream stream(packetData);
+	unsigned int id;
+	stream >> id;
+	id = qFromBigEndian(id);
+	bool requestFound = false;
+	for (int i = 0; i < incomingJobRequests.size(); i++) {
+		if (incomingJobRequests[i]->source == node && incomingJobRequests[i]->id == id) {
+			requestFound = true;
+			delete incomingJobRequests[i];
+			incomingJobRequests.removeAt(i);
+			break;
+		}
+	}
+	if (!requestFound) {
+		qWarning("onJobData(): Invaild job id.");
+	}
+	// Parse packet data
+	QString toolchain;
+	stream >> toolchain;
+	QStringList compilerParameters;
+	stream >> compilerParameters;
+	QList<QByteArray> fileContent;
+	stream >> fileContent;
 	// Create input files
-	// TODO
+	QStringList inputFiles;
+	QStringList outputFiles;
+	for (int i = 0; i < fileContent.size(); i++) {
+		InputOutputFilePair filePair(".c", ".o");
+		inputFiles.append(filePair.getInputFilename());
+		outputFiles.append(filePair.getOutputFilename());
+		QFile inputFile(filePair.getInputFilename());
+		if (!inputFile.open(QIODevice::WriteOnly)) {
+			qFatal("Could not open previously created temporary file.");
+		}
+		inputFile.write(fileContent[i]);
+		inputFile.close();
+	}
 	// Create job
-	// TODO
-	// Start job
-	// TODO
+	Job *job = new Job(inputFiles, outputFiles, QStringList(), QStringList(),
+			compilerParameters, toolchain, QDir::tempPath(), true, false,
+			QByteArray());
+	IncomingJob *incoming = new IncomingJob(node, job, id);
+	job->setIncomingJob(incoming);
+	emit receivedJob(job);
+	// TODO: Connect to Job::finished()
+	// Send packet indicating that the job was received
+	Packet reply(PacketType::JobDataReceived, qToBigEndian(id));
+	network->send(node, reply);
 }
 void CompilerNetwork::onJobDataReceived(NetworkNode *node, const Packet &packet) {
 	qDebug("onJobDataReceived");
@@ -698,6 +741,7 @@ void CompilerNetwork::onAbortJob(NetworkNode *node, const Packet &packet) {
 	// Cancel an incoming job request if it has not
 	for (int i = incomingJobRequests.size() - 1; i >= 0; i--) {
 		if (incomingJobRequests[i]->source == node && incomingJobRequests[i]->id == id) {
+			delete incomingJobRequests[i];
 			incomingJobRequests.removeAt(i);
 			return;
 		}
@@ -766,16 +810,35 @@ void CompilerNetwork::preprocessWaitingJob() {
 	waitingJobs.removeLast();
 	waitingPreprocessingJobs.append(job);
 	// Start preprocessing
-	connect(job, SIGNAL(preProcessFinished(Job*, int, QByteArray, QByteArray)),
-			this, SLOT(onPreprocessingFinished(Job*, int, QByteArray, QByteArray)));
+	connect(job, SIGNAL(preProcessFinished(Job*)),
+			this, SLOT(onPreprocessingFinished(Job*)));
 	job->preProcess();
 }
 
 void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	// Collect input data
-	// TODO
+	QStringList inputFiles = job->getPreprocessedFiles();
+	QList<QByteArray> fileContent;
+	foreach (QString fileName, inputFiles) {
+		QFile file(fileName);
+		if (!file.open(QIODevice::ReadOnly)) {
+			qFatal("Could not open previously created temporary file.");
+		}
+		fileContent.append(file.readAll());
+	}
 	// Get parameters
-	// TODO
+	QStringList compilerParameters = job->getCompilerParameters();
+	QString toolchain = job->getToolchain();
 	// Create job data packet
-	// TODO
+	QByteArray packetData;
+	QDataStream stream(&packetData, QIODevice::WriteOnly);
+	stream << qToBigEndian(request->id);
+	stream << toolchain;
+	stream << compilerParameters;
+	stream << fileContent;
+	Packet packet(PacketType::JobData, packetData);
+	network->send(request->target, packet);
+	// Store outgoing job info
+	OutgoingJob *outgoing = new OutgoingJob(request->target, job, request->id);
+	job->setOutgoingJob(outgoing);
 }
