@@ -262,7 +262,7 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	}
 	// Abort remote jobs from this node
 	for (int i = incomingJobs.size() - 1; i >= 0; i--) {
-		if (incomingJobs[i]->getTargetPeer() == node) {
+		if (incomingJobs[i]->getSourcePeer() == node) {
 			// Kill the job
 			// TODO: CompilerService does not yet react to this
 			emit remoteJobAborted(incomingJobs[i]->getJob());
@@ -372,12 +372,38 @@ void CompilerNetwork::onPreprocessingFinished(Job *job) {
 		return;
 	}
 	// Insert job into waitingPreprocessedJobs if it is in waitingPreprocessingJobs
-	// TODO: We also have to store preprocessor output!
 	waitingPreprocessingJobs.removeAt(waitingJobIndex);
 	waitingPreprocessedJobs.append(job);
 	// Delegate the job if possible
 	// TODO: We have to keep a list of the requests which have been accepted but
 	// no job has been sent
+}
+void CompilerNetwork::onJobFinished(Job *job) {
+	IncomingJob *incoming = job->getIncomingJob();
+	assert(incoming != NULL);
+	// Fetch output data
+	JobResult result = job->getJobResult();
+	QList<QByteArray> fileContent;
+	if (result.returnValue == 0) {
+		QStringList outputFiles = job->getOutputFiles();
+		foreach (QString fileName, outputFiles) {
+			QFile file(fileName);
+			if (!file.open(QIODevice::ReadOnly)) {
+				qFatal("onJobFinished(): Could not read previously created temporary file.");
+			}
+			fileContent.append(file.readAll());
+		}
+	}
+	// Send job result
+	QByteArray packetData;
+	QDataStream stream(&packetData, QIODevice::WriteOnly);
+	stream << qToBigEndian(incoming->getId());
+	stream << qToBigEndian(result.returnValue);
+	stream << result.stdout;
+	stream << result.stderr;
+	stream << fileContent;
+	Packet packet(PacketType::JobFinished, packetData);
+	network->send(incoming->getSourcePeer(), packet);
 }
 
 TrustedPeer *CompilerNetwork::getTrustedPeer(const PublicKey &publicKey) {
@@ -665,6 +691,7 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 	}
 	if (!requestFound) {
 		qWarning("onJobData(): Invaild job id.");
+		return;
 	}
 	// Parse packet data
 	QString toolchain;
@@ -693,8 +720,8 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 			QByteArray());
 	IncomingJob *incoming = new IncomingJob(node, job, id);
 	job->setIncomingJob(incoming);
+	connect(job, SIGNAL(finished(Job*)), this, SLOT(onJobFinished(Job*)));
 	emit receivedJob(job);
-	// TODO: Connect to Job::finished()
 	// Send packet indicating that the job was received
 	Packet reply(PacketType::JobDataReceived, qToBigEndian(id));
 	network->send(node, reply);
@@ -707,12 +734,56 @@ void CompilerNetwork::onJobDataReceived(NetworkNode *node, const Packet &packet)
 }
 void CompilerNetwork::onJobFinished(NetworkNode *node, const Packet &packet) {
 	qDebug("onJobFinished");
+	QByteArray packetData((const char*)packet.getPayloadData(), packet.getPayloadSize());
+	QDataStream stream(packetData);
+	unsigned int id;
+	stream >> id;
+	id = qFromBigEndian(id);
+	OutgoingJob *outgoing = NULL;
+	int outgoingIndex = -1;
+	for (int i = 0; i < delegatedJobs.size(); i++) {
+		if (delegatedJobs[i]->getTargetPeer() == node && delegatedJobs[i]->getId() == id) {
+			outgoing = delegatedJobs[i];
+			outgoingIndex = i;
+			break;
+		}
+	}
+	if (outgoing == NULL) {
+		qWarning("onJobFinished(): Invaild job id.");
+		return;
+	}
+	Job *job = outgoing->getJob();
 	// Get output data
-	// TODO
+	int returnValue;
+	stream >> returnValue;
+	returnValue = qFromBigEndian(returnValue);
+	QByteArray stdout;
+	stream >> stdout;
+	QByteArray stderr;
+	stream >> stderr;
+	QList<QByteArray> outputFileContent;
+	stream >> outputFileContent;
 	// Create output files
-	// TODO
+	if (outputFileContent.size() > job->getOutputFiles().size()) {
+		qWarning("onJobFinished(): Received too many output files.");
+		outputFileContent = outputFileContent.mid(0, job->getOutputFiles().size());
+	}
+	for (int i = 0; i < outputFileContent.size(); i++) {
+		QFile file(job->getOutputFiles()[i]);
+		if (!file.open(QIODevice::WriteOnly)) {
+			qWarning("Could not open output file.");
+			// TODO: Let the job fail here
+			continue;
+		}
+		file.write(outputFileContent[i]);
+	}
 	// Finish job
-	// TODO
+	job->setFinished(returnValue, stdout, stderr);
+	// Delete the job
+	job->setOutgoingJob(NULL);
+	delete outgoing;
+	delegatedJobs.removeAt(outgoingIndex);
+	delete job;
 }
 void CompilerNetwork::onAbortJob(NetworkNode *node, const Packet &packet) {
 	qDebug("onAbortJob");
@@ -727,7 +798,7 @@ void CompilerNetwork::onAbortJob(NetworkNode *node, const Packet &packet) {
 	}
 	// Check if the job has potentially already been started
 	for (int i = 0; i < incomingJobs.count(); i++) {
-		if (incomingJobs[i]->getTargetPeer() == node && incomingJobs[i]->getId() == id) {
+		if (incomingJobs[i]->getSourcePeer() == node && incomingJobs[i]->getId() == id) {
 			// Kill the job
 			// TODO: CompilerService does not yet react to this
 			emit remoteJobAborted(incomingJobs[i]->getJob());

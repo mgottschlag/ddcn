@@ -34,7 +34,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 class OutgoingJob {
 public:
-	OutgoingJob(NetworkNode* targetPeer, Job* job, int id) {
+	OutgoingJob(NetworkNode* targetPeer, Job* job, unsigned int id) {
 	  this->targetPeer = targetPeer;
 	  this->job = job;
 	  this->id = id;
@@ -46,10 +46,13 @@ public:
 	Job *getJob() {
 		return job;
 	}
+	unsigned int getId() {
+		return id;
+	}
 private:
 	NetworkNode *targetPeer;
 	Job *job;
-	int id;
+	unsigned int id;
 };
 
 #endif
