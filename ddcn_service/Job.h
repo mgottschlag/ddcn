@@ -99,6 +99,19 @@ public:
 	QStringList getPreprocessedFiles() {
 		return preprocessedFiles;
 	}
+	QStringList getInputFiles() {
+		return outputFiles;
+	}
+	QStringList getOutputFiles() {
+		return outputFiles;
+	}
+
+	QStringList getCompilerParameters() {
+		return compilerParameters;
+	}
+	QString getToolchain() {
+		return toolChain;
+	}
 
 	void setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr);
 signals:

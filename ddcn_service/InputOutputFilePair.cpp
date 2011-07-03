@@ -45,7 +45,7 @@ InputOutputFilePair::InputOutputFilePair(QString inputExtension,
 void InputOutputFilePair::createTemporaryFiles() {
 	for (int i = 0; i < 2; i++) {
 		QFile *file = new QFile(this->filename + this->extensions[i]);
-		if (file->open(stderr, QIODevice::WriteOnly)) {
+		if (file->open(QIODevice::WriteOnly)) {
 			//TODO what in case it does not open?
 			file->close();
 		}

@@ -43,7 +43,7 @@ public:
 	/**
 	 * Creates a new pair of temporary files with a unique filename.
 	 * The filename is created by using the given templateName, a random number and the
-	 * given extensions.
+	 * given extensions. Both extensions include the leading dot, e.g. ".c".
 	 * @param extension1 the extension for the input (source) file.
 	 * @param extension2 the extension for the output (target) file.
 	 * @param templateName the templateName for the file. This helps to

@@ -107,8 +107,7 @@ private slots:
 	void onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const Packet &packet);
 
-	void onPreprocessingFinished(Job *job, int returnValue,
-			const QByteArray &stdout, const QByteArray &stderr);
+	void onPreprocessingFinished(Job *job);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
