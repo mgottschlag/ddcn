@@ -38,16 +38,72 @@ struct PacketType {
 	enum List {
 		Invalid,
 		FirstType,
+		/**
+		 * Sent by a peer whenever it wants to delegate a job to the target.
+		 *
+		 * Only sent if the peer has received NetworkResourcesAvailable from the
+		 * target earlier. Contains a request id which is used to later identify
+		 * the job connected to this request.
+		 *
+		 * @todo Should also contain the toolchain version?
+		 */
 		JobRequest = FirstType,
+		/**
+		 * Sent by a peer as a response to JobRequest if the target may send the
+		 * job. Contains the request id.
+		 */
 		JobRequestAccepted,
+		/**
+		 * Sent by a peer as a response to JobRequest if the target may not send
+		 * the job. Contains the request id.
+		 */
 		JobRequestRejected,
+		/**
+		 * Sent by a peer after it has received JobRequestAccepted. Contains all
+		 * input file data, all parameters, the toolchain version and the
+		 * request id.
+		 */
 		JobData,
+		/**
+		 * Sent after the peer has successfully received JobData and begins
+		 * compiling. Contains the request id.
+		 */
 		JobDataReceived,
+		/**
+		 * Sent after the peer has finished compiling. Contains all output
+		 * files, all console output, the process return value and the request
+		 * id. If the job was not executed at all, this contains a flag saying
+		 * so.
+		 */
 		JobFinished,
+		/**
+		 * Sent by a peer which has called either JobRequest or JobData earlier.
+		 *
+		 * Contains a request id and cancels the request or job connected to the
+		 * id.
+		 */
 		AbortJob,
+		/**
+		 * Sent to trusted peers or trusted groups whenever a peer wants to
+		 * delegate any jobs, but does not have information about available
+		 * resources.
+		 */
 		QueryNetworkResources,
+		/**
+		 * Sent after QueryNetworkResources has been received and if the peer
+		 * has spare resources which the other peer is allowed to use.
+		 */
 		NetworkResourcesAvailable,
+		/**
+		 * Sent to all peers in the network whenever ddcn_control wants an
+		 * overview about the network structure and information about all peers.
+		 */
 		QueryNodeStatus,
+		/**
+		 * Response to NetworkResourcesAvailable, contains the peer name and
+		 * public key, group membership information and information about the
+		 * current work load.
+		 */
 		NodeStatus,
 		LastType = NodeStatus
 	};
@@ -112,18 +168,56 @@ private:
 	PacketHeader *header;
 };
 
+/**
+ * Class which contains a packet which can be sent over the network. This class
+ * utilizes implicit data sharing via reference counting, so it can be passed
+ * by value to other functions without any speed penalty.
+ */
 class Packet {
 public:
+	/**
+	 * Creates an invalid packet.
+	 *
+	 * @see isValid()
+	 */
 	Packet() {
 	}
+	/**
+	 * Copy constructor.
+	 *
+	 * Quite efficient because of the implicit data sharing which is happening
+	 * here.
+	 *
+	 * @param other Packet to be copied.
+	 */
 	Packet(const Packet &other) : data(other.data) {
 	}
+	/**
+	 * Creates a packet from a single value.
+	 *
+	 * @param type Type of the packet.
+	 * @param payload Value which is inserted into the packet.
+	 *
+	 * @warning The payload does not need to be passed as a pointer because
+	 * then the pointer would be inserted into the packet!
+	 */
 	template<typename T> Packet(PacketType::List type, const T &payload) {
-		qDebug("T: %d", sizeof(T));
 		PacketData *packetData = new PacketData(type, sizeof(T));
 		std::memcpy(packetData->getPayload(), &payload, sizeof(T));
 		this->data = packetData;
 	}
+	/**
+	 * Creates a packet from raw payload data.
+	 *
+	 * @param type Type of the packet.
+	 * @param size Size of the payload.
+	 * @param data Data to be copied into the packet. Can be NULL in which case
+	 * the packet content is left uninitialized and can be filled later via
+	 * getPayloadData().
+	 *
+	 * @note Not passing a data pointer but rather filling the packet later
+	 * might be faster because one copy less has to be made in may cases.
+	 */
 	Packet(PacketType::List type, unsigned int size = 0, void *data = NULL) {
 		PacketData *packetData = new PacketData(type, size);
 		if (data) {
@@ -132,6 +226,11 @@ public:
 		this->data = packetData;
 	}
 
+	/**
+	 * Returns the packet header type.
+	 *
+	 * @return Packet type.
+	 */
 	PacketType::List getType() const {
 		if (!data) {
 			return PacketType::Invalid;
@@ -139,6 +238,16 @@ public:
 			return data.constData()->getType();
 		}
 	}
+	/**
+	 * Returns the payload of the packet as a single type.
+	 *
+	 * @return Packet payload or NULL if the packet is too small to contain the
+	 * type.
+	 *
+	 * @note This can also be used to not read the complete payload but rather
+	 * only the first part of it, the rest then can be read via
+	 * getPayloadData().
+	 */
 	template<typename T> T *getPayload() {
 		if (!data) {
 			return NULL;
@@ -160,6 +269,11 @@ public:
 		return (const T*)getPayloadData();
 	}
 
+	/**
+	 * Returns the raw payload data.
+	 *
+	 * @return Payload data.
+	 */
 	void *getPayloadData() {
 		if (!data) {
 			return NULL;
@@ -172,6 +286,9 @@ public:
 		}
 		return data.constData()->getPayload();
 	}
+	/**
+	 * Returns the size of the payload in bytes.
+	 */
 	unsigned int getPayloadSize() const {
 		if (!data) {
 			return 0;
@@ -179,12 +296,22 @@ public:
 		return data.constData()->getPayloadSize();
 	}
 
+	/**
+	 * Returns the raw data of the packet, including the packet header.
+	 *
+	 * @return Raw packet data.
+	 */
 	const void *getRawData() const {
 		if (!data) {
 			return NULL;
 		}
 		return data.constData()->getData();
 	}
+	/**
+	 * Returns the raw packet data size.
+	 *
+	 * @return Raw packet data size.
+	 */
 	unsigned int getRawSize() const {
 		if (!data) {
 			return 0;
@@ -192,11 +319,25 @@ public:
 		return data.constData()->getSize();
 	}
 
+	/**
+	 * Copies a packet to this variable.
+	 *
+	 * Quite efficient because of the implicit data sharing which is happening
+	 * here.
+	 *
+	 * @param other Packet to be copied.
+	 */
 	Packet &operator=(const Packet &other) {
 		data = other.data;
 		return *this;
 	}
 
+	/**
+	 * Returns true if the packet is valid.
+	 *
+	 * A packet is invalid if it only was initialized with the default
+	 * constructor and no valid packet was assigned to it.
+	 */
 	bool isValid() const {
 		if (!data) {
 			return false;
@@ -205,6 +346,11 @@ public:
 		}
 	}
 
+	/**
+	 * Creates a packet from raw data received from the network.
+	 *
+	 * @return Resulting packet or an invalid packet if the data is corrupt.
+	 */
 	static Packet fromRawData(const QByteArray &data) {
 		if ((size_t)data.size() < sizeof(PacketHeader)) {
 			return Packet();
@@ -226,7 +372,9 @@ private:
 	QSharedDataPointer<PacketData> data;
 };
 
-// Template specialization for easy insertion of raw byte arrays
+/**
+ * Template specialization for easy insertion of raw byte arrays
+ */
 template<> inline Packet::Packet<QByteArray>(PacketType::List type, const QByteArray &data) {
 	PacketData *packetData = new PacketData(type, data.size());
 	std::memcpy(packetData->getPayload(), data.data(), data.size());
