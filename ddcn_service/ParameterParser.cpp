@@ -92,6 +92,17 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 			outputFiles.append(rawParameters[i]);
 		} else if (parameter == "-c") {
 			compilerParameters.append(parameter);
+		} else if (parameter == "-") {
+			// Do not delegate job which reads from stdin
+			// TODO: This can easily be implemented
+			delegatable = false;
+			preprocessingParameters.append(parameter);
+			compilerParameters.append(parameter);
+		} else if (parameter == "E") {
+			// Do not delegate jobs which only perform preprocessing
+			delegatable = false;
+			preprocessingParameters.append(parameter);
+			compilerParameters.append(parameter);
 		} else if (parameter.at(0) == '-'){
 			// TODO: Dependency generation arguments
 			// TODO: Other parameters which do not have any "-" in front of them
