@@ -33,10 +33,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 Job::Job(QStringList inputFiles, QStringList parameters,
-		QStringList preprocessorParameters,
-		QString toolChain, QString workingDir, bool isRemoteJob, bool delegatable) :
-		incomingJob(NULL), outgoingJob(NULL),
-		preProcessListPosition(0) {
+		QStringList preprocessorParameters, QString toolChain,
+		QString workingDir, bool isRemoteJob, bool delegatable) :
+		preProcessListPosition(0), preprocessing(false), preprocessed(false),
+		compiling(false), incomingJob(NULL), outgoingJob(NULL) {
 	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
 			  (inputFiles.count() <= 0) ? "[no inputFiles]" : inputFiles[0].toAscii().data(),
 			  (parameters.count() <= 0) ? "[no parameters]" : parameters[0].toAscii().data(),
@@ -76,13 +76,16 @@ void Job::preProcess() {
 			SLOT(onPreProcessExecuteError(QProcess::ExitStatus))
 		);
 		gccPreProcess->start("gcc", preProcessParameter);
-	}
-	else {
+		preprocessing = true;
+	} else {
+		preprocessing = false;
+		// TODO: preprocessed = true?
 		emit preProcessFinished(this);
 	}
 }
 
 void Job::execute() {
+	// TODO: This does not work, if we compile locally, we should not do this
 	if (this->preProcessedFiles.count() > 0) {
 		this->parameters <<	(this->preProcessedFiles);
 	} else {
@@ -106,9 +109,11 @@ void Job::execute() {
 	gccProcess->setWorkingDirectory(this->workingDir);
 	gccProcess->setProcessChannelMode(QProcess::MergedChannels);
 	gccProcess->start("gcc", this->parameters);
+	compiling = true;
 }
 
 void Job::onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+	compiling = false;
 	qCritical("%d, %d, %s", (int)gccProcess->canReadLine(),
 			  gccProcess->exitCode(),
 			  gccProcess->readAll().data());
@@ -118,16 +123,19 @@ void Job::onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 }
 
 void Job::onExecuteError(QProcess::ProcessError error) {
-	
+	compiling = false;
+
 	jobResult.consoleOutput = gccProcess->readLine() + "\n"
 											+ getQProcessErrorDescription(error);
 	jobResult.returnValue = -1; //= Error!
-	
+
 	emit finished(this);
 }
 
 void Job::onPreProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
+	preprocessingStdout = gccPreProcess->readAllStandardOutput();
+	preprocessingStderr = gccPreProcess->readAllStandardError();
 	this->preProcessListPosition++;
 	this->preProcess();
 }
@@ -136,13 +144,20 @@ void Job::onPreProcessExecuteError(QProcess::ProcessError error) {
 	preProcessResult.consoleOutput = gccProcess->readLine() + "\n"
 											+ getQProcessErrorDescription(error);
 	preProcessResult.returnValue = -1; //= Error!
-	
+	// TODO
+	//emit finished(this);
+}
+
+void Job::setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr) {
+	jobResult.returnValue = returnValue;
+	// TODO
+	jobResult.consoleOutput = stdout;
 	emit finished(this);
 }
 
 QString Job::getQProcessErrorDescription(QProcess::ProcessError error) {
 	//finished signal: finished(bool executed, int resultValue, QString consoleOutput, QList<QByteArray> outputFiles);
-	QString errorString = "Error: An unresolveable error occured.\n"; //TODO 
+	QString errorString = "Error: An unresolveable error occured.\n"; //TODO
 	switch(error) {
 		case 0: errorString = "Error: Could not start gcc process.\n"; break;
 		case 1: errorString = "Error: gcc process started successfully but crashed.\n"; break;
@@ -153,7 +168,5 @@ QString Job::getQProcessErrorDescription(QProcess::ProcessError error) {
 	}
 	return errorString;
 }
-
-
 
 

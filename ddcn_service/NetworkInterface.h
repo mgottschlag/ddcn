@@ -49,6 +49,15 @@ Q_DECLARE_METATYPE(ariba::DataMessage);
 /**
  * This class initializes Ariba and MCPO and does the communication between the
  * main thread and the Ariba system queue thread.
+ *
+ * If data needs to be passed into the ariba thread, this is done via posting an
+ * event to the ariba system queue.
+ *
+ * If data needs to be passed to the main qt thread, this is done via emitting a
+ * signal connected to an object created in the main thread.
+ *
+ * Note that the private key cannot be changed, if you want to do this, you have
+ * to shutdown all networking and recreate the NetworkInterface object.
  */
 class NetworkInterface : public QObject,
 		public ariba::utility::StartupInterface,

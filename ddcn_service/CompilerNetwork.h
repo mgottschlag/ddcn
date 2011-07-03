@@ -34,9 +34,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "NetworkInterface.h"
 #include "OutgoingJob.h"
 #include "NodeStatus.h"
+#include "IncomingJob.h"
+#include "JobRequest.h"
 
 #include <QObject>
-#include "JobRequest.h"
 
 struct FreeCompilerSlots {
 	NetworkNode *node;
@@ -105,6 +106,9 @@ private slots:
 	void onMessageReceived(NetworkNode *node, const Packet &packet);
 	void onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const Packet &packet);
+
+	void onPreprocessingFinished(Job *job, int returnValue,
+			const QByteArray &stdout, const QByteArray &stderr);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
@@ -113,6 +117,8 @@ signals:
 	void trustedGroupsChanged(QList<TrustedGroup*> trustedGroups);
 	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
 	void receivedJob(Job *job);
+	// TODO: Not yet connected to anything
+	void remoteJobAborted(Job *job);
 	void finishedJob(Job *job, bool executed, bool success);
 	void nodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups);
 private:
@@ -133,6 +139,24 @@ private:
 	void createJobRequests();
 	void onIncomingJobRequest(NetworkNode *node, const Packet &packet);
 
+	void onJobRequestAccepted(NetworkNode *node, const Packet &packet);
+	void onJobRequestRejected(NetworkNode *node, const Packet &packet);
+
+	void onJobData(NetworkNode *node, const Packet &packet);
+	void onJobDataReceived(NetworkNode *node, const Packet &packet);
+	void onJobFinished(NetworkNode *node, const Packet &packet);
+	void onAbortJob(NetworkNode *node, const Packet &packet);
+
+	void addWaitingJob(Job *job);
+	Job *removeWaitingJob();
+	Job *removePreprocessedWaitingJob();
+	unsigned int getWaitingJobCount();
+	unsigned int getPreprocessingWaitingJobCount();
+	unsigned int getPreprocessedWaitingJobCount();
+	void preprocessWaitingJob();
+
+	void delegateJob(Job *job, OutgoingJobRequest *request);
+
 	unsigned int generateJobId() {
 		return ++lastJobId;
 	}
@@ -150,6 +174,8 @@ private:
 	NetworkInterface *network;
 
 	QList<Job*> waitingJobs;
+	QList<Job*> waitingPreprocessingJobs;
+	QList<Job*> waitingPreprocessedJobs;
 
 	QList<FreeCompilerSlots> freeRemoteSlots;
 	unsigned int freeLocalSlots;
@@ -158,6 +184,8 @@ private:
 
 	QList<OutgoingJobRequest*> outgoingJobRequests;
 	QList<IncomingJobRequest*> incomingJobRequests;
+
+	QList<IncomingJob*> incomingJobs;
 
 	unsigned int lastJobId;
 
