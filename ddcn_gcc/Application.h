@@ -63,7 +63,9 @@ public:
 	int run(int argc, char **argv);
 private:
 	QStringList fetchToolChainList();
-	int executeJob(QString toolChain, QStringList parameters);
+	int executeJob(QString toolChain, QStringList parameters, const QByteArray & stdinData);
+
+	QByteArray readStdin ();
 };
 
 #endif

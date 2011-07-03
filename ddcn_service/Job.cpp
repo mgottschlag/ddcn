@@ -35,7 +35,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Job::Job(QStringList inputFiles, QStringList outputFiles,
 		QStringList fullParameters, QStringList preprocessorParameters,
 		QStringList compilerParameters,QString toolChain,
-		QString workingDir, bool isRemoteJob, bool delegatable) :
+		QString workingDir, bool isRemoteJob, bool delegatable,
+		const QByteArray &stdinData) :
 		preProcessListPosition(0), preprocessing(false), preprocessed(false),
 		compiling(false), incomingJob(NULL), outgoingJob(NULL) {
 	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
@@ -50,6 +51,7 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 	this->preprocessorParameters = preprocessorParameters;
 	this->delegatable = delegatable;
 	this->workingDir = workingDir;
+	this->stdinData = stdinData;
 }
 
 
@@ -115,6 +117,8 @@ void Job::execute() {
 	gccProcess->setProcessChannelMode(QProcess::SeparateChannels);
 	// TODO: Toolchain path
 	gccProcess->start("gcc", parameters);
+	gccProcess->write(stdinData);
+	gccProcess->closeWriteChannel();
 	compiling = true;
 }
 

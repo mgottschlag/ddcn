@@ -52,7 +52,7 @@ public:
 	Job(QStringList inputFiles, QStringList outputFiles,
 		QStringList fullParameters, QStringList preprocessorParameters,
 		QStringList compilerParameters, QString toolChain, QString workingDir,
-		bool isRemoteJob, bool delegatable);
+		bool isRemoteJob, bool delegatable, const QByteArray &stdinData);
 	bool isRemoteJob() {
 		return this->remoteJob;
 	}
@@ -122,6 +122,8 @@ private:
 	QStringList fullParameters;
 	QStringList preprocessorParameters;
 	QStringList compilerParameters;
+
+	QByteArray stdinData;
 
 	QStringList preProcessedFiles;
 	QString toolChain;

@@ -67,8 +67,8 @@ void CompilerServiceAdaptor::onMaxThreadCountChanged(int threadCount) {
 }
 
 JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
-									   QString toolChain, QString workingPath,
-									   const QDBusMessage &message) {
+		QString toolChain, QString workingPath,
+		const QByteArray &stdinData, const QDBusMessage &message) {
 	//TODO DEBUG:qCritical("DBus anfrage");
 	ParameterParser parser(parameters);
 	//TODO DEBUG:qCritical("Parser durch");
@@ -76,7 +76,8 @@ JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 	                   parser.getOriginalParameters(),
 	                   parser.getPreprocessingParameters(),
 	                   parser.getCompilerParameters(),
-	                   toolChain, workingPath, false, parser.isDelegatable());
+	                   toolChain, workingPath, false, parser.isDelegatable(),
+	                   stdinData);
 	//TODO DEBUG:qCritical("job erzeugt");
 	message.setDelayedReply(true);
 	//TODO DEBUG:qCritical("setDelayedReply");
