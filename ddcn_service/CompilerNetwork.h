@@ -108,6 +108,7 @@ private slots:
 		const Packet &packet);
 
 	void onPreprocessingFinished(Job *job);
+	void onJobFinished(Job *job);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
