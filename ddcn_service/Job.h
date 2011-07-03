@@ -53,6 +53,8 @@ public:
 		QStringList fullParameters, QStringList preprocessorParameters,
 		QStringList compilerParameters, QString toolChain, QString workingDir,
 		bool isRemoteJob, bool delegatable, const QByteArray &stdinData);
+	~Job();
+
 	bool isRemoteJob() {
 		return this->remoteJob;
 	}
@@ -94,18 +96,9 @@ public:
 		return incomingJob;
 	}
 
-	/*void setCompilerStdout(const QByteArray &stdout) {
-		compilerStdout = stdout;
+	QStringList getPreprocessedFiles() {
+		return preprocessedFiles;
 	}
-	const QByteArray &getCompilerStdout() {
-		return compilerStdout;
-	}
-	void setCompilerStderr(const QByteArray &stderr) {
-		compilerStderr = stderr;
-	}
-	const QByteArray &getCompilerStderr() {
-		return compilerStderr;
-	}*/
 
 	void setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr);
 signals:
@@ -125,7 +118,7 @@ private:
 
 	QByteArray stdinData;
 
-	QStringList preProcessedFiles;
+	QStringList preprocessedFiles;
 	QString toolChain;
 	QString workingDir;
 	JobResult jobResult;
