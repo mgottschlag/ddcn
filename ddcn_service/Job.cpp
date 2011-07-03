@@ -53,7 +53,13 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 	this->workingDir = workingDir;
 	this->stdinData = stdinData;
 }
-
+Job::~Job() {
+	// Remove temporary files created for preprocessing
+	foreach (QString fileName, preprocessedFiles) {
+		QFile file(fileName);
+		file.remove();
+	}
+}
 
 //will be called by the CompilerNetwork
 void Job::preProcess() {
@@ -67,7 +73,7 @@ void Job::preProcess() {
 		preProcessParameter << "-E " << inputFile << "-o"
 									<< tmpFile.getFilename()
 									<< this->preprocessorParameters;
-		this->preProcessedFiles.append(tmpFile.getFilename());
+		this->preprocessedFiles.append(tmpFile.getFilename());
 		gccPreProcess = new QProcess(this);
 		connect(gccPreProcess,
 			SIGNAL(finished(int, QProcess::ExitStatus)),
