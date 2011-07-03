@@ -91,18 +91,14 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &in
 
 QDBusArgument &operator<<(QDBusArgument &argument, const JobResult &jobResult) {
 	argument.beginStructure();
-	argument << jobResult.consoleOutput << jobResult.returnValue;
+	argument << jobResult.stdout << jobResult.stderr << jobResult.returnValue;
 	argument.endStructure();
 	return argument;
 }
 const QDBusArgument &operator>>(const QDBusArgument &argument, JobResult &jobResult) {
 	argument.beginStructure();
-	QString consoleOutput;
-	int returnValue;
-	argument >> consoleOutput >> returnValue;
+	argument >> jobResult.stdout >> jobResult.stderr >> jobResult.returnValue;
 	argument.endStructure();
-	jobResult.consoleOutput = consoleOutput;
-	jobResult.returnValue = returnValue;
 	return argument;
 }
 

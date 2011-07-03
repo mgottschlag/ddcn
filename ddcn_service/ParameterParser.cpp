@@ -36,7 +36,7 @@ ParameterParser::ParameterParser() : delegatable(false) {
 }
 
 void ParameterParser::parse(const QStringList &rawParameters) {
-	originalParameters.clear();
+	originalParameters = rawParameters;
 	preprocessingParameters.clear();
 	compilerParameters.clear();
 	inputFiles.clear();
@@ -61,7 +61,7 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 		}
 	}
 	delegatable = compilingOnly && !nativeOptimization;
-	
+
 	for (int i = 0; i < rawParameters.size(); i++) {
 		QString parameter = rawParameters[i];
 		if (parameter == "-I" || parameter == "-iquote") {
@@ -136,9 +136,6 @@ QStringList ParameterParser::getPreprocessingParameters() {
 	return preprocessingParameters;
 }
 QStringList ParameterParser::getCompilerParameters() {
-	if (!isDelegatable()) {
-		return originalParameters;
-	}
 	return compilerParameters;
 }
 

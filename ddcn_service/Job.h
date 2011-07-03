@@ -33,10 +33,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "InputOutputFilePair.h"
 
 struct JobResult {
-	// TODO: Remove this
-	QString consoleOutput;
-	//QByteArray stdout;
-	//QByteArray stderr;
+	QByteArray stdout;
+	QByteArray stderr;
 	int returnValue;
 };
 
@@ -51,8 +49,9 @@ class IncomingJob;
 class Job : public QObject {
 	Q_OBJECT
 public:
-	Job(QStringList inputFiles, QStringList parameters,
-		QStringList preprocessorParameters, QString toolChain, QString workingDir,
+	Job(QStringList inputFiles, QStringList outputFiles,
+		QStringList fullParameters, QStringList preprocessorParameters,
+		QStringList compilerParameters, QString toolChain, QString workingDir,
 		bool isRemoteJob, bool delegatable);
 	bool isRemoteJob() {
 		return this->remoteJob;
@@ -64,7 +63,8 @@ public:
 		return this->jobResult;
 	}
 	JobResult getPreprocessingResult() {
-		return this->preProcessResult;
+		return this->preprocessingResult
+;
 	}
 	bool isDelegatable() {
 		return this->delegatable;
@@ -110,7 +110,7 @@ public:
 	void setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr);
 signals:
 	void finished(Job *job);
-	void preProcessFinished(Job *job);
+	void preprocessingFinished(Job *job);
 private:
 	QString getQProcessErrorDescription(QProcess::ProcessError error);
 	QByteArray compilerStdout;
@@ -118,20 +118,20 @@ private:
 	QStringList inputFiles;
 	QStringList outputFiles;
 	bool delegatable;
+
+	QStringList fullParameters;
 	QStringList preprocessorParameters;
+	QStringList compilerParameters;
+
 	QStringList preProcessedFiles;
-	QStringList parameters;
 	QString toolChain;
 	QString workingDir;
-// 	bool delegatable;
 	JobResult jobResult;
-	JobResult preProcessResult;
+	JobResult preprocessingResult;
 	QProcess *gccPreProcess;
 	int preProcessListPosition;
 	QProcess *gccProcess;
 	bool remoteJob;
-	QByteArray preprocessingStdout;
-	QByteArray preprocessingStderr;
 
 	bool preprocessing;
 	bool preprocessed;

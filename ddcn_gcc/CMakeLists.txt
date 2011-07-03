@@ -15,7 +15,6 @@ set(SRC
 )
 
 set(MOC_H
-	Application.h
 )
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_H})

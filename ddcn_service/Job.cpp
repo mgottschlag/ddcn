@@ -30,19 +30,21 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "InputOutputFilePair.h"
 #include "TemporaryFile.h"
 
+#include <cassert>
 
-
-Job::Job(QStringList inputFiles, QStringList parameters,
-		QStringList preprocessorParameters, QString toolChain,
+Job::Job(QStringList inputFiles, QStringList outputFiles,
+		QStringList fullParameters, QStringList preprocessorParameters,
+		QStringList compilerParameters,QString toolChain,
 		QString workingDir, bool isRemoteJob, bool delegatable) :
 		preProcessListPosition(0), preprocessing(false), preprocessed(false),
 		compiling(false), incomingJob(NULL), outgoingJob(NULL) {
 	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
 			  (inputFiles.count() <= 0) ? "[no inputFiles]" : inputFiles[0].toAscii().data(),
-			  (parameters.count() <= 0) ? "[no parameters]" : parameters[0].toAscii().data(),
+			  (fullParameters.count() <= 0) ? "[no parameters]" : fullParameters[0].toAscii().data(),
 			  toolChain.toAscii().data(), (int)this->delegatable);
 	this->inputFiles = inputFiles;
-	this->parameters = parameters;
+	this->outputFiles = outputFiles;
+	this->fullParameters = fullParameters;
 	this->toolChain = toolChain;
 	this->remoteJob = isRemoteJob;
 	this->preprocessorParameters = preprocessorParameters;
@@ -79,20 +81,23 @@ void Job::preProcess() {
 		preprocessing = true;
 	} else {
 		preprocessing = false;
-		// TODO: preprocessed = true?
-		emit preProcessFinished(this);
+		preprocessed = true;
+		emit preprocessingFinished(this);
 	}
 }
 
 void Job::execute() {
-	// TODO: This does not work, if we compile locally, we should not do this
-	if (this->preProcessedFiles.count() > 0) {
-		this->parameters <<	(this->preProcessedFiles);
+	QStringList parameters;
+	if (isRemoteJob()) {
+		parameters = compilerParameters;
+		parameters << inputFiles;
+		// We do not need to set the output files here as they need to be in the
+		// same directory and have the same name as the input files
+		assert(outputFiles.count() == inputFiles.count());
+		// TODO: Check file names in debug builds via assert
 	} else {
-		this->parameters << this->preprocessorParameters;
-		this->parameters << this->inputFiles;
+		parameters = fullParameters;
 	}
-	qCritical(QDir::currentPath().toAscii().data());
 	//create a gcc process and submit the parameters
 	gccProcess = new QProcess(this);
 	connect(gccProcess,
@@ -107,17 +112,17 @@ void Job::execute() {
 	);
 	//TODO DEBUG:qCritical("Start Compiling");
 	gccProcess->setWorkingDirectory(this->workingDir);
-	gccProcess->setProcessChannelMode(QProcess::MergedChannels);
-	gccProcess->start("gcc", this->parameters);
+	gccProcess->setProcessChannelMode(QProcess::SeparateChannels);
+	// TODO: Toolchain path
+	gccProcess->start("gcc", parameters);
 	compiling = true;
 }
 
 void Job::onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 	compiling = false;
-	qCritical("%d, %d, %s", (int)gccProcess->canReadLine(),
-			  gccProcess->exitCode(),
-			  gccProcess->readAll().data());
-	jobResult.consoleOutput = gccProcess->readAll();
+	qCritical("Execute finished: %d", gccProcess->exitCode());
+	jobResult.stdout = gccProcess->readAllStandardOutput();
+	jobResult.stderr = gccProcess->readAllStandardError();
 	jobResult.returnValue = exitCode;
 	emit finished(this);
 }
@@ -125,8 +130,9 @@ void Job::onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 void Job::onExecuteError(QProcess::ProcessError error) {
 	compiling = false;
 
-	jobResult.consoleOutput = gccProcess->readLine() + "\n"
-											+ getQProcessErrorDescription(error);
+	jobResult.stdout = gccProcess->readAllStandardOutput();
+	jobResult.stderr = gccProcess->readAllStandardError();
+	jobResult.stderr.append((QString("\n") + getQProcessErrorDescription(error)).toAscii());
 	jobResult.returnValue = -1; //= Error!
 
 	emit finished(this);
@@ -134,24 +140,30 @@ void Job::onExecuteError(QProcess::ProcessError error) {
 
 void Job::onPreProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-	preprocessingStdout = gccPreProcess->readAllStandardOutput();
-	preprocessingStderr = gccPreProcess->readAllStandardError();
-	this->preProcessListPosition++;
-	this->preProcess();
+	preprocessingResult.stdout.append(gccPreProcess->readAllStandardOutput());
+	preprocessingResult.stderr.append(gccPreProcess->readAllStandardError());
+	preprocessingResult.returnValue = exitCode;
+	if (exitCode != 0) {
+		// Do not continue if preprocessing failed
+		emit preprocessingFinished(this);
+	} else {
+		this->preProcessListPosition++;
+		this->preProcess();
+	}
 }
 
 void Job::onPreProcessExecuteError(QProcess::ProcessError error) {
-	preProcessResult.consoleOutput = gccProcess->readLine() + "\n"
-											+ getQProcessErrorDescription(error);
-	preProcessResult.returnValue = -1; //= Error!
-	// TODO
-	//emit finished(this);
+	preprocessingResult.stdout.append(gccPreProcess->readAllStandardOutput());
+	preprocessingResult.stderr.append(gccPreProcess->readAllStandardError());
+	preprocessingResult.returnValue = -1;
+	// Do not continue if preprocessing failed
+	emit preprocessingFinished(this);
 }
 
 void Job::setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr) {
+	jobResult.stdout = stdout;
+	jobResult.stderr = stderr;
 	jobResult.returnValue = returnValue;
-	// TODO
-	jobResult.consoleOutput = stdout;
 	emit finished(this);
 }
 
@@ -168,5 +180,3 @@ QString Job::getQProcessErrorDescription(QProcess::ProcessError error) {
 	}
 	return errorString;
 }
-
-

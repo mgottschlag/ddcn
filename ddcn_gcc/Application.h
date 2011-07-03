@@ -44,7 +44,8 @@ QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info);
 const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info);
 
 struct JobResult {
-	QString consoleOutput;
+	QByteArray stdout;
+	QByteArray stderr;
 	int returnValue;
 };
 
