@@ -119,7 +119,6 @@ signals:
 	void receivedJob(Job *job);
 	// TODO: Not yet connected to anything
 	void remoteJobAborted(Job *job);
-	void finishedJob(Job *job, bool executed, bool success);
 	void nodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups);
 private:
 	TrustedPeer *getTrustedPeer(const PublicKey &publicKey);
@@ -179,6 +178,8 @@ private:
 
 	QList<FreeCompilerSlots> freeRemoteSlots;
 	unsigned int freeLocalSlots;
+	unsigned int freeRemoteSlotCount;
+	unsigned int maxFreeRemoteSlotCount;
 
 	QList<OutgoingJob*> delegatedJobs;
 
