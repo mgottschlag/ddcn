@@ -53,18 +53,14 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &in
 
 QDBusArgument &operator<<(QDBusArgument &argument, const JobResult &jobResult) {
 	argument.beginStructure();
-	argument << jobResult.consoleOutput << jobResult.returnValue;
+	argument << jobResult.stdout << jobResult.stderr << jobResult.returnValue;
 	argument.endStructure();
 	return argument;
 }
 const QDBusArgument &operator>>(const QDBusArgument &argument, JobResult &jobResult) {
 	argument.beginStructure();
-	QString consoleOutput;
-	int returnValue;
-	argument >> consoleOutput >> returnValue;
+	argument >> jobResult.stdout >> jobResult.stderr >> jobResult.returnValue;
 	argument.endStructure();
-	jobResult.consoleOutput = consoleOutput;
-	jobResult.returnValue = returnValue;
 	return argument;
 }
 
@@ -100,7 +96,6 @@ int Application::run(int argc, char **argv) {
 }
 
 QStringList Application::fetchToolChainList() {
-	qCritical("asdasdasda");
 	QDBusInterface interface("org.ddcn.service",
 	                         "/CompilerService",
 	                         "org.ddcn.CompilerService");
@@ -140,8 +135,8 @@ int Application::executeJob(QString toolChain, QStringList parameters) {
 		return -1;
 	}
 	JobResult result = reply.value();
-	qCritical("AUSGABE: \n %s", result.consoleOutput.toAscii().data());
-	std::cerr << result.consoleOutput.toStdString();
+	std::cout.write(result.stdout.data(), result.stdout.size());
+	std::cerr.write(result.stderr.data(), result.stderr.size());
 	return result.returnValue;
 }
 

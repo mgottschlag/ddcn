@@ -72,16 +72,18 @@ JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 	//TODO DEBUG:qCritical("DBus anfrage");
 	ParameterParser parser(parameters);
 	//TODO DEBUG:qCritical("Parser durch");
-	Job *job = new Job(parser.getInputFiles(), parser.getCompilerParameters(),
-					   parser.getPreprocessingParameters(),
-					   toolChain, workingPath, false, parser.isDelegatable());
+	Job *job = new Job(parser.getInputFiles(), parser.getOutputFiles(),
+	                   parser.getOriginalParameters(),
+	                   parser.getPreprocessingParameters(),
+	                   parser.getCompilerParameters(),
+	                   toolChain, workingPath, false, parser.isDelegatable());
 	//TODO DEBUG:qCritical("job erzeugt");
 	message.setDelayedReply(true);
 	//TODO DEBUG:qCritical("setDelayedReply");
 	QDBusMessage *dBusMessage = new QDBusMessage(message.createReply());
 	//TODO DEBUG:qCritical("Reply created");
 	this->jobDBusMessageMap.insert(job, dBusMessage);
-	
+
 	//TODO DEBUG:qCritical("DBus anfrage bearbeitet");
 	service->addJob(job);
 	return JobResult();
