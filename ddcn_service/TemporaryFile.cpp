@@ -40,7 +40,7 @@ TemporaryFile::TemporaryFile(QString extension, QString templateName,
 	if(file->open(QIODevice::WriteOnly)) {
 		file->close();
 	} else {
-		qFatal("Can not write temporary files.");
+		qFatal("Can not write temporary file \"%s\".", file->fileName().toAscii().data());
 	}
 }
 
@@ -53,7 +53,7 @@ QString TemporaryFile::generateFilename(QString templateName, QString filename) 
 }
 
 QString TemporaryFile::randomize() {
-	return "" + qrand() % 100000;
+	return QString::number(qrand() % 100000);
 }
 
 QString TemporaryFile::getExtension() {
