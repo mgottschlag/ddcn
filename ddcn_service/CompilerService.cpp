@@ -41,6 +41,10 @@ CompilerService::CompilerService(CompilerNetwork *network)
 	determineAndSetMaxThreadCount();
 	this->toolChains.append(ToolChain("/usr/bin/gcc"));//TODO Debug Only
 	loadToolChains();
+	// Connect network signals
+	connect(network, SIGNAL(receivedJob(Job*)), this, SLOT(onReceivedJob(Job*)));
+	connect(network, SIGNAL(remoteJobAborted(Job*)), this, SLOT(onRemoteJobAborted(Job*)));
+	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 }
 
 void CompilerService::addJob(Job *job) {
@@ -49,6 +53,7 @@ void CompilerService::addJob(Job *job) {
 	} else {
 		this->remoteJobQueue.append(job);
 	}
+	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 	//TODO DEBUG:qCritical("Job hinzugefuegt");
 	manageJobs();
 }
@@ -60,21 +65,29 @@ void CompilerService::onIncomingJob(Job *job) {
 	this->addJob(job);
 }
 
-void CompilerService::onRemoteCompileFinished(Job *job, bool executed) {
+/*void CompilerService::onRemoteCompileFinished(Job *job, bool executed) {
 	if (executed) {
 		this->removeJob(job);
 	} else {
 		this->localJobQueue.move(this->localJobQueue.indexOf(job, 0), this->localJobQueue.count());
 	}
 	manageJobs();
-}
+}*/
 
 //PRIVATE
 
 bool CompilerService::removeJob(Job *job) {
 	//Tries to locate a given Job in the local job queue or in the remote job queue and removes it,
 	//otherwise return false.
-	return (this->localJobQueue.removeOne(job)) ?  true : (this->remoteJobQueue.removeOne(job));
+	if (this->localJobQueue.removeOne(job)) {
+		network->setFreeLocalSlots(computeFreeLocalSlotCount());
+		return true;
+	} else if (this->remoteJobQueue.removeOne(job)) {
+		network->setFreeLocalSlots(computeFreeLocalSlotCount());
+		return true;
+	} else {
+		return false;
+	}
 }
 
 void CompilerService::manageJobs() {
@@ -137,6 +150,7 @@ void CompilerService::manageOutgoingJobs() {
 		network->delegateOutgoingJob(this->delegatedJobQueue.first());
 		this->delegatedJobQueue.removeFirst();
 	}
+	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 }
 
 
@@ -197,4 +211,19 @@ void CompilerService::onLocalCompileFinished(Job* job) {
 	emit localJobCompilationFinished(job);
 	setCurrentThreadCount(this->currentThreadCount - 1);
 	manageJobs();
+}
+
+void CompilerService::onReceivedJob(Job *job) {
+	// TODO
+	qFatal("onReceivedJob()");
+}
+void CompilerService::onRemoteJobAborted(Job *job) {
+	// TODO
+	qFatal("onRemoteJobAborted()");
+}
+
+unsigned int CompilerService::computeFreeLocalSlotCount() {
+	// free slots = 2*max threads - active jobs, so that every thread has one
+	// more job in the queue
+	return std::max(maxThreadCount - localJobQueue.size() - remoteJobQueue.size(), 0);
 }

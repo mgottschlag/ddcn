@@ -60,7 +60,7 @@ public:
        // return this->maxThreadCount;
        return QThread::idealThreadCount();
     }
-    
+
     void addToolChain(QString path) {
         ToolChain toolChain(path);
         if (this->toolChains.indexOf(toolChain) >= 0 && QFile(path).exists()) {
@@ -71,6 +71,7 @@ public:
 
 	void setMaxThreadCount(int count) {
 		this->saveMaxThreadCount(count);
+		network->setFreeLocalSlots(computeFreeLocalSlotCount());
 		emit maxThreadCountChanged(this->maxThreadCount);
 	}
 
@@ -85,11 +86,16 @@ public slots:
     /**Removes the job from the local queue if it has been executed successfully.
      * Otherwise, moves the job to the end of the list in order to execute it again.
      */
-    void onRemoteCompileFinished(Job *job, bool executed);
+	// TODO: This is not necessary anymore because CompilerNetwork will just try
+	// to send the job to another peer
+    //void onRemoteCompileFinished(Job *job, bool executed);
 signals:
     void currentThreadCountChanged(int currentThreadCount);
     void maxThreadCountChanged(int maxThreadCount);
 	void localJobCompilationFinished(Job *job);
+private slots:
+	void onReceivedJob(Job *job);
+	void onRemoteJobAborted(Job *job);
 private:
     bool removeJob(Job *job);
     void manageJobs();
@@ -105,8 +111,11 @@ private:
         this->currentThreadCount = count;
         emit currentThreadCountChanged(this->currentThreadCount);
     }
-    
+
     void determineAndSetMaxThreadCount();
+
+	unsigned int computeFreeLocalSlotCount();
+
     int currentThreadCount;
     int maxThreadCount;
     QList<ToolChain> toolChains;
