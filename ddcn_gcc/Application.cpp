@@ -31,6 +31,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <iostream>
 #include <QDir>
+#include <cstdio>
 
 QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info)
 {
@@ -87,12 +88,21 @@ int Application::run(int argc, char **argv) {
 			return -1;
 		}
 	}
+	// Check whether we need to read stdin
+	QByteArray stdinData;
+	for (int i = 1; i < argc; i++) {
+		// "-" says that we should read from stdin
+		if (!strcmp(argv[i], "-")) {
+			stdinData = readStdin();
+			break;
+		}
+	}
 	// Send the job
 	QStringList parameters;
 	for (int i = 1; i < argc; i++) {
 		parameters.append(argv[i]);
 	}
-	return executeJob(toolChain, parameters);
+	return executeJob(toolChain, parameters, stdinData);
 }
 
 QStringList Application::fetchToolChainList() {
@@ -119,7 +129,8 @@ QStringList Application::fetchToolChainList() {
 	return dummy;
 	//return toolChains;
 }
-int Application::executeJob(QString toolChain, QStringList parameters) {
+int Application::executeJob(QString toolChain, QStringList parameters,
+		const QByteArray &stdinData) {
 	QDBusInterface interface("org.ddcn.service",
 	                         "/CompilerService",
 	                         "org.ddcn.CompilerService");
@@ -128,7 +139,7 @@ int Application::executeJob(QString toolChain, QStringList parameters) {
 		return -1;
 	}
 	QDBusReply<JobResult> reply = interface.call("executeJob", parameters,
-			toolChain, QDir::currentPath());
+			toolChain, QDir::currentPath(), stdinData);
 	if (!reply.isValid()) {
 		qCritical(reply.error().message().toAscii().data());
 		qCritical("Error: Could not call compiler service (executeJob()).");
@@ -140,3 +151,9 @@ int Application::executeJob(QString toolChain, QStringList parameters) {
 	return result.returnValue;
 }
 
+QByteArray Application::readStdin() {
+	QFile input;
+	input.open(stdin, QIODevice::ReadOnly);
+	QByteArray inputData = input.readAll();
+	return inputData;
+}
