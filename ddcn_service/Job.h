@@ -33,7 +33,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "InputOutputFilePair.h"
 
 struct JobResult {
+	// TODO: Remove this
 	QString consoleOutput;
+	//QByteArray stdout;
+	//QByteArray stderr;
 	int returnValue;
 };
 
@@ -49,7 +52,7 @@ class Job : public QObject {
 	Q_OBJECT
 public:
 	Job(QStringList inputFiles, QStringList parameters,
-		 QStringList preprocessorParameters, QString toolChain, QString workingDir,
+		QStringList preprocessorParameters, QString toolChain, QString workingDir,
 		bool isRemoteJob, bool delegatable);
 	bool isRemoteJob() {
 		return this->remoteJob;
@@ -60,11 +63,23 @@ public:
 	JobResult getJobResult() {
 		return this->jobResult;
 	}
+	JobResult getPreprocessingResult() {
+		return this->preProcessResult;
+	}
 	bool isDelegatable() {
 		return this->delegatable;
 	}
 	void execute();
 	void preProcess();
+	bool isPreprocessing() {
+		return preprocessing;
+	}
+	bool isCompiling() {
+		return compiling;
+	}
+	bool wasPreprocessed() {
+		return preprocessed;
+	}
 
 	void setOutgoingJob(OutgoingJob *outgoingJob) {
 		this->outgoingJob = outgoingJob;
@@ -78,12 +93,28 @@ public:
 	IncomingJob *getIncomingJob() {
 		return incomingJob;
 	}
+
+	/*void setCompilerStdout(const QByteArray &stdout) {
+		compilerStdout = stdout;
+	}
+	const QByteArray &getCompilerStdout() {
+		return compilerStdout;
+	}
+	void setCompilerStderr(const QByteArray &stderr) {
+		compilerStderr = stderr;
+	}
+	const QByteArray &getCompilerStderr() {
+		return compilerStderr;
+	}*/
+
+	void setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr);
 signals:
 	void finished(Job *job);
 	void preProcessFinished(Job *job);
 private:
 	QString getQProcessErrorDescription(QProcess::ProcessError error);
-	QString consoleOutput;
+	QByteArray compilerStdout;
+	QByteArray compilerStderr;
 	QStringList inputFiles;
 	QStringList outputFiles;
 	bool delegatable;
@@ -99,6 +130,12 @@ private:
 	int preProcessListPosition;
 	QProcess *gccProcess;
 	bool remoteJob;
+	QByteArray preprocessingStdout;
+	QByteArray preprocessingStderr;
+
+	bool preprocessing;
+	bool preprocessed;
+	bool compiling;
 private slots:
 	void onPreProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 	void onPreProcessExecuteError(QProcess::ProcessError error);

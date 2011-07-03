@@ -204,7 +204,7 @@ void CompilerNetwork::removeGroupMembership(QString name, const PublicKey &publi
 }
 
 void CompilerNetwork::delegateOutgoingJob(Job *job) {
-	waitingJobs.append(job);
+	addWaitingJob(job);
 	if (freeRemoteSlots.size() > 0) {
 		// Create a job request for the job
 		createJobRequests();
@@ -218,9 +218,9 @@ void CompilerNetwork::delegateOutgoingJob(Job *job) {
 	}
 }
 Job *CompilerNetwork::cancelOutgoingJob() {
-	if (!waitingJobs.empty()) {
-		Job *job = waitingJobs.last();
-		waitingJobs.removeLast();
+	// Cancel a job which has not yet been delegated
+	Job *job = removeWaitingJob();
+	if (job) {
 		return job;
 	}
 	// TODO: Check whether we can abort an already delegated job
@@ -257,11 +257,43 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 		node->getTrustedPeer()->setNetworkNode(NULL);
 	}
 	// Reject local jobs delegated to this node
-	// TODO
+	for (int i = delegatedJobs.size() - 1; i >= 0; i--) {
+		if (delegatedJobs[i]->getTargetPeer() == node) {
+			emit finishedJob(delegatedJobs[i]->getJob(), false, false);
+			delegatedJobs.removeAt(i);
+		}
+	}
 	// Abort remote jobs from this node
-	// TODO
+	for (int i = incomingJobs.size() - 1; i >= 0; i--) {
+		if (incomingJobs[i]->getTargetPeer() == node) {
+			// Kill the job
+			// TODO: CompilerService does not yet react to this
+			emit remoteJobAborted(incomingJobs[i]->getJob());
+			// Delete the job
+			delete incomingJobs[i]->getJob();
+			delete incomingJobs[i];
+			incomingJobs.removeAt(i);
+		}
+	}
+	for (int i = incomingJobRequests.size() - 1; i >= 0; i--) {
+		if (incomingJobRequests[i]->source == node) {
+			incomingJobRequests.removeAt(i);
+		}
+	}
 	// Abort job requests directed to this node
-	// TODO
+	bool requestsRemoved = false;
+	for (int i = outgoingJobRequests.size() - 1; i >= 0; i--) {
+		if (outgoingJobRequests[i]->target == node) {
+			outgoingJobRequests.removeAt(i);
+			requestsRemoved = true;
+		}
+	}
+	if (requestsRemoved) {
+		// Create new requests if necessary
+		// TODO: Also look for network resources if necessary
+		createJobRequests();
+	}
+	QList<IncomingJobRequest*> incomingJobRequests;
 }
 void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
 	// TODO: Nothing to do here? Maybe update TrustedPeer name
@@ -272,18 +304,24 @@ void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet)
 			onIncomingJobRequest(node, packet);
 			break;
 		case PacketType::JobRequestAccepted:
-			// Really delegate the first job in the queue now
-			// TODO
+			onJobRequestAccepted(node, packet);
+			break;
 			break;
 		case PacketType::JobRequestRejected:
-			// Remove outgoing job request
-			// TODO
+			onJobRequestRejected(node, packet);
+			break;
 			break;
 		case PacketType::JobData:
+			onJobData(node, packet);
+			break;
 		case PacketType::JobDataReceived:
+			onJobDataReceived(node, packet);
+			break;
 		case PacketType::JobFinished:
+			onJobFinished(node, packet);
+			break;
 		case PacketType::AbortJob:
-			// TODO
+			onAbortJob(node, packet);
 			break;
 		case PacketType::QueryNetworkResources:
 			qDebug("Node asking for available resources.");
@@ -315,6 +353,33 @@ void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node
 			qWarning("Warning: Unknown group package type received.");
 			break;
 	}
+}
+
+void CompilerNetwork::onPreprocessingFinished(Job *job, int returnValue,
+		const QByteArray &stdout, const QByteArray &stderr) {
+	int waitingJobIndex = -1;
+	for (int i = 0; i < waitingPreprocessingJobs.count(); i++) {
+		if (waitingPreprocessingJobs[i] == job) {
+			waitingJobIndex = i;
+			break;
+		}
+	}
+	if (waitingJobIndex == -1) {
+		// Nothing to do here, the job was cancelled by CompilerService
+		return;
+	}
+	// If an error occurred, the job is finished
+	if (returnValue != 0) {
+		job->setFinished(returnValue, stdout, stderr);
+		return;
+	}
+	// Insert job into waitingPreprocessedJobs if it is in waitingPreprocessingJobs
+	// TODO: We also have to store preprocessor output!
+	waitingPreprocessingJobs.removeAt(waitingJobIndex);
+	waitingPreprocessedJobs.append(job);
+	// Delegate the job if possible
+	// TODO: We have to keep a list of the requests which have been accepted but
+	// no job has been sent
 }
 
 TrustedPeer *CompilerNetwork::getTrustedPeer(const PublicKey &publicKey) {
@@ -455,7 +520,7 @@ void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packe
 
 void CompilerNetwork::createJobRequests() {
 	// Send job requests for waiting jobs as long as there are free slots available
-	while (freeRemoteSlots.size() > 0 && outgoingJobRequests.size() < waitingJobs.size()) {
+	while (freeRemoteSlots.size() > 0 && outgoingJobRequests.size() < (int)getWaitingJobCount()) {
 		FreeCompilerSlots &nextSlots = freeRemoteSlots[0];
 		// Create request
 		// TODO: The request needs a timeout so that we do not wait forever
@@ -465,6 +530,12 @@ void CompilerNetwork::createJobRequests() {
 		outgoingJobRequests.append(request);
 		Packet packet(PacketType::JobRequest, qToBigEndian(request->id));
 		network->send(request->target, packet);
+		// If there are not enough preprocessed waiting jobs, start preprocessing
+		// for one of the waiting jobs
+		int preprocessed = getPreprocessedWaitingJobCount() + getPreprocessingWaitingJobCount();
+		if (outgoingJobRequests.size() > preprocessed) {
+			preprocessWaitingJob();
+		}
 		// Remove one free slot from the list
 		nextSlots.slotCount--;
 		if (nextSlots.slotCount == 0) {
@@ -502,4 +573,203 @@ void CompilerNetwork::onIncomingJobRequest(NetworkNode *node, const Packet &pack
 	network->send(node, reply);
 	// Consume one local slot
 	// TODO: Should this already be done here, or only later when the Job is created?
+}
+
+void CompilerNetwork::onJobRequestAccepted(NetworkNode *node, const Packet &packet) {
+	qDebug("onJobRequestAccepted");
+	// Get job id
+	unsigned int id = 0;
+	const unsigned int *idPtr = packet.getPayload<unsigned int>();
+	if (idPtr) {
+		id = qFromBigEndian(*idPtr);
+	} else {
+		qWarning("onJobRequestAccepted: Invalid packet received.");
+		return;
+	}
+	// We have to check whether we have sent a job request to this peer
+	// to ensure that we do not accept offers from untrusted peers
+	// Also, remove the request from the list
+	bool requestFound = false;
+	for (int i = 0; i < outgoingJobRequests.size(); i++) {
+		OutgoingJobRequest *request = outgoingJobRequests[i];
+		if (request->target == node && request->id == id) {
+			requestFound = true;
+			// Really delegate the first job in the queue now
+			Job *job = removePreprocessedWaitingJob();
+			if (!job) {
+				// No job is ready, so wait until a job has been preprocessed
+				// TODO
+			}
+			delegateJob(job, request);
+			// Remove the request from the list
+			delete request;
+			outgoingJobRequests.removeAt(i);
+			break;
+		}
+	}
+	if (!requestFound) {
+		qWarning("onJobRequestAccepted: Received unknown job id.");
+	}
+}
+void CompilerNetwork::onJobRequestRejected(NetworkNode *node, const Packet &packet) {
+	qDebug("onJobRequestRejected");
+	// Get job id
+	unsigned int id = 0;
+	const unsigned int *idPtr = packet.getPayload<unsigned int>();
+	if (idPtr) {
+		id = qFromBigEndian(*idPtr);
+	} else {
+		qWarning("onJobRequestRejected: Invalid packet received.");
+		return;
+	}
+	// Remove outgoing job request
+	bool requestFound = false;
+	for (int i = 0; i < outgoingJobRequests.size(); i++) {
+		OutgoingJobRequest *request = outgoingJobRequests[i];
+		if (request->target == node && request->id == id) {
+			requestFound = true;
+			delete request;
+			outgoingJobRequests.removeAt(i);
+			break;
+		}
+	}
+	if (!requestFound) {
+		qWarning("onJobRequestRejected: Received unknown job id.");
+	}
+	// TODO: Remove all free slots from this node as it probably will not accept any later job now
+	// Send new requests to other peers if necessary
+	createJobRequests();
+}
+
+void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
+	qDebug("onJobData");
+	// Create input files
+	// TODO
+	// Create job
+	// TODO
+	// Start job
+	// TODO
+}
+void CompilerNetwork::onJobDataReceived(NetworkNode *node, const Packet &packet) {
+	qDebug("onJobDataReceived");
+	// Restart outgoing job timeout (we can wait longer for actual compilation
+	// than for receiving the job data)
+	// TODO
+}
+void CompilerNetwork::onJobFinished(NetworkNode *node, const Packet &packet) {
+	qDebug("onJobFinished");
+	// Get output data
+	// TODO
+	// Create output files
+	// TODO
+	// Finish job
+	// TODO
+}
+void CompilerNetwork::onAbortJob(NetworkNode *node, const Packet &packet) {
+	qDebug("onAbortJob");
+	// Get job id
+	unsigned int id = 0;
+	const unsigned int *idPtr = packet.getPayload<unsigned int>();
+	if (idPtr) {
+		id = qFromBigEndian(*idPtr);
+	} else {
+		qWarning("onAbortJob: Invalid packet received.");
+		return;
+	}
+	// Check if the job has potentially already been started
+	for (int i = 0; i < incomingJobs.count(); i++) {
+		if (incomingJobs[i]->getTargetPeer() == node && incomingJobs[i]->getId() == id) {
+			// Kill the job
+			// TODO: CompilerService does not yet react to this
+			emit remoteJobAborted(incomingJobs[i]->getJob());
+			// Delete the job
+			delete incomingJobs[i]->getJob();
+			delete incomingJobs[i];
+			incomingJobs.removeAt(i);
+			return;
+		}
+	}
+	// Cancel an incoming job request if it has not
+	for (int i = incomingJobRequests.size() - 1; i >= 0; i--) {
+		if (incomingJobRequests[i]->source == node && incomingJobRequests[i]->id == id) {
+			incomingJobRequests.removeAt(i);
+			return;
+		}
+	}
+	qWarning("onAbortJob(): Invalid job id.");
+}
+
+void CompilerNetwork::addWaitingJob(Job *job) {
+	if (job->wasPreprocessed()) {
+		waitingPreprocessedJobs.append(job);
+	} else if (job->isPreprocessing()) {
+		// We do not need to connect to the preprocessingFinished() signal as
+		// we are already connected to it, CompilerNetwork started preprocessing
+		// anyways
+		waitingPreprocessingJobs.append(job);
+	} else {
+		waitingJobs.append(job);
+	}
+}
+Job *CompilerNetwork::removeWaitingJob() {
+	// Prefer to pick a job from one of the lists where little work has already
+	// been done
+	if (!waitingJobs.empty()) {
+		Job *job = waitingJobs.last();
+		waitingJobs.removeLast();
+		return job;
+	} else if (!waitingPreprocessingJobs.empty()) {
+		Job *job = waitingPreprocessingJobs.last();
+		waitingPreprocessingJobs.removeLast();
+		return job;
+	} else if (!waitingPreprocessedJobs.empty()) {
+		Job *job = waitingPreprocessedJobs.last();
+		waitingPreprocessedJobs.removeLast();
+		return job;
+	} else {
+		return NULL;
+	}
+}
+Job *CompilerNetwork::removePreprocessedWaitingJob() {
+	if (waitingPreprocessedJobs.empty()) {
+		return NULL;
+	}
+	Job *job = waitingPreprocessedJobs.last();
+	waitingPreprocessedJobs.removeLast();
+	return job;
+}
+unsigned int CompilerNetwork::getWaitingJobCount() {
+	return waitingJobs.count() + waitingPreprocessedJobs.count()
+			+ waitingPreprocessingJobs.count();
+}
+unsigned int CompilerNetwork::getPreprocessingWaitingJobCount() {
+	return waitingPreprocessedJobs.size();
+}
+unsigned int CompilerNetwork::getPreprocessedWaitingJobCount() {
+	return waitingPreprocessedJobs.size();
+}
+
+void CompilerNetwork::preprocessWaitingJob() {
+	if (waitingJobs.empty()) {
+		// This should not happen, should be checked in createJobRequests()
+		qCritical("preprocessWaitingJob() called without unpreprocessed waiting jobs!");
+		return;
+	}
+	// TODO: Should we rather pick the first job?
+	Job *job = waitingJobs.last();
+	waitingJobs.removeLast();
+	waitingPreprocessingJobs.append(job);
+	// Start preprocessing
+	connect(job, SIGNAL(preProcessFinished(Job*, int, QByteArray, QByteArray)),
+			this, SLOT(onPreprocessingFinished(Job*, int, QByteArray, QByteArray)));
+	job->preProcess();
+}
+
+void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
+	// Collect input data
+	// TODO
+	// Get parameters
+	// TODO
+	// Create job data packet
+	// TODO
 }

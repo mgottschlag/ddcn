@@ -35,15 +35,25 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 class IncomingJob {
 public:
-	IncomingJob(NetworkNode* targetPeer, Job* job, int id) {
-	  this.targetPeer = targetPeer;
-	  this.job = job;
-	  this.id = id;
+	IncomingJob(NetworkNode *targetPeer, Job *job, unsigned int id) {
+		this->targetPeer = targetPeer;
+		this->job = job;
+		this->id = id;
+	}
+
+	NetworkNode *getTargetPeer() {
+		return targetPeer;
+	}
+	Job *getJob() {
+		return job;
+	}
+	unsigned int getId() {
+		return id;
 	}
 private:
-	NetworkNode* targetPeer;
-	Job* job;
-	int id;
+	NetworkNode *targetPeer;
+	Job *job;
+	unsigned int id;
 };
 
 #endif

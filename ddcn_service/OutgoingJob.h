@@ -34,14 +34,21 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 class OutgoingJob {
 public:
-	OutgoingJob(NetworkNode* sourcePeer, Job* job, int id) {
-	  this->sourcePeer = sourcePeer;
+	OutgoingJob(NetworkNode* targetPeer, Job* job, int id) {
+	  this->targetPeer = targetPeer;
 	  this->job = job;
 	  this->id = id;
 	}
+
+	NetworkNode *getTargetPeer() {
+		return targetPeer;
+	}
+	Job *getJob() {
+		return job;
+	}
 private:
-	NetworkNode* sourcePeer;
-	Job* job;
+	NetworkNode *targetPeer;
+	Job *job;
 	int id;
 };
 
