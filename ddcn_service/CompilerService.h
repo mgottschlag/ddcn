@@ -48,7 +48,6 @@ public:
     void addJob(Job *job);
 
     QList<ToolChain> *getToolChains() {
-		qCritical("GetToolchains, %d", this->toolChains.count());
         return &this->toolChains;
     }
 
@@ -115,6 +114,8 @@ private:
     void determineAndSetMaxThreadCount();
 
 	unsigned int computeFreeLocalSlotCount();
+
+	Job *extractLocalDelegatableJob();
 
     int currentThreadCount;
     int maxThreadCount;
