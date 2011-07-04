@@ -67,7 +67,8 @@ PublicKey::~PublicKey() {
 
 PublicKey PublicKey::fromPEM(QString data) {
 	BIO *bio = BIO_new(BIO_s_mem());
-	BIO_write(bio, data.data(), data.size());
+	QByteArray ascii = data.toAscii();
+	BIO_write(bio, ascii.data(), ascii.size());
 	// We do not support encrypting the key with a password
 	EVP_PKEY *osslKey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
 	BIO_free(bio);
@@ -240,34 +241,35 @@ PrivateKey PrivateKey::generate(unsigned int bits) {
 	return key;
 }
 
-PublicKey PrivateKey::fromPEM(QString data) {
+PrivateKey PrivateKey::fromPEM(QString data) {
 	BIO *bio = BIO_new(BIO_s_mem());
-	BIO_write(bio, data.data(), data.size());
+	QByteArray ascii = data.toAscii();
+	BIO_write(bio, ascii.data(), ascii.size());
 	// We do not support encrypting the key with a password
 	EVP_PKEY *osslKey = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
 	BIO_free(bio);
 	if (!osslKey) {
-		return PublicKey();
+		return PrivateKey();
 	}
 	PublicKeyData *keyData = new PublicKeyData();
 	keyData->setPrivateKey(true);
 	keyData->setKey(osslKey);
-	PublicKey key(keyData);
+	PrivateKey key(keyData);
 	return key;
 }
-PublicKey PrivateKey::fromDER(QByteArray data) {
+PrivateKey PrivateKey::fromDER(QByteArray data) {
 	BIO *bio = BIO_new(BIO_s_mem());
 	BIO_write(bio, data.data(), data.size());
 	// We do not support encrypting the key with a password
 	EVP_PKEY *osslKey = d2i_PrivateKey_bio(bio, NULL);
 	BIO_free(bio);
 	if (!osslKey) {
-		return PublicKey();
+		return PrivateKey();
 	}
 	PublicKeyData *keyData = new PublicKeyData();
 	keyData->setPrivateKey(true);
 	keyData->setKey(osslKey);
-	PublicKey key(keyData);
+	PrivateKey key(keyData);
 	return key;
 }
 QString PrivateKey::toPEM() const {
@@ -300,13 +302,13 @@ bool PrivateKey::save(QString fileName) const {
 	file.write(pem.toAscii());
 	return true;
 }
-PublicKey PrivateKey::load(QString fileName) {
+PrivateKey PrivateKey::load(QString fileName) {
 	QFile file(fileName);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		return PublicKey();
 	}
 	QByteArray pem = file.readAll();
-	return fromPEM(QString::fromAscii(pem));
+	return fromPEM(QString::fromAscii(pem.data()));
 
 }
 

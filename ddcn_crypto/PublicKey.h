@@ -78,13 +78,13 @@ public:
 
 	static PrivateKey generate(unsigned int bits = 2048);
 
-	static PublicKey fromPEM(QString data);
-	static PublicKey fromDER(QByteArray data);
+	static PrivateKey fromPEM(QString data);
+	static PrivateKey fromDER(QByteArray data);
 	QString toPEM() const;
 	QByteArray toDER() const;
 
 	bool save(QString fileName) const;
-	static PublicKey load(QString fileName);
+	static PrivateKey load(QString fileName);
 
 	bool isValid() const {
 		return keyData != NULL;
