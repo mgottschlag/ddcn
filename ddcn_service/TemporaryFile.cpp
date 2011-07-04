@@ -32,7 +32,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 TemporaryFile::TemporaryFile(QString extension, QString templateName,
 							 QString filename) {
 	QSettings settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn");
-	this->path = settings.value("tempFilePath", "tmp/").toString();
+	this->path = settings.value("tempFilePath", "/tmp/").toString();
 	this->path = this->path.endsWith("/") ? this->path : this->path + "/";
 	this->extension = extension.startsWith(".") ? extension : "." + extension;
 	this->name = generateFilename(templateName, filename);
