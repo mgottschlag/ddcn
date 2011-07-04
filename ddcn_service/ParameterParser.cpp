@@ -98,20 +98,27 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 			delegatable = false;
 			preprocessingParameters.append(parameter);
 			compilerParameters.append(parameter);
-		} else if (parameter == "E"
-				|| parameter == "-M"
-				|| parameter == "-MM"
-				|| parameter == "-MF"
-				|| parameter == "-MG"
-				|| parameter == "-MP"
+		} else if (parameter == "-MF"
 				|| parameter == "-MT"
-				|| parameter == "-MQ"
+				|| parameter == "-MQ") {
+			// Dependency generation parameters with additional parameter
+			preprocessingParameters.append(parameter);
+			if (i == parameter.count() - 1) {
+				delegatable = false;
+				continue;
+			}
+			i++;
+			preprocessingParameters.append(rawParameters[i]);
+		} else if (parameter == "-MG"
+				|| parameter == "-MP"
 				|| parameter == "-MD"
 				|| parameter == "-MMD") {
-			// Do not delegate jobs which only perform preprocessing or which
-			// perform dependency generation
-			// TODO: We can actually delegate these jobs, might get a bit messy
-			// though
+			// Dependency generation parameters
+			preprocessingParameters.append(parameter);
+		} else if (parameter == "E"
+				|| parameter == "-M"
+				|| parameter == "-MM") {
+			// Do not delegate jobs which only perform preprocessing
 			delegatable = false;
 			preprocessingParameters.append(parameter);
 			compilerParameters.append(parameter);
