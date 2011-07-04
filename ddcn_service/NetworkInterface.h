@@ -113,7 +113,7 @@ protected:
 	// System event listener interface
 	virtual void handleSystemEvent(const ariba::utility::SystemEvent &event);
 signals:
-	void aribaMessage(const ariba::DataMessage &msg, const ariba::utility::NodeID &remote,
+	void aribaMessage(const QByteArray &data, unsigned short serial, const ariba::utility::NodeID &remote,
 		const ariba::utility::LinkID &link);
 	void aribaLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
 	void aribaLinkDown(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
@@ -121,7 +121,7 @@ signals:
 	void aribaLinkFail(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
 	void mcpoReceiveData(const ariba::DataMessage &msg);
 private slots:
-	void onAribaMessage(const ariba::DataMessage &msg, const ariba::utility::NodeID &remote,
+	void onAribaMessage(const QByteArray &data, unsigned short serial, const ariba::utility::NodeID &remote,
 		const ariba::utility::LinkID &link);
 	void onAribaLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);
 	void onAribaLinkDown(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote);

@@ -29,6 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ariba/utility/system/StartupWrapper.h>
 #include <QDebug>
 #include <QtEndian>
+#include <QThread>
 
 uint qHash(ariba::utility::NodeID nodeId) {
 	return qHash(nodeId.toString().c_str());
@@ -44,12 +45,15 @@ struct PeerMessage {
 	ariba::utility::LinkID linkId;
 	// This is an encrypted stream, so no Packet here
 	QByteArray message;
+	unsigned short serial;
 };
 
 class DdcnMessage : public ariba::Message {
 	VSERIALIZEABLE;
 public:
-	DdcnMessage() {
+	DdcnMessage() : serial(0) {
+	}
+	DdcnMessage(unsigned short serial) : serial(serial) {
 	}
 	virtual ~DdcnMessage() {
 	}
@@ -57,11 +61,31 @@ public:
 	QByteArray &getData() {
 		return data;
 	}
+
+	unsigned short getSerial() {
+		return serial;
+	}
+
+	unsigned short getChecksum() {
+		return qChecksum(data.data(), data.size());
+	}
 private:
+	unsigned short serial;
 	QByteArray data;
 };
 
 sznBeginDefault(DdcnMessage, X) {
+	if (X.isDeserializer() && X.getRemainingLength() < 6 * 8) {
+		qCritical("Empty packet without header received.");
+		data = QByteArray();
+		// TODO
+	} else {
+	quint16 checksum;
+	if (X.isSerializer()) {
+		checksum = qChecksum(data.data(), data.size());
+	}
+	X && serial;
+	X && checksum;
 	unsigned int size = data.size();
 	X && size;
 	data.resize(size);
@@ -75,9 +99,20 @@ sznBeginDefault(DdcnMessage, X) {
 	}
 	// TODO: This can be optimized
 	for (unsigned int i = 0; i < size; i++) {
+		if (X.isDeserializer() && X.getRemainingLength() < 8) {
+			qCritical("Not enough data in packet!");
+			// TODO
+			break;
+		}
 		unsigned char c = data[i];
 		X && c;
 		data[i] = c;
+	}
+	if (X.isDeserializer()) {
+		if (checksum != qChecksum(data.data(), data.size())) {
+			qFatal("Checksums do not match!");
+		}
+	}
 	}
 } sznEnd();
 
@@ -130,8 +165,9 @@ NetworkInterface::NetworkInterface(QString name,
 		discoveryTimer(this) {
 	certificate = Certificate::createSelfSigned(privateKey);
 	// We use signals/slots to pass data from the Ariba thread to the Qt thread
-	connect(this, SIGNAL(aribaMessage(ariba::DataMessage, ariba::utility::NodeID, ariba::utility::LinkID)),
-		SLOT(onAribaMessage(ariba::DataMessage, ariba::utility::NodeID, ariba::utility::LinkID)), Qt::QueuedConnection);
+	connect(this, SIGNAL(aribaMessage(QByteArray, unsigned short, ariba::utility::NodeID, ariba::utility::LinkID)),
+		SLOT(onAribaMessage(QByteArray, unsigned short, ariba::utility::NodeID, ariba::utility::LinkID)),
+		Qt::QueuedConnection);
 	connect(this, SIGNAL(aribaLinkUp(ariba::utility::LinkID, ariba::utility::NodeID)),
 		SLOT(onAribaLinkUp(ariba::utility::LinkID, ariba::utility::NodeID)), Qt::QueuedConnection);
 	connect(this, SIGNAL(aribaLinkDown(ariba::utility::LinkID, ariba::utility::NodeID)),
@@ -218,7 +254,18 @@ bool NetworkInterface::onLinkRequest(const ariba::utility::NodeID &remote) {
 }
 void NetworkInterface::onMessage(const ariba::DataMessage &msg,
 		const ariba::utility::NodeID &remote, const ariba::utility::LinkID &link) {
-	emit aribaMessage(msg, remote, link);
+	// TODO: This must not be an assert
+	assert(msg.isMessage());
+	DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
+	if (ddcnMessage->getData().size() == 0) {
+		qCritical("Received empty message.");
+		return;
+	}
+	qDebug("Incoming: %d (serial: %d, checksum: %X)",
+		(int)ddcnMessage->getData().size(), ddcnMessage->getSerial(),
+		ddcnMessage->getChecksum());
+	emit aribaMessage(ddcnMessage->getData(), ddcnMessage->getSerial(), remote, link);
+	delete ddcnMessage;
 }
 void NetworkInterface::onLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
 	emit aribaLinkUp(link, remote);
@@ -327,9 +374,10 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 		delete groupMessage;
 	} else if (event.getType() == SEND_PEER_MESSAGE_EVENT) {
 		PeerMessage *peerMessage = event.getData<PeerMessage>();
-		// TODO: Serial counter to recognize missing packets
-		DdcnMessage message;
+		DdcnMessage message(peerMessage->serial);
 		message.getData() = peerMessage->message;
+		qDebug("Outgoing: %d (serial: %d, checksum: %X)",
+			peerMessage->message.size(), peerMessage->serial, message.getChecksum());
 		node->sendMessage(message, peerMessage->linkId);
 		delete peerMessage;
 	} else {
@@ -337,7 +385,7 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 	}
 }
 
-void NetworkInterface::onAribaMessage(const ariba::DataMessage &msg,
+void NetworkInterface::onAribaMessage(const QByteArray &data, unsigned short serial,
 		const ariba::utility::NodeID &remote, const ariba::utility::LinkID &link) {
 	qCritical("onAribaMessage");
 	NetworkNode *networkNode = NULL;
@@ -351,14 +399,14 @@ void NetworkInterface::onAribaMessage(const ariba::DataMessage &msg,
 		}
 	}
 	if (!networkNode) {
+		qWarning("Message from unknown node.");
 		return;
 	}
-	// TODO: This must not be an assert
-	assert(msg.isMessage());
-	DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
-	// TODO: Do we need to delete ddcnMessage here? Probably.
-	networkNode->getTLS().writeIncoming(ddcnMessage->getData());
-	qCritical("writeIncoming: %d", (int)ddcnMessage->getData().size());
+	unsigned short expectedSerial = networkNode->getNextExpectedSerial();
+	if (serial != expectedSerial) {
+		qCritical("Serial mismatch: %d instead of %d", serial, expectedSerial);
+	}
+	networkNode->getTLS().writeIncoming(data);
 }
 void NetworkInterface::onAribaLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
 	qCritical("onAribaLinkUp");
@@ -438,6 +486,7 @@ void NetworkInterface::onNodeOutgoingDataAvailable(NetworkNode *node) {
 	peerMessage->nodeId = node->aribaNode;
 	peerMessage->linkId = node->aribaLink;
 	peerMessage->message = outgoingData;
+	peerMessage->serial = node->getNextOutgoingSerial();
 	SystemQueue::instance().scheduleEvent(SystemEvent(this,
 		SEND_PEER_MESSAGE_EVENT, peerMessage));
 }
