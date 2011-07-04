@@ -38,6 +38,7 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true), freeLocalSlots(0),
 	QString keyFile = QFileInfo(settings.fileName()).absolutePath() + "/privkey.pem";
 	PrivateKey key = PrivateKey::load(keyFile);
 	if (!key.isValid()) {
+		qWarning("Warning: Could not read local private key, generating new key.");
 		key = PrivateKey::generate(2048);
 		if (!key.save(keyFile)) {
 			qWarning("Warning: Could not save local private key!");
@@ -297,6 +298,7 @@ void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
 	// TODO: Nothing to do here? Maybe update TrustedPeer name
 }
 void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet) {
+	qDebug("Message received: %d", packet.getType());
 	switch (packet.getType()) {
 		case PacketType::JobRequest:
 			onIncomingJobRequest(node, packet);
@@ -345,6 +347,8 @@ void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node
 	switch (packet.getType()) {
 		case PacketType::QueryNetworkResources:
 			qDebug("Node asking for network resources.");
+			// TODO: This needs to be special as we have to prove that we are
+			// a member of that group
 			reportNetworkResources(node);
 			break;
 		default:
@@ -354,6 +358,7 @@ void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node
 }
 
 void CompilerNetwork::onPreprocessingFinished(Job *job) {
+	qDebug("onPreprocessingFinished");
 	int waitingJobIndex = -1;
 	for (int i = 0; i < waitingPreprocessingJobs.count(); i++) {
 		if (waitingPreprocessingJobs[i] == job) {
@@ -363,20 +368,26 @@ void CompilerNetwork::onPreprocessingFinished(Job *job) {
 	}
 	if (waitingJobIndex == -1) {
 		// Nothing to do here, the job was cancelled by CompilerService
+		qCritical("onPreprocessingFinished: Job already removed?");
 		return;
 	}
+	waitingPreprocessingJobs.removeAt(waitingJobIndex);
 	// If an error occurred, the job is finished
 	JobResult result = job->getPreprocessingResult();
 	if (result.returnValue != 0) {
 		job->setFinished(result.returnValue, result.stdout, result.stderr);
+		delete job;
+		qWarning("Preprocessing finished with error (%d, \"%s\").", result.returnValue, result.stderr.data());
 		return;
 	}
 	// Insert job into waitingPreprocessedJobs if it is in waitingPreprocessingJobs
-	waitingPreprocessingJobs.removeAt(waitingJobIndex);
-	waitingPreprocessedJobs.append(job);
-	// Delegate the job if possible
-	// TODO: We have to keep a list of the requests which have been accepted but
-	// no job has been sent
+	// or delegate the job if possible
+	if (acceptedJobRequests.size() > 0) {
+		delegateJob(job, acceptedJobRequests.back());
+		acceptedJobRequests.removeLast();
+	} else {
+		waitingPreprocessedJobs.append(job);
+	}
 }
 void CompilerNetwork::onJobFinished(Job *job) {
 	IncomingJob *incoming = job->getIncomingJob();
@@ -443,9 +454,11 @@ void CompilerNetwork::askForFreeSlots() {
 	// TODO: Maybe include the toolchain version here? Might reduce overall
 	// traffic generated
 	Packet packet(PacketType::QueryNetworkResources);
-	foreach (TrustedPeer *trustedPeer, trustedPeers) {
+	// TODO: Debug
+	network->sendToAll(packet);
+	/*foreach (TrustedPeer *trustedPeer, trustedPeers) {
 		network->send(trustedPeer->getNetworkNode(), packet);
-	}
+	}*/
 	// The packet sent to the groups has to look different as we have to
 	// include the group key
 	foreach (TrustedGroup *trustedGroup, trustedGroups) {
@@ -627,10 +640,14 @@ void CompilerNetwork::onJobRequestAccepted(NetworkNode *node, const Packet &pack
 		if (request->target == node && request->id == id) {
 			requestFound = true;
 			// Really delegate the first job in the queue now
+			qDebug("Job request accepted, queue size: %d/%d/%d", waitingJobs.size(),
+				waitingPreprocessingJobs.size(), waitingPreprocessedJobs.size());
 			Job *job = removePreprocessedWaitingJob();
 			if (!job) {
 				// No job is ready, so wait until a job has been preprocessed
-				// TODO
+				acceptedJobRequests.append(request);
+				outgoingJobRequests.removeAt(i);
+				return;
 			}
 			delegateJob(job, request);
 			// Remove the request from the list
@@ -723,6 +740,7 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 	connect(job, SIGNAL(finished(Job*)), this, SLOT(onJobFinished(Job*)));
 	emit receivedJob(job);
 	// Send packet indicating that the job was received
+	qDebug("Sending JobDataReceived...");
 	Packet reply(PacketType::JobDataReceived, qToBigEndian(id));
 	network->send(node, reply);
 }
@@ -881,7 +899,7 @@ void CompilerNetwork::preprocessWaitingJob() {
 	waitingJobs.removeLast();
 	waitingPreprocessingJobs.append(job);
 	// Start preprocessing
-	connect(job, SIGNAL(preProcessFinished(Job*)),
+	connect(job, SIGNAL(preprocessingFinished(Job*)),
 			this, SLOT(onPreprocessingFinished(Job*)));
 	job->preProcess();
 }

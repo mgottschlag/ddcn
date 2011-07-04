@@ -186,6 +186,8 @@ private:
 	QList<OutgoingJobRequest*> outgoingJobRequests;
 	QList<IncomingJobRequest*> incomingJobRequests;
 
+	QList<OutgoingJobRequest*> acceptedJobRequests;
+
 	QList<IncomingJob*> incomingJobs;
 
 	unsigned int lastJobId;
