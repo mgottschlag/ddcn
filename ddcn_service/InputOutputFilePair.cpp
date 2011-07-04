@@ -55,7 +55,7 @@ void InputOutputFilePair::createTemporaryFiles() {
 QString InputOutputFilePair::generateFilename(QString templateName) {
 	QString random = randomize();
 	QString returnValue = templateName;
-	while (!(QFile().exists(this->path + returnValue + random + this->getInputFileExtension())) ||
+	while (QFile().exists(this->path + returnValue + random + this->getInputFileExtension()) ||
 		QFile().exists(this->path + returnValue + random + this->getOutputFileExtension())) {
 		random = randomize();
 	}
