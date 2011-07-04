@@ -39,10 +39,6 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 		const QByteArray &stdinData) :
 		preProcessListPosition(0), preprocessing(false), preprocessed(false),
 		compiling(false), incomingJob(NULL), outgoingJob(NULL) {
-	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
-			  (inputFiles.count() <= 0) ? "[no inputFiles]" : inputFiles[0].toAscii().data(),
-			  (fullParameters.count() <= 0) ? "[no parameters]" : fullParameters[0].toAscii().data(),
-			  toolChain.toAscii().data(), (int)this->delegatable);
 	this->inputFiles = inputFiles;
 	this->outputFiles = outputFiles;
 	this->fullParameters = fullParameters;
@@ -52,6 +48,10 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 	this->delegatable = delegatable;
 	this->workingDir = workingDir;
 	this->stdinData = stdinData;
+	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
+			(inputFiles.count() <= 0) ? "[no inputFiles]" : inputFiles[0].toAscii().data(),
+			(fullParameters.count() <= 0) ? "[no parameters]" : fullParameters[0].toAscii().data(),
+			toolChain.toAscii().data(), (int)this->delegatable);
 }
 Job::~Job() {
 	// Remove temporary files created for preprocessing
@@ -70,7 +70,7 @@ void Job::preProcess() {
 			inputFile.right(inputFile.length() - inputFile.lastIndexOf(".")),
 			"ddcn_tmp_",
 			inputFile.left(inputFile.indexOf(".")));
-		preProcessParameter << "-E " << inputFile << "-o"
+		preProcessParameter << "-E" << inputFile << "-o"
 									<< tmpFile.getFilename()
 									<< this->preprocessorParameters;
 		this->preprocessedFiles.append(tmpFile.getFilename());
@@ -85,6 +85,7 @@ void Job::preProcess() {
 			this,
 			SLOT(onPreProcessExecuteError(QProcess::ProcessError))
 		);
+		gccPreProcess->setWorkingDirectory(this->workingDir);
 		gccPreProcess->start("gcc", preProcessParameter);
 		preprocessing = true;
 	} else {
