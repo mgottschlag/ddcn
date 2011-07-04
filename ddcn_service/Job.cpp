@@ -81,9 +81,9 @@ void Job::preProcess() {
 			SLOT(onPreProcessFinished(int,QProcess::ExitStatus))
 		);
 		connect(gccPreProcess,
-			SIGNAL(error(int, QProcess::ExitStatus)),
+			SIGNAL(error(QProcess::ProcessError)),
 			this,
-			SLOT(onPreProcessExecuteError(QProcess::ExitStatus))
+			SLOT(onPreProcessExecuteError(QProcess::ProcessError))
 		);
 		gccPreProcess->start("gcc", preProcessParameter);
 		preprocessing = true;
