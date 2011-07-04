@@ -145,8 +145,10 @@ void CompilerService::manageOutgoingJobs() {
 	//delegates all jobs until only this->maxThreadCount * 2 Jobs remain in localJobQueue
 	//removes delegated Jobs from the delegatedJobQueue
 	while (this->maxThreadCount < this->localJobQueue.count()) {
-		Job *job = this->localJobQueue.last();
-		this->localJobQueue.removeLast();
+		Job *job = extractLocalDelegatableJob();
+		if (job == NULL) {
+			break;
+		}
 		this->delegatedJobQueue.append(job);
 		network->delegateOutgoingJob(this->delegatedJobQueue.first());
 		this->delegatedJobQueue.removeFirst();
@@ -227,4 +229,15 @@ unsigned int CompilerService::computeFreeLocalSlotCount() {
 	// free slots = 2*max threads - active jobs, so that every thread has one
 	// more job in the queue
 	return std::max(maxThreadCount - localJobQueue.size() - remoteJobQueue.size(), 0);
+}
+
+Job *CompilerService::extractLocalDelegatableJob() {
+	for (int i = this->localJobQueue.size() - 1; i >= 0; i--) {
+		if (this->localJobQueue[i]->isDelegatable()) {
+			Job *job = this->localJobQueue[i];
+			this->localJobQueue.removeAt(i);
+			return job;
+		}
+	}
+	return NULL;
 }
