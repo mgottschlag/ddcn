@@ -30,7 +30,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QtEndian>
 
 NetworkNode::NetworkNode(ariba::utility::NodeID nodeId, ariba::utility::LinkID linkId) : aribaNode(nodeId),
-		aribaLink(linkId), trustedPeer(NULL) {
+		aribaLink(linkId), trustedPeer(NULL), lastExpectedSerial(0), lastOutgoingSerial(0) {
 	connect(&tls, SIGNAL(readyReadOutgoing()), this,
 		SLOT(onOutgoingDataAvailable()));
 	connect(&tls, SIGNAL(readyRead()), this,
@@ -55,6 +55,7 @@ void NetworkNode::onOutgoingDataAvailable() {
 	emit outgoingDataAvailable(this);
 }
 void NetworkNode::onIncomingDataAvailable() {
+	qDebug("Incoming data available.");
 	incomingData += tls.read();
 	// Read packets until not enough data is left
 	PacketHeader header;
@@ -62,8 +63,9 @@ void NetworkNode::onIncomingDataAvailable() {
 		uint32_t dataSize = incomingData.size();
 		memcpy(&header, incomingData.data(), sizeof(header));
 		uint32_t packetSize = qFromBigEndian(header.size);
-		if (dataSize >= packetSize) {
-			if (dataSize == packetSize) {
+		qDebug("packet: %d/%d (type: %d).", dataSize, packetSize, header.type);
+		if (dataSize >= packetSize + sizeof(header)) {
+			if (dataSize == packetSize + sizeof(header)) {
 				Packet packet = Packet::fromRawData(incomingData.left(sizeof(header) + packetSize));
 				// TODO: Disconnect if packet is invalid
 				emit packetReceived(this, packet);

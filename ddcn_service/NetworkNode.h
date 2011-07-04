@@ -49,6 +49,13 @@ public:
 		return trustedPeer;
 	}
 	void sendPacket(const Packet &packet);
+
+	unsigned short getNextExpectedSerial() {
+		return ++lastExpectedSerial;
+	}
+	unsigned short getNextOutgoingSerial() {
+		return ++lastOutgoingSerial;
+	}
 signals:
 	void outgoingDataAvailable(NetworkNode *node);
 	void packetReceived(NetworkNode *node, const Packet &packet);
@@ -70,6 +77,9 @@ private:
 	TLS tls;
 
 	QByteArray incomingData;
+
+	unsigned short lastExpectedSerial;
+	unsigned short lastOutgoingSerial;
 
 	// TODO: Remove this
 	friend class NetworkInterface;
