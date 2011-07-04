@@ -46,46 +46,39 @@ struct PeerMessage {
 	QByteArray message;
 };
 
-/*class DdcnMessage : public ariba::Message {
-	VSERIALIZEABLE;
-public:
-	DdcnMessage() : data(NULL), length(0) {
-	}
-	DdcnMessage(char *data, size_t length) : data(data), length(length) {
-	}
-	virtual ~DdcnMessage() {
-	}
-
-	size_t getLength() {
-		return length;
-	}
-	char *getData() {
-		return data;
-	}
-
-private:
-	char *data;
-	size_t length;
-};*/
 class DdcnMessage : public ariba::Message {
 	VSERIALIZEABLE;
 public:
 	DdcnMessage() {
 	}
-	DdcnMessage(std::string text) : text(text) {
-	}
 	virtual ~DdcnMessage() {
 	}
 
-	std::string getText() {
-		return text;
+	QByteArray &getData() {
+		return data;
 	}
 private:
-	std::string text;
+	QByteArray data;
 };
 
 sznBeginDefault(DdcnMessage, X) {
-	X && T(text);
+	unsigned int size = data.size();
+	X && size;
+	data.resize(size);
+
+	// Limit packets to 1MB
+	// TODO: Better limit
+	size = std::min(size, 1u << 20);
+
+	if (X.isSerializer()) {
+		data.resize(size);
+	}
+	// TODO: This can be optimized
+	for (unsigned int i = 0; i < size; i++) {
+		unsigned char c = data[i];
+		X && c;
+		data[i] = c;
+	}
 } sznEnd();
 
 vsznDefault(DdcnMessage);
@@ -329,24 +322,15 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 		QByteArray data = packetData.toHex();
 		DdcnGroupMessage ddcnMessage(groupMessage->nodeId.toString(),
 				groupMessage->serviceId.toString(), data.data());
+		// TODO: This function is still unimplemented
 		mcpo->sendToGroup(ddcnMessage, groupMessage->serviceId);
 		delete groupMessage;
 	} else if (event.getType() == SEND_PEER_MESSAGE_EVENT) {
 		PeerMessage *peerMessage = event.getData<PeerMessage>();
-		//ariba::DataMessage message(peerMessage->message.data(), peerMessage->message.size());
-		/*DataTpl<> data((unsigned char*)peerMessage->message.data(), peerMessage->message.size());
-		ariba::Message message(data);
-		ariba::DataMessage dataMessage(message);
-		qCritical("Sending message: %d", (int)dataMessage.getSize());
-		assert(!dataMessage.isData());
-		// TODO: Reliable packets?
-		node->sendMessage(dataMessage, peerMessage->linkId);*/
-		//DdcnMessage message(peerMessage->message.data(), peerMessage->message.size());
-		qDebug("Ariba: Sending data packet.");
-		QByteArray text = peerMessage->message.toHex();
-		DdcnMessage message(text.data());
+		// TODO: Serial counter to recognize missing packets
+		DdcnMessage message;
+		message.getData() = peerMessage->message;
 		node->sendMessage(message, peerMessage->linkId);
-		//node->sendMessage( pingmsg, nid, PingPong::PINGPONG_SERVICEID );
 		delete peerMessage;
 	} else {
 		qCritical("NetworkInterface: Unknown event type.");
@@ -369,28 +353,12 @@ void NetworkInterface::onAribaMessage(const ariba::DataMessage &msg,
 	if (!networkNode) {
 		return;
 	}
-	/*if (!msg.isData()) {
-		size_t msgLength = msg.getMessage()->getPayload().getLength();
-		char *msgData = (char*)msg.getMessage()->getPayload().getBuffer();
-		qCritical("writeIncoming: %d (no data message)", msgLength);
-		QByteArray message(msgData, msgLength);
-		networkNode->getTLS().writeIncoming(message);
-	} else {
-		qCritical("No data message.");
-		qCritical("writeIncoming: %d (data message)", (int)msg.getSize());
-		QByteArray message((char*)msg.getData(), msg.getSize());
-		networkNode->getTLS().writeIncoming(message);
-	}*/
-	/*DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
-	qCritical("writeIncoming: %d", (int)ddcnMessage->getLength());
-	QByteArray message(ddcnMessage->getData(), ddcnMessage->getLength());*/
+	// TODO: This must not be an assert
 	assert(msg.isMessage());
 	DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
-	/*qCritical("writeIncoming: %d", (int)ddcnMessage->getLength());
-	QByteArray message(ddcnMessage->getData(), ddcnMessage->getLength());*/
-	QByteArray message = QByteArray::fromHex(ddcnMessage->getText().c_str());
-	qCritical("writeIncoming: %d", (int)message.size());
-	networkNode->getTLS().writeIncoming(message);
+	// TODO: Do we need to delete ddcnMessage here? Probably.
+	networkNode->getTLS().writeIncoming(ddcnMessage->getData());
+	qCritical("writeIncoming: %d", (int)ddcnMessage->getData().size());
 }
 void NetworkInterface::onAribaLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
 	qCritical("onAribaLinkUp");
