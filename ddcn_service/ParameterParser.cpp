@@ -28,9 +28,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ParameterParser::ParameterParser(const QStringList &rawParameters) {
 	parse(rawParameters);
-	qCritical("Parser, input: %d", this->inputFiles.count());
+	/*qCritical("Parser, input: %d", this->inputFiles.count());
 	qCritical("Parser, compile parameter: %d", this->compilerParameters.count());
-	qCritical("Parser, perProParameter: %d", this->preprocessingParameters.count());
+	qCritical("Parser, perProParameter: %d", this->preprocessingParameters.count());*/
 }
 ParameterParser::ParameterParser() : delegatable(false) {
 }
@@ -98,13 +98,24 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 			delegatable = false;
 			preprocessingParameters.append(parameter);
 			compilerParameters.append(parameter);
-		} else if (parameter == "E") {
-			// Do not delegate jobs which only perform preprocessing
+		} else if (parameter == "E"
+				|| parameter == "-M"
+				|| parameter == "-MM"
+				|| parameter == "-MF"
+				|| parameter == "-MG"
+				|| parameter == "-MP"
+				|| parameter == "-MT"
+				|| parameter == "-MQ"
+				|| parameter == "-MD"
+				|| parameter == "-MMD") {
+			// Do not delegate jobs which only perform preprocessing or which
+			// perform dependency generation
+			// TODO: We can actually delegate these jobs, might get a bit messy
+			// though
 			delegatable = false;
 			preprocessingParameters.append(parameter);
 			compilerParameters.append(parameter);
 		} else if (parameter.at(0) == '-'){
-			// TODO: Dependency generation arguments
 			// TODO: Other parameters which do not have any "-" in front of them
 			// TODO: File types
 			preprocessingParameters.append(parameter);
