@@ -207,6 +207,15 @@ public:
 		this->data = packetData;
 	}
 	/**
+	 * Creates an empty packet with a certain type
+	 *
+	 * @param type Type of the packet.
+	 */
+	Packet(PacketType::List type) {
+		PacketData *packetData = new PacketData(type, 0);
+		data = packetData;
+	}
+	/**
 	 * Creates a packet from raw payload data.
 	 *
 	 * @param type Type of the packet.
@@ -218,12 +227,14 @@ public:
 	 * @note Not passing a data pointer but rather filling the packet later
 	 * might be faster because one copy less has to be made in may cases.
 	 */
-	Packet(PacketType::List type, unsigned int size = 0, void *data = NULL) {
+	static Packet fromData(PacketType::List type, unsigned int size = 0, void *data = NULL) {
+		Packet packet;
 		PacketData *packetData = new PacketData(type, size);
 		if (data) {
 			std::memcpy(packetData->getPayload(), data, size);
 		}
-		this->data = packetData;
+		packet.data = packetData;
+		return packet;
 	}
 
 	/**
@@ -366,7 +377,7 @@ public:
 			return Packet();
 		}
 		void *payload = (char*)data.data() + sizeof(PacketHeader);
-		return Packet((PacketType::List)header->type, payloadSize, payload);
+		return fromData((PacketType::List)header->type, payloadSize, payload);
 	}
 private:
 	QSharedDataPointer<PacketData> data;
