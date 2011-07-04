@@ -51,6 +51,12 @@ void CompilerService::addJob(Job *job) {
 	if (job->isRemoteJob()) {
 		this->remoteJobQueue.append(job);
 	} else {
+		// Local jobs shall trigger a signal which gets forwarded to the adaptor
+		connect(job,
+			SIGNAL(finished(Job*)),
+			this,
+			SLOT(onLocalCompileFinished(Job*))
+		);
 		this->localJobQueue.append(job);
 	}
 	network->setFreeLocalSlots(computeFreeLocalSlotCount());
@@ -131,12 +137,6 @@ void CompilerService::executeFirstJobFromList(QList<Job*> *jobList) {
 
 void CompilerService::executeJobLocally(Job* job) {
 	//TODO DEBUG:qCritical("executeJobLocally");
-	connect(job,
-		SIGNAL(finished(Job*)),
-		this,
-		SLOT(onLocalCompileFinished(Job*))
-	);
-	//TODO DEBUG:qCritical("job.execute");
 	job->execute();
 	setCurrentThreadCount(this->currentThreadCount + 1);
 }
