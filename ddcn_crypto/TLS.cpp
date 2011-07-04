@@ -269,7 +269,13 @@ bool TLS::checkOutgoing() {
 	BIO_read(wbio, outgoing.data(), outgoing.size());
 	toNetwork.append(outgoing);
 	emit readyReadOutgoing();
-	return outgoing.size() > 0;
+	if (outgoing.size() > 0) {
+		doWrite();
+		checkOutgoing();
+		return true;
+	} else {
+		return false;
+	}
 }
 
 void TLS::continueHandshake() {
