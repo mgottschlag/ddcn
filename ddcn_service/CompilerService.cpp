@@ -49,9 +49,9 @@ CompilerService::CompilerService(CompilerNetwork *network)
 
 void CompilerService::addJob(Job *job) {
 	if (job->isRemoteJob()) {
-		this->localJobQueue.append(job);
-	} else {
 		this->remoteJobQueue.append(job);
+	} else {
+		this->localJobQueue.append(job);
 	}
 	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 	//TODO DEBUG:qCritical("Job hinzugefuegt");
@@ -106,9 +106,10 @@ void CompilerService::manageLocalJobs() {
 		executeFirstJobFromList(&this->localJobQueue);
 	}
 	while (this->maxThreadCount > this->currentThreadCount
-		&& this->localJobQueue.count() == 0) {
+			&& this->localJobQueue.count() == 0) {
 		Job *job = this->network->cancelOutgoingJob();
 		if (job != NULL) {
+			qDebug("CompilerService: Cancelling outgoing job.");
 			executeJobLocally(job);
 		} else {
 			break;
