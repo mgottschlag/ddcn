@@ -39,18 +39,29 @@ ToolChain::ToolChain(QString path) {
 		compiler->setProcessEnvironment(environment);
 
 		QString version = "/";
+		QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+		env.insert("LC_ALL", "C");
+		compiler->setProcessEnvironment(env);
+		compiler->setProcessChannelMode(QProcess::MergedChannels);
 		compiler->start(path, QStringList("-v"));
-		compiler->waitForStarted(500);
+		if (!compiler->waitForStarted(500)) {
+			qCritical("Could not start compiler \"%s\".",
+					path.toAscii().data());
+			return;
+		}
 		compiler->waitForFinished(500);
 		while (!compiler->atEnd()) {
 			QString line = compiler->readLine(1000);
 			if (line.startsWith("Target: ")) {
-				version = line.right(line.indexOf(":") + 1).append(version);
-			} else if (line.startsWith(line.startsWith("gcc version"))) {
-				version.append(line.mid(11, line.indexOf("(") - 13));
+				version = line.mid(8, line.count() - 9).append(version);
+			} else if (line.startsWith("gcc version")) {
+				// We only need two gcc version numbers
+				version.append(line.mid(12, 3));
 			}
 		}
 		delete compiler;
+	} else {
+		qCritical("Invalid toochain path.");
 	}
 }
 
