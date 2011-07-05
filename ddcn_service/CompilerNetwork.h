@@ -118,7 +118,6 @@ signals:
 	void trustedGroupsChanged(QList<TrustedGroup*> trustedGroups);
 	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
 	void receivedJob(Job *job);
-	// TODO: Not yet connected to anything
 	void remoteJobAborted(Job *job);
 	void nodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups);
 private:

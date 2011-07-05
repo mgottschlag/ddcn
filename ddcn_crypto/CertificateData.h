@@ -34,7 +34,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct CertificateData {
 public:
-	CertificateData() : refCount(0), cert(NULL) {
+	CertificateData(X509 *cert) : refCount(0), cert(cert) {
 	}
 	~CertificateData() {
 		if (cert) {
@@ -51,10 +51,6 @@ public:
 		}
 	}
 
-	void setCert(X509 *cert) {
-		// TODO: Remove this, only allow setting in the constructor
-		this->cert = cert;
-	}
 	X509 *getCert() {
 		return cert;
 	}

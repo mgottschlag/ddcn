@@ -825,7 +825,6 @@ void CompilerNetwork::onAbortJob(NetworkNode *node, const Packet &packet) {
 	for (int i = 0; i < incomingJobs.count(); i++) {
 		if (incomingJobs[i]->getSourcePeer() == node && incomingJobs[i]->getId() == id) {
 			// Kill the job
-			// TODO: CompilerService does not yet react to this
 			emit remoteJobAborted(incomingJobs[i]->getJob());
 			// Delete the job
 			delete incomingJobs[i]->getJob();

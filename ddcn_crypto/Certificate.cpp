@@ -53,8 +53,7 @@ Certificate Certificate::createSelfSigned(const PublicKey &key) {
 	X509_gmtime_adj(X509_get_notBefore(osslCert), 0);
 	X509_gmtime_adj(X509_get_notAfter(osslCert), (long)60*60*24*365);
 	X509_set_pubkey(osslCert, osslKey);
-	CertificateData *certData = new CertificateData();
-	certData->setCert(osslCert);
+	CertificateData *certData = new CertificateData(osslCert);
 	certData->setPublicKey(key);
 	Certificate certificate(certData);
 	return certificate;

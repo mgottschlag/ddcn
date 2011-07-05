@@ -88,9 +88,6 @@ public slots:
     /**Removes the job from the local queue if it has been executed successfully.
      * Otherwise, moves the job to the end of the list in order to execute it again.
      */
-	// TODO: This is not necessary anymore because CompilerNetwork will just try
-	// to send the job to another peer
-    //void onRemoteCompileFinished(Job *job, bool executed);
 signals:
     void currentThreadCountChanged(int currentThreadCount);
     void maxThreadCountChanged(int maxThreadCount);

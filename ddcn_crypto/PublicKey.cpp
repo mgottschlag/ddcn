@@ -129,7 +129,6 @@ unsigned int PublicKey::hash() const {
 }
 
 bool PublicKey::save(QString fileName) const {
-	// TODO: Write directly?
 	QString pem = toPEM();
 	QFile file(fileName);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -281,7 +280,6 @@ QByteArray PrivateKey::toDER() const {
 }
 
 bool PrivateKey::save(QString fileName) const {
-	// TODO: Write directly?
 	QString pem = toPEM();
 	QFile file(fileName);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
