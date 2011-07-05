@@ -103,6 +103,7 @@ void CompilerService::manageJobs() {
 }
 
 void CompilerService::manageLocalJobs() {
+	qDebug("manageLocalJobs: %d/%d, %d", this->maxThreadCount, this->currentThreadCount, this->remoteJobQueue.count());
 	//compiles maxThreadCount jobs at the same time.
 	//if there are no more jobs to compile in the localJobQueue, get back enough jobs from the network in
 	//			order to compile maxThreadCount jobs locally
@@ -123,6 +124,7 @@ void CompilerService::manageLocalJobs() {
 	}
 	while (this->maxThreadCount > this->currentThreadCount
 		&& this->remoteJobQueue.count() > 0) {
+		qDebug("Executing remote job.");
 		executeFirstJobFromList(&this->remoteJobQueue);
 	}
 }
@@ -217,12 +219,19 @@ void CompilerService::onLocalCompileFinished(Job* job) {
 }
 
 void CompilerService::onReceivedJob(Job *job) {
-	// TODO
-	qFatal("onReceivedJob()");
+	qDebug("onReceivedJob()");
+	remoteJobQueue.append(job);
+	manageJobs();
 }
 void CompilerService::onRemoteJobAborted(Job *job) {
-	// TODO
-	qFatal("onRemoteJobAborted()");
+	qDebug("onRemoteJobAborted()");
+	if (!remoteJobQueue.removeOne(job)) {
+		// If the job is not in the queue, this means that it is active right
+		// now. In this case we do not have to do anything as the job is killed
+		// by CompilerNetwork
+		// However, we have to free one thread as the process will be killed
+		setCurrentThreadCount(this->currentThreadCount - 1);
+	}
 }
 
 unsigned int CompilerService::computeFreeLocalSlotCount() {
