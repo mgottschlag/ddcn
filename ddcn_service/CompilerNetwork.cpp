@@ -406,6 +406,7 @@ void CompilerNetwork::onJobFinished(Job *job) {
 		}
 	}
 	// Send job result
+	qDebug("Remote job finished, %d (\"%s\")", result.returnValue, result.stderr.data());
 	QByteArray packetData;
 	QDataStream stream(&packetData, QIODevice::WriteOnly);
 	stream << qToBigEndian(incoming->getId());
@@ -787,7 +788,7 @@ void CompilerNetwork::onJobFinished(NetworkNode *node, const Packet &packet) {
 		outputFileContent = outputFileContent.mid(0, job->getOutputFiles().size());
 	}
 	for (int i = 0; i < outputFileContent.size(); i++) {
-		QFile file(job->getOutputFiles()[i]);
+		QFile file(job->getWorkingDirectory() + "/" + job->getOutputFiles()[i]);
 		if (!file.open(QIODevice::WriteOnly)) {
 			qWarning("Could not open output file.");
 			// TODO: Let the job fail here
@@ -930,4 +931,5 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	// Store outgoing job info
 	OutgoingJob *outgoing = new OutgoingJob(request->target, job, request->id);
 	job->setOutgoingJob(outgoing);
+	delegatedJobs.append(outgoing);
 }
