@@ -28,6 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "PublicKeyData.h"
 
 #include <openssl/pem.h>
+#include <openssl/evp.h>
 #include <QFile>
 
 static QByteArray toByteArray(BIO *bio) {
@@ -216,24 +217,11 @@ PrivateKey::PrivateKey(const PublicKey &other) : keyData(other.keyData) {
 }
 
 PrivateKey PrivateKey::generate(unsigned int bits) {
-	EVP_PKEY_CTX *context = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
-	if (!context) {
-		return PrivateKey();
+	RSA *rsa = RSA_generate_key(bits, RSA_F4, NULL, NULL);
+	EVP_PKEY *pkey = EVP_PKEY_new();
+	if (EVP_PKEY_assign_RSA(pkey, rsa) == 0) {
+		qFatal("Could not assign RSA key.");
 	}
-	if (EVP_PKEY_keygen_init(context) <= 0) {
-		EVP_PKEY_CTX_free(context);
-		return PrivateKey();
-	}
-	if (EVP_PKEY_CTX_set_rsa_keygen_bits(context, bits) <= 0) {
-		EVP_PKEY_CTX_free(context);
-		return PrivateKey();
-	}
-	EVP_PKEY *pkey = NULL;
-	if (EVP_PKEY_keygen(context, &pkey) <= 0) {
-		EVP_PKEY_CTX_free(context);
-		return PrivateKey();
-	}
-	EVP_PKEY_CTX_free(context);
 	PublicKeyData *keyData = new PublicKeyData();
 	keyData->setPrivateKey(true);
 	keyData->setKey(pkey);
