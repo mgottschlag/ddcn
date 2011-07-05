@@ -155,7 +155,7 @@ static int tlsVerifyCallback(X509_STORE_CTX *context, void *userdata) {
 
 bool TLS::init(const SSL_METHOD *method) {
 	// Create context with key/cert
-	context = SSL_CTX_new(method);
+	context = SSL_CTX_new((SSL_METHOD*)method);
 	if (!context) {
 		ERR_print_errors_fp(stderr);
 		return false;
