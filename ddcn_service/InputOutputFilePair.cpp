@@ -59,12 +59,12 @@ QString InputOutputFilePair::generateFilename(QString templateName) {
 		QFile().exists(this->path + returnValue + random + this->getOutputFileExtension())) {
 		random = randomize();
 	}
-	return returnValue + returnValue + random;
+	return this->path + returnValue + random;
 }
 
 QString InputOutputFilePair::randomize() {
 	//TODO Returns a value between 0 and RAND_MAX (defined in <cstdlib> and <stdlib.h>)
-	return QString(qrand() * 1000000).left(7);
+	return QString::number(qrand() % 1000000);
 }
 
 QString InputOutputFilePair::getInputFileExtension() {
