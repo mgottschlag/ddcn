@@ -214,8 +214,8 @@ TLS::AcceptConnectState::List TLS::nonBlockigConnectAccept(int status) {
 	} else {
 		handshaken = true;
 		// Fetch remote certificate
-		CertificateData *certData = new CertificateData();
-		certData->setCert(SSL_get_peer_certificate(ssl));
+		CertificateData *certData = new CertificateData(SSL_get_peer_certificate(ssl));
+		// TODO: Check whetehr certificate is valid
 		peerCert = Certificate(certData);
 		return AcceptConnectState::Finished;
 	}
