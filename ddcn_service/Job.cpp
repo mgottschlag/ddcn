@@ -38,7 +38,7 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 		QString workingDir, bool isRemoteJob, bool delegatable,
 		const QByteArray &stdinData) :
 		preProcessListPosition(0), preprocessing(false), preprocessed(false),
-		compiling(false), incomingJob(NULL), outgoingJob(NULL) {
+		compiling(false), delegated(false), incomingJob(NULL), outgoingJob(NULL) {
 	this->inputFiles = inputFiles;
 	this->outputFiles = outputFiles;
 	this->fullParameters = fullParameters;
@@ -174,6 +174,8 @@ void Job::onPreProcessExecuteError(QProcess::ProcessError error) {
 }
 
 void Job::setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr) {
+	// If this function is called, the job was compiled on another peer
+	delegated = true;
 	jobResult.stdout = stdout;
 	jobResult.stderr = stderr;
 	jobResult.returnValue = returnValue;

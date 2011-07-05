@@ -83,6 +83,10 @@ public:
 		return preprocessed;
 	}
 
+	bool wasDelegated() {
+		return delegated;
+	}
+
 	void setOutgoingJob(OutgoingJob *outgoingJob) {
 		this->outgoingJob = outgoingJob;
 	}
@@ -147,6 +151,8 @@ private:
 	bool preprocessing;
 	bool preprocessed;
 	bool compiling;
+
+	bool delegated;
 private slots:
 	void onPreProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 	void onPreProcessExecuteError(QProcess::ProcessError error);
