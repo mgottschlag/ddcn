@@ -236,6 +236,19 @@ public:
 		packet.data = packetData;
 		return packet;
 	}
+	/**
+	 * Creates a packet from raw payload data.
+	 *
+	 * @param type Type of the packet.
+	 * @param data Data to be copied into the packet.
+	 */
+	static Packet fromData(PacketType::List type, const QByteArray &data) {
+		Packet packet;
+		PacketData *packetData = new PacketData(type, data.size());
+		std::memcpy(packetData->getPayload(), data.data(), data.size());
+		packet.data = packetData;
+		return packet;
+	}
 
 	/**
 	 * Returns the packet header type.
@@ -382,14 +395,5 @@ public:
 private:
 	QSharedDataPointer<PacketData> data;
 };
-
-/**
- * Template specialization for easy insertion of raw byte arrays
- */
-template<> inline Packet::Packet<QByteArray>(PacketType::List type, const QByteArray &data) {
-	PacketData *packetData = new PacketData(type, data.size());
-	std::memcpy(packetData->getPayload(), data.data(), data.size());
-	this->data = packetData;
-}
 
 #endif

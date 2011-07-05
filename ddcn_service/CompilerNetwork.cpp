@@ -263,7 +263,7 @@ void CompilerNetwork::onDelegatedJobFinished(Job *job) {
 	stream << result.stdout;
 	stream << result.stderr;
 	stream << fileContent;
-	Packet packet(PacketType::JobFinished, packetData);
+	Packet packet = Packet::fromData(PacketType::JobFinished, packetData);
 	network->send(incoming->getSourcePeer(), packet);
 	delete incoming;
 	delete job;
@@ -469,7 +469,7 @@ void CompilerNetwork::askForFreeSlots() {
 	foreach (TrustedGroup *trustedGroup, trustedGroups) {
 		// Create a new packet for each group containing the group key
 		QByteArray payload = trustedGroup->getPublicKey().toDER();
-		packet = Packet(PacketType::QueryNetworkResources, payload);
+		packet = Packet::fromData(PacketType::QueryNetworkResources, payload);
 		network->send(trustedGroup->getMcpoGroup(), packet);
 	}
 }
@@ -491,7 +491,7 @@ void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 		stream << (unsigned int)key.size();
 		stream << key;
 	}
-	Packet packet(PacketType::NodeStatus, packetData);
+	Packet packet = Packet::fromData(PacketType::NodeStatus, packetData);
 	network->send(node, packet);
 }
 void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
@@ -932,7 +932,7 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	stream << toolchain;
 	stream << compilerParameters;
 	stream << fileContent;
-	Packet packet(PacketType::JobData, packetData);
+	Packet packet = Packet::fromData(PacketType::JobData, packetData);
 	network->send(request->target, packet);
 	// Store outgoing job info
 	OutgoingJob *outgoing = new OutgoingJob(request->target, job, request->id);
