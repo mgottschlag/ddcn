@@ -261,9 +261,9 @@ void NetworkInterface::onMessage(const ariba::DataMessage &msg,
 		qCritical("Received empty message.");
 		return;
 	}
-	qDebug("Incoming: %d (serial: %d, checksum: %X)",
+	/*qDebug("Incoming: %d (serial: %d, checksum: %X)",
 		(int)ddcnMessage->getData().size(), ddcnMessage->getSerial(),
-		ddcnMessage->getChecksum());
+		ddcnMessage->getChecksum());*/
 	emit aribaMessage(ddcnMessage->getData(), ddcnMessage->getSerial(), remote, link);
 	delete ddcnMessage;
 }
@@ -376,8 +376,8 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 		PeerMessage *peerMessage = event.getData<PeerMessage>();
 		DdcnMessage message(peerMessage->serial);
 		message.getData() = peerMessage->message;
-		qDebug("Outgoing: %d (serial: %d, checksum: %X)",
-			peerMessage->message.size(), peerMessage->serial, message.getChecksum());
+		/*qDebug("Outgoing: %d (serial: %d, checksum: %X)",
+			peerMessage->message.size(), peerMessage->serial, message.getChecksum());*/
 		node->sendMessage(message, peerMessage->linkId);
 		delete peerMessage;
 	} else {
@@ -479,7 +479,7 @@ void NetworkInterface::onMcpoReceiveData(const ariba::DataMessage &msg) {
 
 void NetworkInterface::onNodeOutgoingDataAvailable(NetworkNode *node) {
 	QByteArray outgoingData = node->getTLS().readOutgoing();
-	qCritical("onNodeOutgoingDataAvailable: %d", (int)outgoingData.size());
+	//qCritical("onNodeOutgoingDataAvailable: %d", (int)outgoingData.size());
 	// Inject data into the ariba thread
 	PeerMessage *peerMessage = new PeerMessage;
 	// TODO: This might be a security risk? We probably should encrypt the packet

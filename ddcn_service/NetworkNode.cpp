@@ -55,7 +55,7 @@ void NetworkNode::onOutgoingDataAvailable() {
 	emit outgoingDataAvailable(this);
 }
 void NetworkNode::onIncomingDataAvailable() {
-	qDebug("Incoming data available.");
+	//qDebug("Incoming data available.");
 	incomingData += tls.read();
 	// Read packets until not enough data is left
 	PacketHeader header;
@@ -63,7 +63,7 @@ void NetworkNode::onIncomingDataAvailable() {
 		uint32_t dataSize = incomingData.size();
 		memcpy(&header, incomingData.data(), sizeof(header));
 		uint32_t packetSize = qFromBigEndian(header.size);
-		qDebug("packet: %d/%d (type: %d).", dataSize, packetSize, header.type);
+		//qDebug("packet: %d/%d (type: %d).", dataSize, packetSize, header.type);
 		if (dataSize >= packetSize + sizeof(header)) {
 			if (dataSize == packetSize + sizeof(header)) {
 				Packet packet = Packet::fromRawData(incomingData.left(sizeof(header) + packetSize));
