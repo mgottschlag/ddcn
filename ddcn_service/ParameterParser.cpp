@@ -122,6 +122,9 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 			delegatable = false;
 			preprocessingParameters.append(parameter);
 			compilerParameters.append(parameter);
+		} else if (parameter.startsWith("-D")) {
+			// Defining a preprocessor macro
+			preprocessingParameters.append(parameter);
 		} else if (parameter.at(0) == '-'){
 			// TODO: Other parameters which do not have any "-" in front of them
 			// TODO: File types
