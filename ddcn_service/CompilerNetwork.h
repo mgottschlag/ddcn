@@ -98,6 +98,8 @@ public:
 	unsigned int getFreeLocalSlots();
 
 	void queryNetworkStatus();
+
+	void onDelegatedJobFinished(Job *job);
 private slots:
 	void onPeerConnected(NetworkNode *node, QString name,
 		const PublicKey &publicKey);
@@ -108,7 +110,6 @@ private slots:
 		const Packet &packet);
 
 	void onPreprocessingFinished(Job *job);
-	void onJobFinished(Job *job);
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);

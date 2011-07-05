@@ -49,6 +49,12 @@ CompilerService::CompilerService(CompilerNetwork *network)
 
 void CompilerService::addJob(Job *job) {
 	if (job->isRemoteJob()) {
+		qDebug("Added remote job.");
+		connect(job,
+			SIGNAL(finished(Job*)),
+			this,
+			SLOT(onRemoteCompileFinished(Job*))
+		);
 		this->remoteJobQueue.append(job);
 	} else {
 		// Local jobs shall trigger a signal which gets forwarded to the adaptor
@@ -214,14 +220,21 @@ bool CompilerService::isToolChainAvailable(ToolChain target) {
 void CompilerService::onLocalCompileFinished(Job* job) {
 	//TODO DEBUG:qCritical("Compiler finished");
 	emit localJobCompilationFinished(job);
+	if (!job->wasDelegated()) {
+		setCurrentThreadCount(this->currentThreadCount - 1);
+	}
+	manageJobs();
+}
+void CompilerService::onRemoteCompileFinished(Job* job) {
+	qDebug("onRemoteCompileFinished()");
 	setCurrentThreadCount(this->currentThreadCount - 1);
+	network->onDelegatedJobFinished(job);
 	manageJobs();
 }
 
 void CompilerService::onReceivedJob(Job *job) {
 	qDebug("onReceivedJob()");
-	remoteJobQueue.append(job);
-	manageJobs();
+	addJob(job);
 }
 void CompilerService::onRemoteJobAborted(Job *job) {
 	qDebug("onRemoteJobAborted()");
