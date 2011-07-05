@@ -112,6 +112,9 @@ public:
 	QString getToolchain() {
 		return toolChain;
 	}
+	QString getWorkingDirectory() {
+		return workingDir;
+	}
 
 	void setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr);
 signals:

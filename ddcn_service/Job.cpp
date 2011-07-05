@@ -45,6 +45,7 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 	this->toolChain = toolChain;
 	this->remoteJob = isRemoteJob;
 	this->preprocessorParameters = preprocessorParameters;
+	this->compilerParameters = compilerParameters;
 	this->delegatable = delegatable;
 	this->workingDir = workingDir;
 	this->stdinData = stdinData;
@@ -59,6 +60,7 @@ Job::~Job() {
 		QFile file(fileName);
 		file.remove();
 	}
+	// The processes are killed automatically here in the destructor of QProcess
 }
 
 //will be called by the CompilerNetwork
