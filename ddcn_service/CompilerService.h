@@ -132,6 +132,7 @@ private:
 private slots:
     //TODO richtig??
     void onLocalCompileFinished(Job *job);
+    void onRemoteCompileFinished(Job *job);
 };
 
 #endif

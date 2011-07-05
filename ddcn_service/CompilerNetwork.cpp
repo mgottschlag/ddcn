@@ -237,6 +237,38 @@ void CompilerNetwork::queryNetworkStatus() {
 	network->sendToAll(packet);
 }
 
+void CompilerNetwork::onDelegatedJobFinished(Job *job) {
+	IncomingJob *incoming = job->getIncomingJob();
+	assert(incoming != NULL);
+	// Fetch output data
+	JobResult result = job->getJobResult();
+	QList<QByteArray> fileContent;
+	if (result.returnValue == 0) {
+		QStringList outputFiles = job->getOutputFiles();
+		foreach (QString fileName, outputFiles) {
+			QFile file(fileName);
+			if (!file.open(QIODevice::ReadOnly)) {
+				qFatal("onJobFinished(): Could not read previously created temporary file.");
+			}
+			fileContent.append(file.readAll());
+		}
+	}
+	incomingJobs.removeOne(incoming);
+	// Send job result
+	qDebug("Remote job finished (id: %d), %d (\"%s\")", incoming->getId(), result.returnValue, result.stderr.data());
+	QByteArray packetData;
+	QDataStream stream(&packetData, QIODevice::WriteOnly);
+	stream << qToBigEndian(incoming->getId());
+	stream << qToBigEndian(result.returnValue);
+	stream << result.stdout;
+	stream << result.stderr;
+	stream << fileContent;
+	Packet packet(PacketType::JobFinished, packetData);
+	network->send(incoming->getSourcePeer(), packet);
+	delete incoming;
+	delete job;
+}
+
 void CompilerNetwork::onPeerConnected(NetworkNode *node, QString name,
 		const PublicKey &publicKey) {
 	TrustedPeer *trustedPeer = getTrustedPeer(publicKey);
@@ -388,34 +420,6 @@ void CompilerNetwork::onPreprocessingFinished(Job *job) {
 	} else {
 		waitingPreprocessedJobs.append(job);
 	}
-}
-void CompilerNetwork::onJobFinished(Job *job) {
-	IncomingJob *incoming = job->getIncomingJob();
-	assert(incoming != NULL);
-	// Fetch output data
-	JobResult result = job->getJobResult();
-	QList<QByteArray> fileContent;
-	if (result.returnValue == 0) {
-		QStringList outputFiles = job->getOutputFiles();
-		foreach (QString fileName, outputFiles) {
-			QFile file(fileName);
-			if (!file.open(QIODevice::ReadOnly)) {
-				qFatal("onJobFinished(): Could not read previously created temporary file.");
-			}
-			fileContent.append(file.readAll());
-		}
-	}
-	// Send job result
-	qDebug("Remote job finished, %d (\"%s\")", result.returnValue, result.stderr.data());
-	QByteArray packetData;
-	QDataStream stream(&packetData, QIODevice::WriteOnly);
-	stream << qToBigEndian(incoming->getId());
-	stream << qToBigEndian(result.returnValue);
-	stream << result.stdout;
-	stream << result.stderr;
-	stream << fileContent;
-	Packet packet(PacketType::JobFinished, packetData);
-	network->send(incoming->getSourcePeer(), packet);
 }
 
 TrustedPeer *CompilerNetwork::getTrustedPeer(const PublicKey &publicKey) {
@@ -738,7 +742,8 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 			QByteArray());
 	IncomingJob *incoming = new IncomingJob(node, job, id);
 	job->setIncomingJob(incoming);
-	connect(job, SIGNAL(finished(Job*)), this, SLOT(onJobFinished(Job*)));
+	incomingJobs.append(incoming);
+	qDebug("Created remote job (id: %d)", incoming->getId());
 	emit receivedJob(job);
 	// Send packet indicating that the job was received
 	qDebug("Sending JobDataReceived...");
@@ -802,6 +807,7 @@ void CompilerNetwork::onJobFinished(NetworkNode *node, const Packet &packet) {
 	job->setOutgoingJob(NULL);
 	delete outgoing;
 	delegatedJobs.removeAt(outgoingIndex);
+	qDebug("Job finished (id: %d), %d delegated jobs remaining.", id, delegatedJobs.size());
 	delete job;
 }
 void CompilerNetwork::onAbortJob(NetworkNode *node, const Packet &packet) {
@@ -932,4 +938,5 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	OutgoingJob *outgoing = new OutgoingJob(request->target, job, request->id);
 	job->setOutgoingJob(outgoing);
 	delegatedJobs.append(outgoing);
+	qDebug("Delegated job (id: %d)", outgoing->getId());
 }
