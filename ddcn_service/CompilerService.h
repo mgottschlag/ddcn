@@ -48,6 +48,7 @@ public:
     void addJob(Job *job);
 
     QList<ToolChain> *getToolChains() {
+		qCritical("GetToolchains, %d", this->toolChains.count());
         return &this->toolChains;
     }
 
@@ -59,13 +60,14 @@ public:
        // return this->maxThreadCount;
        return QThread::idealThreadCount();
     }
-
+    
     void addToolChain(QString path) {
         ToolChain toolChain(path);
         if (this->toolChains.indexOf(toolChain) >= 0 && QFile(path).exists()) {
             this->toolChains.append(toolChain);
             saveToolChains();
         }
+        emit toolChainsChanged();
     }
 
 	void setMaxThreadCount(int count) {
@@ -79,6 +81,7 @@ public:
         if (this->toolChains.removeOne(toolChain)) {
             saveToolChains();
         }
+        emit toolChainsChanged();
     }
 public slots:
     void onIncomingJob(Job *job);
@@ -92,9 +95,14 @@ signals:
     void currentThreadCountChanged(int currentThreadCount);
     void maxThreadCountChanged(int maxThreadCount);
 	void localJobCompilationFinished(Job *job);
+	void numberOfJobsInLocalQueueChanged(int noj);
+	void numberOfJobsInRemoteQueueChanged(int noj);
+	void toolChainsChanged();
 private slots:
 	void onReceivedJob(Job *job);
 	void onRemoteJobAborted(Job *job);
+    	void onLocalCompileFinished(Job *job);
+    	void onRemoteCompileFinished(Job *job);
 private:
     bool removeJob(Job *job);
     void manageJobs();
@@ -110,7 +118,6 @@ private:
         this->currentThreadCount = count;
         emit currentThreadCountChanged(this->currentThreadCount);
     }
-
     void determineAndSetMaxThreadCount();
 
 	unsigned int computeFreeLocalSlotCount();
@@ -123,16 +130,11 @@ private:
     CompilerNetwork *network;
     QList<Job*> localJobQueue;
     QList<Job*> remoteJobQueue;
-    QList<Job*> delegatedJobQueue;
 	QSettings settings;
 	static QString settingToolChains;
 	static QString settingToolChainPath;
 	static QString settingToolChainVersion;
 	static QString settingMaxThreadCount;
-private slots:
-    //TODO richtig??
-    void onLocalCompileFinished(Job *job);
-    void onRemoteCompileFinished(Job *job);
 };
 
 #endif
