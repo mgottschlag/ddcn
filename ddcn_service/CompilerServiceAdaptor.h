@@ -53,12 +53,6 @@ public slots:
 	int getMaxThreadCount();
 	void shutdown();										//TODO
 	QList<ToolChainInfo> getToolChains();
-	/**
-	 * Creates a new Job and returns its DBus path.
-	 * @param inputFiles The (binary) content of the files to pass to the new job.
-	 * @param parameters The compilation parameters.
-	 * @param toolChain The gcc target triple (platform, system and kernel (order may vary) /gcc-version: eg. i686-linux-gnu/4.4.5).
-	 */
 	JobResult executeJob(QStringList parameters, QString toolChain,
 		QString workingPath, const QByteArray &stdinData, const QDBusMessage &message);
 	void addToolChain(QString path);
@@ -67,11 +61,17 @@ public slots:
 private slots:
 	void onCurrentThreadCountChanged(int threadCount);
 	void onMaxThreadCountChanged(int threadCount);
+	void onNumberOfJobsInLocalQueueChanged(int noj);
+	void onNumberOfJobsInRemoteQueueChanged(int noj);
+	void onToolChainsChanged();
 	void requestShutdown();
 signals:
 	void currentThreadCountChanged(int threadCount);
 	void maxThreadCountChanged(int threadCount);
 	void onShutdownRequest();
+	void numberOfJobsInLocalQueueChanged(int noj);
+	void numberOfJobsInRemoteQueueChanged(int noj);
+	void toolChainsChanged(QList<ToolChainInfo> toolChains);
 private:
 	ToolChainInfo toToolChainInfo(ToolChain toolChain);
 	CompilerService *service;

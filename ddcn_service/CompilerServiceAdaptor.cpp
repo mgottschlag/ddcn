@@ -44,6 +44,18 @@ CompilerServiceAdaptor::CompilerServiceAdaptor(CompilerService *service)
 			SIGNAL(localJobCompilationFinished(Job*)),
 			this,
 			SLOT(localCompilationJobFinished(Job*)));
+	connect(service,
+			SIGNAL(numberOfJobsInLocalQueueChanged(int)),
+			this,
+			SLOT(onNumberOfJobsInLocalQueueChanged(int)));
+	connect(service,
+			SIGNAL(numberOfJobsInRemoteQueueChanged(int)),
+			this,
+			SLOT(onNumberOfJobsInRemoteQueueChanged(int)));
+	connect(service,
+			SIGNAL(toolChainsChanged()),
+			this,
+			SLOT(onToolChainsChanged()));
 }
 
 void CompilerServiceAdaptor::setMaxThreadCount(int threadCount) {
@@ -64,6 +76,15 @@ void CompilerServiceAdaptor::onCurrentThreadCountChanged(int threadCount) {
 
 void CompilerServiceAdaptor::onMaxThreadCountChanged(int threadCount) {
 	emit maxThreadCountChanged(threadCount);
+}
+void CompilerServiceAdaptor::onNumberOfJobsInLocalQueueChanged(int noj) {
+	emit numberOfJobsInLocalQueueChanged(noj);
+}
+void CompilerServiceAdaptor::onNumberOfJobsInRemoteQueueChanged(int noj) {
+	emit numberOfJobsInRemoteQueueChanged(noj);
+}
+void CompilerServiceAdaptor::onToolChainsChanged() {
+	emit toolChainsChanged(this->getToolChains());
 }
 
 JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,

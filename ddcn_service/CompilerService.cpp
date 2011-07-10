@@ -26,7 +26,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerService.h"
 
-#include <QThread>
 
 QString CompilerService::settingToolChains("toolChains");
 QString CompilerService::settingToolChainPath("path");
@@ -34,22 +33,17 @@ QString CompilerService::settingToolChainVersion("version");
 QString CompilerService::settingMaxThreadCount("maxThreadCount");
 
 
-CompilerService::CompilerService(CompilerNetwork *network)
-		: settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
+CompilerService::CompilerService(CompilerNetwork *network) : settings("ddcn", "ddcn") {
 	this->network = network;
 	setCurrentThreadCount(0);
 	determineAndSetMaxThreadCount();
 	this->toolChains.append(ToolChain("/usr/bin/gcc"));//TODO Debug Only
 	loadToolChains();
-	// Connect network signals
-	connect(network, SIGNAL(receivedJob(Job*)), this, SLOT(onReceivedJob(Job*)));
-	connect(network, SIGNAL(remoteJobAborted(Job*)), this, SLOT(onRemoteJobAborted(Job*)));
-	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 }
 
 void CompilerService::addJob(Job *job) {
 	if (job->isRemoteJob()) {
-		qDebug("Added remote job.");
+		emit numberOfJobsInRemoteQueueChanged(this->remoteJobQueue.count());
 		connect(job,
 			SIGNAL(finished(Job*)),
 			this,
@@ -64,8 +58,8 @@ void CompilerService::addJob(Job *job) {
 			SLOT(onLocalCompileFinished(Job*))
 		);
 		this->localJobQueue.append(job);
+		emit numberOfJobsInLocalQueueChanged(this->localJobQueue.count());
 	}
-	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 	//TODO DEBUG:qCritical("Job hinzugefuegt");
 	manageJobs();
 }
@@ -80,6 +74,8 @@ void CompilerService::onIncomingJob(Job *job) {
 /*void CompilerService::onRemoteCompileFinished(Job *job, bool executed) {
 	if (executed) {
 		this->removeJob(job);
+		emit numberOfJobsInLocalQueueChanged(this->localJobQueue.count());
+		emit numberOfJobsInRemoteQueueChanged(this->remoteJobQueue.count());
 	} else {
 		this->localJobQueue.move(this->localJobQueue.indexOf(job, 0), this->localJobQueue.count());
 	}
@@ -109,7 +105,6 @@ void CompilerService::manageJobs() {
 }
 
 void CompilerService::manageLocalJobs() {
-	qDebug("manageLocalJobs: %d/%d, %d", this->maxThreadCount, this->currentThreadCount, this->remoteJobQueue.count());
 	//compiles maxThreadCount jobs at the same time.
 	//if there are no more jobs to compile in the localJobQueue, get back enough jobs from the network in
 	//			order to compile maxThreadCount jobs locally
@@ -122,7 +117,6 @@ void CompilerService::manageLocalJobs() {
 			&& this->localJobQueue.count() == 0) {
 		Job *job = this->network->cancelOutgoingJob();
 		if (job != NULL) {
-			qDebug("CompilerService: Cancelling outgoing job.");
 			executeJobLocally(job);
 		} else {
 			break;
@@ -130,7 +124,6 @@ void CompilerService::manageLocalJobs() {
 	}
 	while (this->maxThreadCount > this->currentThreadCount
 		&& this->remoteJobQueue.count() > 0) {
-		qDebug("Executing remote job.");
 		executeFirstJobFromList(&this->remoteJobQueue);
 	}
 }
@@ -145,6 +138,12 @@ void CompilerService::executeFirstJobFromList(QList<Job*> *jobList) {
 
 void CompilerService::executeJobLocally(Job* job) {
 	//TODO DEBUG:qCritical("executeJobLocally");
+	connect(job,
+		SIGNAL(finished(Job*)),
+		this,
+		SLOT(onLocalCompileFinished(Job*))
+	);
+	//TODO DEBUG:qCritical("job.execute");
 	job->execute();
 	setCurrentThreadCount(this->currentThreadCount + 1);
 }
@@ -157,9 +156,10 @@ void CompilerService::manageOutgoingJobs() {
 		if (job == NULL) {
 			break;
 		}
-		this->delegatedJobQueue.append(job);
-		network->delegateOutgoingJob(this->delegatedJobQueue.first());
-		this->delegatedJobQueue.removeFirst();
+		//this->delegatedJobQueue.append(job);
+		//network->delegateOutgoingJob(this->delegatedJobQueue.first());
+		network->delegateOutgoingJob(job);
+		//this->delegatedJobQueue.removeFirst();
 	}
 	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 }
@@ -221,7 +221,8 @@ void CompilerService::onLocalCompileFinished(Job* job) {
 	//TODO DEBUG:qCritical("Compiler finished");
 	emit localJobCompilationFinished(job);
 	if (!job->wasDelegated()) {
-		setCurrentThreadCount(this->currentThreadCount - 1);
+		emit numberOfJobsInLocalQueueChanged(this->localJobQueue.count());
+		setCurrentThreadCount(--this->currentThreadCount);
 	}
 	manageJobs();
 }
