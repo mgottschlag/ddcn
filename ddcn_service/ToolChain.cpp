@@ -60,6 +60,8 @@ ToolChain::ToolChain(QString path) {
 			}
 		}
 		delete compiler;
+		this->version = version;
+		this->path = path;
 	} else {
 		qCritical("Invalid toochain path.");
 	}

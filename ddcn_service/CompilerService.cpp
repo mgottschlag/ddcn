@@ -33,12 +33,16 @@ QString CompilerService::settingToolChainVersion("version");
 QString CompilerService::settingMaxThreadCount("maxThreadCount");
 
 
-CompilerService::CompilerService(CompilerNetwork *network) : settings("ddcn", "ddcn") {
+CompilerService::CompilerService(CompilerNetwork *network)
+		: settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	this->network = network;
 	setCurrentThreadCount(0);
 	determineAndSetMaxThreadCount();
-	this->toolChains.append(ToolChain("/usr/bin/gcc"));//TODO Debug Only
 	loadToolChains();
+	// Connect network signals
+	connect(network, SIGNAL(receivedJob(Job*)), this, SLOT(onReceivedJob(Job*)));
+	connect(network, SIGNAL(remoteJobAborted(Job*)), this, SLOT(onRemoteJobAborted(Job*)));
+	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 }
 
 void CompilerService::addJob(Job *job) {
@@ -60,6 +64,7 @@ void CompilerService::addJob(Job *job) {
 		this->localJobQueue.append(job);
 		emit numberOfJobsInLocalQueueChanged(this->localJobQueue.count());
 	}
+	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 	//TODO DEBUG:qCritical("Job hinzugefuegt");
 	manageJobs();
 }
@@ -138,12 +143,6 @@ void CompilerService::executeFirstJobFromList(QList<Job*> *jobList) {
 
 void CompilerService::executeJobLocally(Job* job) {
 	//TODO DEBUG:qCritical("executeJobLocally");
-	connect(job,
-		SIGNAL(finished(Job*)),
-		this,
-		SLOT(onLocalCompileFinished(Job*))
-	);
-	//TODO DEBUG:qCritical("job.execute");
 	job->execute();
 	setCurrentThreadCount(this->currentThreadCount + 1);
 }
@@ -177,10 +176,20 @@ void CompilerService::loadToolChains() {
 			this->toolChains.append(toolChain);
 		}
 	}
+	this->settings.endArray();
+	if (this->toolChains.count() < 1) {
+		qWarning("No toolchains loaded, creating default toolchain entry.");
+		// Try to fetch the default compiler
+		ToolChain defaultToolChain("/usr/bin/gcc");
+		if (defaultToolChain.getVersion() != "") {
+			this->toolChains.append(defaultToolChain);
+		}
+		// Save the updated toolchain list
+		saveToolChains();
+	}
 	if (this->toolChains.count() < 1) {
 		qFatal("No ToolChains available!");
 	}
-	this->settings.endArray();
 }
 
 void CompilerService::saveToolChains()  {
@@ -222,7 +231,7 @@ void CompilerService::onLocalCompileFinished(Job* job) {
 	emit localJobCompilationFinished(job);
 	if (!job->wasDelegated()) {
 		emit numberOfJobsInLocalQueueChanged(this->localJobQueue.count());
-		setCurrentThreadCount(--this->currentThreadCount);
+		setCurrentThreadCount(this->currentThreadCount - 1);
 	}
 	manageJobs();
 }
