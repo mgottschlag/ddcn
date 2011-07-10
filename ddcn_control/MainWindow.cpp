@@ -59,7 +59,7 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeS
 	return argument;
 }
 
-MainWindow::MainWindow() {
+MainWindow::MainWindow() : maxThreads(0), currentThreads(0) {
 	ui.setupUi(this);
 	serviceActive = false;
 	emit serviceStatusChanged(false);
@@ -94,6 +94,21 @@ MainWindow::MainWindow() {
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
 			"org.ddcn.CompilerNetwork", "nodeStatusChanged", this,
 			SLOT(onNodeStatusChanged(QString, QString, NodeStatus, QStringList)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
+			"org.ddcn.CompilerService", "currentThreadCountChanged", this,
+			SLOT(onCurrentThreadCountChanged(int)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
+			"org.ddcn.CompilerService", "maxThreadCountChanged", this,
+			SLOT(onMaxThreadCountChanged(int)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
+			"org.ddcn.CompilerService", "numberOfJobsInLocalQueueChanged", this,
+			SLOT(onNumberOfLocalJobsChanged(int)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
+			"org.ddcn.CompilerService", "numberOfJobsInRemoteQueueChanged", this,
+			SLOT(onNumberOfRemoteJobsChanged(int)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
+			"org.ddcn.CompilerService", "toolChainsChanged", this,
+			SLOT(onToolChainsChanged(QList<ToolChainInfo> toolChains))); //TODO ToolChainInfo importieren
 }
 
 void MainWindow::startService() {
