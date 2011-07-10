@@ -121,13 +121,10 @@ QStringList Application::fetchToolChainList() {
 	QList<ToolChainInfo> toolChainInfo = reply.value();
 	QStringList toolChains;
 	foreach(ToolChainInfo info, toolChainInfo) {
-		qCritical("%s, %s", info.path.toAscii().data(), info.version.toAscii().data());
 		toolChains.append(info.version);
 	}
 
-	QStringList dummy = QStringList() << "/usr/bin/gcc" << "4.4.5";
-	return dummy;
-	//return toolChains;
+	return toolChains;
 }
 int Application::executeJob(QString toolChain, QStringList parameters,
 		const QByteArray &stdinData) {

@@ -85,7 +85,7 @@ private slots:
 	void updateThreadCount() {
 		ui.labelWorkload->setText(QString("%1 / %2").arg(this->currentThreads).arg(this->maxThreads));
 	}
-	void onToolChainsChanged(QList<ToolChainInfo> toolChains);
+	//void onToolChainsChanged(QList<ToolChainInfo> toolChains);
 signals:
 	void serviceStatusChanged(bool active);
 private:
