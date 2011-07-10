@@ -68,16 +68,35 @@ private slots:
 	void updateStatusText();
 	void onNodeStatusChanged(QString publicKey, QString fingerprint,
 			NodeStatus nodeStatus, QStringList groups);
+	void onCurrentThreadCountChanged(int threadCount) {
+		this->currentThreads = serviceActive ? threadCount : 0;
+		updateThreadCount();
+	}
+	void onMaxThreadCountChanged(int threadCount) {
+		this->maxThreads = serviceActive ? threadCount : 0;
+		updateThreadCount();
+	}
+	void onNumberOfLocalJobsChanged(int noj) {
+		ui.labelLocalJobs->setText(QString::number(noj));
+	}
+	void onNumberOfRemoteJobsChanged(int noj) {
+		ui.labelRemoteJobs->setText(QString::number(noj));
+	}
+	void updateThreadCount() {
+		ui.labelWorkload->setText(QString("%1 / %2").arg(this->currentThreads).arg(this->maxThreads));
+	}
+	void onToolChainsChanged(QList<ToolChainInfo> toolChains);
 signals:
 	void serviceStatusChanged(bool active);
 private:
-
 	Ui::MainWindow ui;
 
 	QTimer serviceStatusTimer;
 	QTimer serviceTimeoutTimer;
 
 	bool serviceActive;
+	int currentThreads;
+	int maxThreads;
 
 	QLabel statusLabel;
 
