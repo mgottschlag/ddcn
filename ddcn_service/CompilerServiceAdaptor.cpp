@@ -92,12 +92,12 @@ JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 		const QByteArray &stdinData, const QDBusMessage &message) {
 	// Fetch the toolchain path
 	QList<ToolChain> toolChains = *service->getToolChains();
-	QString toolChainPath = "";
+	ToolChain toolChainInfo;
 	for (int i = 0; i < toolChains.size(); i++) {
 		if (toolChains[i].getVersion() == toolChain) {
 			// TODO: Rather pass the whole ToolChain class here so that the job
 			// can get the right filename for the language (gcc/g++)?
-			toolChainPath = toolChains[i].getPath();
+			toolChainInfo = toolChains[i];
 			break;
 		}
 	}
@@ -109,7 +109,7 @@ JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 	                   parser.getOriginalParameters(),
 	                   parser.getPreprocessingParameters(),
 	                   parser.getCompilerParameters(),
-	                   toolChainPath, workingPath, false, parser.isDelegatable(),
+	                   toolChainInfo, workingPath, false, parser.isDelegatable(),
 	                   stdinData);
 	//TODO DEBUG:qCritical("job erzeugt");
 	message.setDelayedReply(true);

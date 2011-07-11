@@ -37,7 +37,10 @@ public:
 	}
 
 	ToolChain(QString path);
-	
+
+	ToolChain() {
+	}
+
 	/**
 	 * Returns the gcc target triple (platform, system and kernel (order may vary) /gcc-version:
 	 * eg. i686-linux-gnu/4.4.5).
