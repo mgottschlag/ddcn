@@ -190,6 +190,7 @@ void CompilerService::loadToolChains() {
 	if (this->toolChains.count() < 1) {
 		qFatal("No ToolChains available!");
 	}
+	network->setToolChains(toolChains);
 }
 
 void CompilerService::saveToolChains()  {
