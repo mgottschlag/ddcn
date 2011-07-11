@@ -31,6 +31,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QStringList>
 #include <QProcess>
 #include "InputOutputFilePair.h"
+#include "ToolChain.h"
 
 struct JobResult {
 	QByteArray stdout;
@@ -51,7 +52,7 @@ class Job : public QObject {
 public:
 	Job(QStringList inputFiles, QStringList outputFiles,
 		QStringList fullParameters, QStringList preprocessorParameters,
-		QStringList compilerParameters, QString toolChain, QString workingDir,
+		QStringList compilerParameters, ToolChain toolChain, QString workingDir,
 		bool isRemoteJob, bool delegatable, const QByteArray &stdinData);
 	~Job();
 
@@ -113,7 +114,7 @@ public:
 	QStringList getCompilerParameters() {
 		return compilerParameters;
 	}
-	QString getToolchain() {
+	ToolChain getToolchain() {
 		return toolChain;
 	}
 	QString getWorkingDirectory() {
@@ -139,7 +140,7 @@ private:
 	QByteArray stdinData;
 
 	QStringList preprocessedFiles;
-	QString toolChain;
+	ToolChain toolChain;
 	QString workingDir;
 	JobResult jobResult;
 	JobResult preprocessingResult;

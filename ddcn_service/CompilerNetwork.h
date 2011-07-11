@@ -70,6 +70,7 @@ public:
 				}
 				return freeSlots.node;
 			} else {
+				freeSlotCount -= freeSlots.slotCount;
 				slotList.removeLast();
 			}
 		}

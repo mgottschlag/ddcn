@@ -34,7 +34,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Job::Job(QStringList inputFiles, QStringList outputFiles,
 		QStringList fullParameters, QStringList preprocessorParameters,
-		QStringList compilerParameters,QString toolChain,
+		QStringList compilerParameters,ToolChain toolChain,
 		QString workingDir, bool isRemoteJob, bool delegatable,
 		const QByteArray &stdinData) :
 		preProcessListPosition(0), preprocessing(false), preprocessed(false),
@@ -52,7 +52,7 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
 			(inputFiles.count() <= 0) ? "[no inputFiles]" : inputFiles[0].toAscii().data(),
 			(fullParameters.count() <= 0) ? "[no parameters]" : fullParameters[0].toAscii().data(),
-			toolChain.toAscii().data(), (int)this->delegatable);
+			toolChain.getVersion().toAscii().data(), (int)this->delegatable);
 }
 Job::~Job() {
 	// Remove temporary files created for preprocessing
@@ -88,7 +88,7 @@ void Job::preProcess() {
 			SLOT(onPreProcessExecuteError(QProcess::ProcessError))
 		);
 		gccPreProcess->setWorkingDirectory(this->workingDir);
-		gccPreProcess->start(toolChain, preProcessParameter);
+		gccPreProcess->start(toolChain.getPath(), preProcessParameter);
 		preprocessing = true;
 	} else {
 		preprocessing = false;
@@ -125,7 +125,7 @@ void Job::execute() {
 	gccProcess->setWorkingDirectory(this->workingDir);
 	gccProcess->setProcessChannelMode(QProcess::SeparateChannels);
 	// TODO: Toolchain path
-	gccProcess->start("gcc", parameters);
+	gccProcess->start(toolChain.getPath(), parameters);
 	gccProcess->write(stdinData);
 	gccProcess->closeWriteChannel();
 	compiling = true;

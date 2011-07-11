@@ -506,7 +506,7 @@ void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
 		toolChainVersions.append(toolChain.getVersion());
 	}
 	stream << toolChainVersions;
-	Packet packet(PacketType::NetworkResourcesAvailable, freeLocalSlots);
+	Packet packet = Packet::fromData(PacketType::NetworkResourcesAvailable, packetData);
 	network->send(node, packet);
 }
 
@@ -567,6 +567,8 @@ void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packe
 	}
 	QStringList toolChainVersions;
 	stream >> toolChainVersions;
+	qDebug("onNetworkResourcesAvailable: toolchains(%d): %s",
+		toolChainVersions.count(), toolChainVersions.join("/").toAscii().data());
 	// Register free remote slots for later use
 	FreeCompilerSlots freeSlots;
 	freeSlots.node = node;
@@ -578,6 +580,7 @@ void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packe
 }
 
 void CompilerNetwork::createJobRequests() {
+	qDebug("createJobRequests()");
 	// Ask for more remote slots as soon as we have spent 75% of the previous slots
 	if (freeRemoteSlots.getFreeSlotCount() <= freeRemoteSlots.getMaxFreeSlotCount() / 4) {
 		askForFreeSlots();
@@ -585,19 +588,23 @@ void CompilerNetwork::createJobRequests() {
 	// Send job requests for waiting jobs as long as there are free slots available
 	while (freeRemoteSlots.getFreeSlotCount() > 0 && outgoingJobRequests.size() < (int)getWaitingJobCount()) {
 		// NOTE: We always create job requests for the toolchain version of the
-		// first waiting job
-		Job *lastWaiting = waitingPreprocessedJobs.last();
-		if (!lastWaiting) {
+		// first waiting job, this is okay as we usually compile lots of jobs
+		// for the same target architecture
+		Job *lastWaiting = NULL;
+		if (!waitingPreprocessedJobs.empty()) {
+			waitingPreprocessedJobs.last();
+		} else if (!waitingPreprocessingJobs.empty()) {
 			lastWaiting = waitingPreprocessingJobs.last();
-		}
-		if (!lastWaiting) {
+		} else if (!waitingJobs.empty()) {
 			lastWaiting = waitingJobs.last();
 		}
 		assert(lastWaiting != NULL);
-		NetworkNode *target = freeRemoteSlots.removeFirst(lastWaiting->getToolchain());
+		NetworkNode *target = freeRemoteSlots.removeFirst(lastWaiting->getToolchain().getVersion());
 		if (!target) {
+			qDebug("createJobRequests: Cannot send job request, no target available.");
 			continue;
 		}
+		qDebug("createJobRequests: Sending job request.");
 		// Create request
 		// TODO: The request needs a timeout so that we do not wait forever
 		OutgoingJobRequest *request = new OutgoingJobRequest;
@@ -758,19 +765,19 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 		inputFile.close();
 	}
 	// Get toolchain path
-	QString toolChainPath = "";
+	ToolChain toolChainInfo;
 	for (int i = 0; i < toolChains.size(); i++) {
 		if (toolChains[i].getVersion() == toolchain) {
 			// TODO: Rather pass the whole ToolChain class here so that the job
 			// can get the right filename for the language (gcc/g++)?
-			toolChainPath = toolChains[i].getPath();
+			toolChainInfo = toolChains[i];
 			break;
 		}
 	}
 	// TODO: Error checking - toolchain unsupported?
 	// Create job
 	Job *job = new Job(inputFiles, outputFiles, QStringList(), QStringList(),
-			compilerParameters, toolChainPath, QDir::tempPath(), true, false,
+			compilerParameters, toolChainInfo, QDir::tempPath(), true, false,
 			QByteArray());
 	IncomingJob *incoming = new IncomingJob(node, job, id);
 	job->setIncomingJob(incoming);
@@ -927,6 +934,7 @@ unsigned int CompilerNetwork::getPreprocessedWaitingJobCount() {
 }
 
 void CompilerNetwork::preprocessWaitingJob() {
+	qDebug("preprocessWaitingJob");
 	if (waitingJobs.empty()) {
 		// This should not happen, should be checked in createJobRequests()
 		qCritical("preprocessWaitingJob() called without unpreprocessed waiting jobs!");
@@ -943,6 +951,7 @@ void CompilerNetwork::preprocessWaitingJob() {
 }
 
 void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
+	qDebug("delegateJob");
 	// Collect input data
 	QStringList inputFiles = job->getPreprocessedFiles();
 	QList<QByteArray> fileContent;
@@ -955,12 +964,12 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	}
 	// Get parameters
 	QStringList compilerParameters = job->getCompilerParameters();
-	QString toolchain = job->getToolchain();
+	ToolChain toolchain = job->getToolchain();
 	// Create job data packet
 	QByteArray packetData;
 	QDataStream stream(&packetData, QIODevice::WriteOnly);
 	stream << qToBigEndian(request->id);
-	stream << toolchain;
+	stream << toolchain.getVersion();
 	stream << compilerParameters;
 	stream << fileContent;
 	Packet packet = Packet::fromData(PacketType::JobData, packetData);
