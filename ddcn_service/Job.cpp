@@ -88,7 +88,7 @@ void Job::preProcess() {
 			SLOT(onPreProcessExecuteError(QProcess::ProcessError))
 		);
 		gccPreProcess->setWorkingDirectory(this->workingDir);
-		gccPreProcess->start("gcc", preProcessParameter);
+		gccPreProcess->start(toolChain, preProcessParameter);
 		preprocessing = true;
 	} else {
 		preprocessing = false;
