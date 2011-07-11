@@ -90,6 +90,18 @@ void CompilerServiceAdaptor::onToolChainsChanged() {
 JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 		QString toolChain, QString workingPath,
 		const QByteArray &stdinData, const QDBusMessage &message) {
+	// Fetch the toolchain path
+	QList<ToolChain> toolChains = *service->getToolChains();
+	QString toolChainPath = "";
+	for (int i = 0; i < toolChains.size(); i++) {
+		if (toolChains[i].getVersion() == toolChain) {
+			// TODO: Rather pass the whole ToolChain class here so that the job
+			// can get the right filename for the language (gcc/g++)?
+			toolChainPath = toolChains[i].getPath();
+			break;
+		}
+	}
+	// TODO: Error checking - toolchain unsupported?
 	//TODO DEBUG:qCritical("DBus anfrage");
 	ParameterParser parser(parameters);
 	//TODO DEBUG:qCritical("Parser durch");
@@ -97,7 +109,7 @@ JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 	                   parser.getOriginalParameters(),
 	                   parser.getPreprocessingParameters(),
 	                   parser.getCompilerParameters(),
-	                   toolChain, workingPath, false, parser.isDelegatable(),
+	                   toolChainPath, workingPath, false, parser.isDelegatable(),
 	                   stdinData);
 	//TODO DEBUG:qCritical("job erzeugt");
 	message.setDelayedReply(true);

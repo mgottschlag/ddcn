@@ -757,9 +757,20 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 		inputFile.write(fileContent[i]);
 		inputFile.close();
 	}
+	// Get toolchain path
+	QString toolChainPath = "";
+	for (int i = 0; i < toolChains.size(); i++) {
+		if (toolChains[i].getVersion() == toolchain) {
+			// TODO: Rather pass the whole ToolChain class here so that the job
+			// can get the right filename for the language (gcc/g++)?
+			toolChainPath = toolChains[i].getPath();
+			break;
+		}
+	}
+	// TODO: Error checking - toolchain unsupported?
 	// Create job
 	Job *job = new Job(inputFiles, outputFiles, QStringList(), QStringList(),
-			compilerParameters, toolchain, QDir::tempPath(), true, false,
+			compilerParameters, toolChainPath, QDir::tempPath(), true, false,
 			QByteArray());
 	IncomingJob *incoming = new IncomingJob(node, job, id);
 	job->setIncomingJob(incoming);
