@@ -27,7 +27,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CompilerNetwork.h"
 
 CompilerNetwork::CompilerNetwork() : encryptionEnabled(true), freeLocalSlots(0),
-		freeRemoteSlotCount(0), maxFreeRemoteSlotCount(0), lastJobId(0),
+		lastJobId(0),
 		settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	// Load peer name and public key from configuration
 	if (!settings.value("name").isValid()) {
@@ -324,6 +324,8 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 		// TODO: Also look for network resources if necessary
 		createJobRequests();
 	}
+	// Remove free remote slots on this peer
+	// TODO
 	QList<IncomingJobRequest*> incomingJobRequests;
 }
 void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
@@ -495,6 +497,15 @@ void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	network->send(node, packet);
 }
 void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
+	QByteArray packetData;
+	QDataStream stream(&packetData, QIODevice::WriteOnly);
+	stream << freeLocalSlots;
+	// Send toolchain info so that other peers only ask peers who have the correct toolchains
+	QStringList toolChainVersions;
+	foreach (ToolChain toolChain, toolChains) {
+		toolChainVersions.append(toolChain.getVersion());
+	}
+	stream << toolChainVersions;
 	Packet packet(PacketType::NetworkResourcesAvailable, freeLocalSlots);
 	network->send(node, packet);
 }
@@ -537,12 +548,15 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 
 void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packet &packet) {
 	qDebug("onNetworkResourcesAvailable");
-	if (packet.getPayloadSize() != sizeof(unsigned int)) {
+	/*if (packet.getPayloadSize() != sizeof(unsigned int)) {
 		qWarning("Wrong packet size (onNetworkResourcesAvailable(): %d instead of %d).",
 				packet.getPayloadSize(), (int)sizeof(unsigned int));
 		return;
-	}
-	unsigned int availableCount = qFromBigEndian(*(unsigned int*)packet.getPayloadData());
+	}*/
+	QByteArray payload((char*)packet.getPayloadData(), packet.getPayloadSize());
+	QDataStream stream(payload);
+	unsigned int availableCount;
+	stream >> availableCount;
 	if (availableCount == 0) {
 		return;
 	}
@@ -551,30 +565,43 @@ void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packe
 	if (availableCount > 16) {
 		availableCount = 16;
 	}
+	QStringList toolChainVersions;
+	stream >> toolChainVersions;
 	// Register free remote slots for later use
 	FreeCompilerSlots freeSlots;
 	freeSlots.node = node;
 	freeSlots.slotCount = availableCount;
+	freeSlots.toolChainVersions = toolChainVersions;
 	freeRemoteSlots.append(freeSlots);
-	freeRemoteSlotCount += availableCount;
-	// As soon as the remote slot count grows, set the new maximum
-	maxFreeRemoteSlotCount = freeRemoteSlotCount;
 	// If we have waiting jobs which can now be sent out, create a request
 	createJobRequests();
 }
 
 void CompilerNetwork::createJobRequests() {
 	// Ask for more remote slots as soon as we have spent 75% of the previous slots
-	if (freeRemoteSlotCount <= maxFreeRemoteSlotCount / 4) {
+	if (freeRemoteSlots.getFreeSlotCount() <= freeRemoteSlots.getMaxFreeSlotCount() / 4) {
 		askForFreeSlots();
 	}
 	// Send job requests for waiting jobs as long as there are free slots available
-	while (freeRemoteSlots.size() > 0 && outgoingJobRequests.size() < (int)getWaitingJobCount()) {
-		FreeCompilerSlots &nextSlots = freeRemoteSlots[0];
+	while (freeRemoteSlots.getFreeSlotCount() > 0 && outgoingJobRequests.size() < (int)getWaitingJobCount()) {
+		// NOTE: We always create job requests for the toolchain version of the
+		// first waiting job
+		Job *lastWaiting = waitingPreprocessedJobs.last();
+		if (!lastWaiting) {
+			lastWaiting = waitingPreprocessingJobs.last();
+		}
+		if (!lastWaiting) {
+			lastWaiting = waitingJobs.last();
+		}
+		assert(lastWaiting != NULL);
+		NetworkNode *target = freeRemoteSlots.removeFirst(lastWaiting->getToolchain());
+		if (!target) {
+			continue;
+		}
 		// Create request
 		// TODO: The request needs a timeout so that we do not wait forever
 		OutgoingJobRequest *request = new OutgoingJobRequest;
-		request->target = nextSlots.node;
+		request->target = target;
 		request->id = generateJobId();
 		outgoingJobRequests.append(request);
 		Packet packet(PacketType::JobRequest, qToBigEndian(request->id));
@@ -585,12 +612,6 @@ void CompilerNetwork::createJobRequests() {
 		if (outgoingJobRequests.size() > preprocessed) {
 			preprocessWaitingJob();
 		}
-		// Remove one free slot from the list
-		nextSlots.slotCount--;
-		if (nextSlots.slotCount == 0) {
-			freeRemoteSlots.removeFirst();
-		}
-		freeRemoteSlotCount--;
 	}
 }
 

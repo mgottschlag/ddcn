@@ -60,13 +60,14 @@ public:
        // return this->maxThreadCount;
        return QThread::idealThreadCount();
     }
-    
+
     void addToolChain(QString path) {
         ToolChain toolChain(path);
         if (this->toolChains.indexOf(toolChain) >= 0 && QFile(path).exists()) {
             this->toolChains.append(toolChain);
             saveToolChains();
         }
+        network->setToolChains(toolChains);
         emit toolChainsChanged();
     }
 

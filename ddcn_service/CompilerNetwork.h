@@ -36,12 +36,56 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "NodeStatus.h"
 #include "IncomingJob.h"
 #include "JobRequest.h"
+#include "ToolChain.h"
 
 #include <QObject>
 
 struct FreeCompilerSlots {
 	NetworkNode *node;
 	unsigned int slotCount;
+	QStringList toolChainVersions;
+};
+
+class FreeCompilerSlotList {
+public:
+	FreeCompilerSlotList() : freeSlotCount(0), maxFreeSlotCount(0) {
+	}
+
+	void append(const FreeCompilerSlots &freeSlots) {
+		if (freeSlots.slotCount == 0) {
+			return;
+		}
+		slotList.append(freeSlots);
+		freeSlotCount += freeSlots.slotCount;
+		// As soon as the remote slot count grows, set the new maximum
+		maxFreeSlotCount = freeSlotCount;
+	}
+	NetworkNode *removeFirst(QString toolChain) {
+		while (!slotList.empty()) {
+			FreeCompilerSlots &freeSlots = slotList.last();
+			if (freeSlots.toolChainVersions.contains(toolChain)) {
+				freeSlots.slotCount--;
+				if (freeSlots.slotCount == 0) {
+					slotList.removeLast();
+				}
+				return freeSlots.node;
+			} else {
+				slotList.removeLast();
+			}
+		}
+		return NULL;
+	}
+
+	unsigned int getFreeSlotCount() {
+		return freeSlotCount;
+	}
+	unsigned int getMaxFreeSlotCount() {
+		return maxFreeSlotCount;
+	}
+private:
+	QList<FreeCompilerSlots> slotList;
+	unsigned int freeSlotCount;
+	unsigned int maxFreeSlotCount;
 };
 
 /**
@@ -100,6 +144,10 @@ public:
 	void queryNetworkStatus();
 
 	void onDelegatedJobFinished(Job *job);
+
+	void setToolChains(QList<ToolChain> toolChains) {
+		this->toolChains = toolChains;
+	}
 private slots:
 	void onPeerConnected(NetworkNode *node, QString name,
 		const PublicKey &publicKey);
@@ -176,10 +224,8 @@ private:
 	QList<Job*> waitingPreprocessingJobs;
 	QList<Job*> waitingPreprocessedJobs;
 
-	QList<FreeCompilerSlots> freeRemoteSlots;
+	FreeCompilerSlotList freeRemoteSlots;
 	unsigned int freeLocalSlots;
-	unsigned int freeRemoteSlotCount;
-	unsigned int maxFreeRemoteSlotCount;
 
 	QList<OutgoingJob*> delegatedJobs;
 
@@ -191,6 +237,8 @@ private:
 	QList<IncomingJob*> incomingJobs;
 
 	unsigned int lastJobId;
+
+	QList<ToolChain> toolChains;
 
 	QSettings settings;
 };
