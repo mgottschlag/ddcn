@@ -69,10 +69,11 @@ void Job::preProcess() {
 	QStringList preProcessParameter;
 	if (this->preProcessListPosition < this->inputFiles.count()) {
 		QString inputFile = this->inputFiles[this->preProcessListPosition];
+		QString baseName = QFileInfo(inputFile).fileName();
 		TemporaryFile tmpFile(
-			inputFile.right(inputFile.length() - inputFile.lastIndexOf(".")),
+			baseName.right(baseName.length() - baseName.lastIndexOf(".")),
 			"ddcn_tmp_",
-			inputFile.left(inputFile.indexOf(".")));
+			baseName.left(baseName.lastIndexOf(".")));
 		preProcessParameter << "-E" << inputFile << "-o"
 									<< tmpFile.getFilename()
 									<< this->preprocessorParameters;
