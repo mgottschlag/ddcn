@@ -51,10 +51,11 @@ public slots:
 	void setMaxThreadCount(int threadCount);
 	int getCurrentThreadCount();
 	int getMaxThreadCount();
-	void shutdown();										//TODO
+	void shutdown();
 	QList<ToolChainInfo> getToolChains();
 	JobResult executeJob(QStringList parameters, QString toolChain,
-		QString workingPath, const QByteArray &stdinData, const QDBusMessage &message);
+		QString workingPath, const QByteArray &stdinData,
+		QString language, const QDBusMessage &message);
 	void addToolChain(QString path);
 	void removeToolChain(QString path);
 	void localCompilationJobFinished(Job *job);

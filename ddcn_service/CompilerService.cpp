@@ -171,7 +171,8 @@ void CompilerService::loadToolChains() {
 		this->settings.setArrayIndex(i);
 		QString version = this->settings.value(this->settingToolChainVersion).toString();
 		QString path = this->settings.value(this->settingToolChainPath).toString();
-		if (QFile(path).exists()) {
+		QString gccPath = QString(path).replace("*", "gcc");
+		if (QFile(gccPath).exists()) {
 			ToolChain toolChain(version, path);
 			this->toolChains.append(toolChain);
 		}
@@ -180,7 +181,7 @@ void CompilerService::loadToolChains() {
 	if (this->toolChains.count() < 1) {
 		qWarning("No toolchains loaded, creating default toolchain entry.");
 		// Try to fetch the default compiler
-		ToolChain defaultToolChain("/usr/bin/gcc");
+		ToolChain defaultToolChain("/usr/bin/*");
 		if (defaultToolChain.getVersion() != "") {
 			this->toolChains.append(defaultToolChain);
 		}

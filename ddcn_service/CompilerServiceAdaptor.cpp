@@ -89,7 +89,8 @@ void CompilerServiceAdaptor::onToolChainsChanged() {
 
 JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 		QString toolChain, QString workingPath,
-		const QByteArray &stdinData, const QDBusMessage &message) {
+		const QByteArray &stdinData, QString language,
+		const QDBusMessage &message) {
 	// Fetch the toolchain path
 	QList<ToolChain> toolChains = *service->getToolChains();
 	ToolChain toolChainInfo;
@@ -110,7 +111,8 @@ JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 	                   parser.getPreprocessingParameters(),
 	                   parser.getCompilerParameters(),
 	                   toolChainInfo, workingPath, false, parser.isDelegatable(),
-	                   stdinData);
+	                   stdinData, language);
+	// TODO: Language
 	//TODO DEBUG:qCritical("job erzeugt");
 	message.setDelayedReply(true);
 	//TODO DEBUG:qCritical("setDelayedReply");

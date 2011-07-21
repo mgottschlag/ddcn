@@ -31,7 +31,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ToolChain.h"
 
 ToolChain::ToolChain(QString path) {
-	if (QFile(path).exists()) {
+	QString gccPath = QString(path).replace("*", "gcc");
+	qDebug("Toolchain path: %s", path.toAscii().data());
+	if (QFile(gccPath).exists()) {
 		//TODO zurückgeändert
 		QProcess *compiler = new QProcess();
 		QProcessEnvironment environment = compiler->processEnvironment();
@@ -43,7 +45,7 @@ ToolChain::ToolChain(QString path) {
 		env.insert("LC_ALL", "C");
 		compiler->setProcessEnvironment(env);
 		compiler->setProcessChannelMode(QProcess::MergedChannels);
-		compiler->start(path, QStringList("-v"));
+		compiler->start(gccPath, QStringList("-v"));
 		if (!compiler->waitForStarted(500)) {
 			qCritical("Could not start compiler \"%s\".",
 					path.toAscii().data());
@@ -75,3 +77,16 @@ QString ToolChain::getVersion() const {
 QString ToolChain::getPath() const {
 	return this->path;
 }
+
+QString ToolChain::getPath(QString language) const {
+	qDebug("Language: %s", language.toAscii().data());
+	qDebug("Path: %s", path.toAscii().data());
+	if (language == "c") {
+		return QString(path).replace("*", "gcc");
+	} else if (language == "c++") {
+		return QString(path).replace("*", "g++");
+	} else {
+		return "";
+	}
+}
+

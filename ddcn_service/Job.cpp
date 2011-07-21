@@ -36,7 +36,7 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 		QStringList fullParameters, QStringList preprocessorParameters,
 		QStringList compilerParameters,ToolChain toolChain,
 		QString workingDir, bool isRemoteJob, bool delegatable,
-		const QByteArray &stdinData) :
+		const QByteArray &stdinData, QString language) :
 		preProcessListPosition(0), preprocessing(false), preprocessed(false),
 		compiling(false), delegated(false), incomingJob(NULL), outgoingJob(NULL) {
 	this->inputFiles = inputFiles;
@@ -49,6 +49,7 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 	this->delegatable = delegatable;
 	this->workingDir = workingDir;
 	this->stdinData = stdinData;
+	this->language = language;
 	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
 			(inputFiles.count() <= 0) ? "[no inputFiles]" : inputFiles[0].toAscii().data(),
 			(fullParameters.count() <= 0) ? "[no parameters]" : fullParameters[0].toAscii().data(),
@@ -88,7 +89,7 @@ void Job::preProcess() {
 			SLOT(onPreProcessExecuteError(QProcess::ProcessError))
 		);
 		gccPreProcess->setWorkingDirectory(this->workingDir);
-		gccPreProcess->start(toolChain.getPath(), preProcessParameter);
+		gccPreProcess->start(toolChain.getPath(language), preProcessParameter);
 		preprocessing = true;
 	} else {
 		preprocessing = false;
@@ -125,7 +126,8 @@ void Job::execute() {
 	gccProcess->setWorkingDirectory(this->workingDir);
 	gccProcess->setProcessChannelMode(QProcess::SeparateChannels);
 	// TODO: Toolchain path
-	gccProcess->start(toolChain.getPath(), parameters);
+	qDebug("Process path: %s", toolChain.getPath(language).toAscii().data());
+	gccProcess->start(toolChain.getPath(language), parameters);
 	gccProcess->write(stdinData);
 	gccProcess->closeWriteChannel();
 	compiling = true;

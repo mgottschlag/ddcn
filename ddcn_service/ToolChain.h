@@ -50,9 +50,16 @@ public:
 
 	/**
 	 * Returns the path to the compiler.
-	 * @return the path to the compiler.
+	 * @return the path to the compiler, a "*" denotes the part where the name
+	 * of the compiler for a certain language is inserted (e.g. "gcc" for C).
 	 */
 	QString getPath() const;
+	/**
+	 * Returns a special part to the compiler for a certain language.
+	 * @param language Language ("c" or "c++").
+	 * @return Path to the compiler executable.
+	 */
+	QString getPath(QString language) const;
 
 	bool operator == (ToolChain o) {
 		if (o.path == path && o.version == version) {
@@ -67,3 +74,4 @@ private:
 };
 
 #endif
+

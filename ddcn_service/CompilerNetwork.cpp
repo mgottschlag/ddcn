@@ -746,6 +746,8 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 	// Parse packet data
 	QString toolchain;
 	stream >> toolchain;
+	QString language;
+	stream >> language;
 	QStringList compilerParameters;
 	stream >> compilerParameters;
 	QList<QByteArray> fileContent;
@@ -778,7 +780,7 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 	// Create job
 	Job *job = new Job(inputFiles, outputFiles, QStringList(), QStringList(),
 			compilerParameters, toolChainInfo, QDir::tempPath(), true, false,
-			QByteArray());
+			QByteArray(), language);
 	IncomingJob *incoming = new IncomingJob(node, job, id);
 	job->setIncomingJob(incoming);
 	incomingJobs.append(incoming);
@@ -970,6 +972,7 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	QDataStream stream(&packetData, QIODevice::WriteOnly);
 	stream << qToBigEndian(request->id);
 	stream << toolchain.getVersion();
+	stream << job->getLanguage();
 	stream << compilerParameters;
 	stream << fileContent;
 	Packet packet = Packet::fromData(PacketType::JobData, packetData);

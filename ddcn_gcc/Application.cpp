@@ -88,6 +88,15 @@ int Application::run(int argc, char **argv) {
 			return -1;
 		}
 	}
+	// Select a language
+	QString language = "c";
+	const char *languageEnv = getenv("DDCN_LANGUAGE");
+	if (languageEnv) {
+		language = languageEnv;
+	}
+	if (language != "c" && language != "c++") {
+		language = "c";
+	}
 	// Check whether we need to read stdin
 	QByteArray stdinData;
 	for (int i = 1; i < argc; i++) {
@@ -102,7 +111,7 @@ int Application::run(int argc, char **argv) {
 	for (int i = 1; i < argc; i++) {
 		parameters.append(argv[i]);
 	}
-	return executeJob(toolChain, parameters, stdinData);
+	return executeJob(toolChain, parameters, stdinData, language);
 }
 
 QStringList Application::fetchToolChainList() {
@@ -121,13 +130,14 @@ QStringList Application::fetchToolChainList() {
 	QList<ToolChainInfo> toolChainInfo = reply.value();
 	QStringList toolChains;
 	foreach(ToolChainInfo info, toolChainInfo) {
+		qDebug("Toolchain available: %s", info.version.toAscii().data());
 		toolChains.append(info.version);
 	}
 
 	return toolChains;
 }
 int Application::executeJob(QString toolChain, QStringList parameters,
-		const QByteArray &stdinData) {
+		const QByteArray &stdinData, QString language) {
 	QDBusInterface interface("org.ddcn.service",
 	                         "/CompilerService",
 	                         "org.ddcn.CompilerService");
@@ -135,8 +145,9 @@ int Application::executeJob(QString toolChain, QStringList parameters,
 		qCritical("Error: Compiler service not available.");
 		return -1;
 	}
+	qDebug("Sending job, toolchain: %s", toolChain.toAscii().data());
 	QDBusReply<JobResult> reply = interface.call("executeJob", parameters,
-			toolChain, QDir::currentPath(), stdinData);
+			toolChain, QDir::currentPath(), stdinData, language);
 	if (!reply.isValid()) {
 		qCritical(reply.error().message().toAscii().data());
 		qCritical("Error: Could not call compiler service (executeJob()).");
