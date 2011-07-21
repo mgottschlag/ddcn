@@ -53,7 +53,8 @@ public:
 	Job(QStringList inputFiles, QStringList outputFiles,
 		QStringList fullParameters, QStringList preprocessorParameters,
 		QStringList compilerParameters, ToolChain toolChain, QString workingDir,
-		bool isRemoteJob, bool delegatable, const QByteArray &stdinData);
+		bool isRemoteJob, bool delegatable, const QByteArray &stdinData,
+		QString language);
 	~Job();
 
 	bool isRemoteJob() {
@@ -121,6 +122,10 @@ public:
 		return workingDir;
 	}
 
+	QString getLanguage() {
+		return language;
+	}
+
 	void setFinished(int returnValue, const QByteArray &stdout, const QByteArray &stderr);
 signals:
 	void finished(Job *job);
@@ -132,6 +137,7 @@ private:
 	QStringList inputFiles;
 	QStringList outputFiles;
 	bool delegatable;
+	QString language;
 
 	QStringList fullParameters;
 	QStringList preprocessorParameters;
