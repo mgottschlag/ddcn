@@ -26,3 +26,6 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(ddcn_crypto SHARED ${SRC} ${MOC_SRC})
 target_link_libraries(ddcn_crypto ${QT_LIBRARIES} ${OPENSSL_LIBRARIES})
+
+install(TARGETS ddcn_crypto LIBRARY DESTINATION lib)
+

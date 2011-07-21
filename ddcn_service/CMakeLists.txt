@@ -52,3 +52,8 @@ include_directories(${ARIBA_INCLUDE_DIR} ${MCPO_INCLUDE_DIR} ${Boost_INCLUDE_DIR
 
 add_executable(ddcn_service ${SRC} ${MOC_SRC})
 target_link_libraries(ddcn_service ${QT_LIBRARIES} ${ARIBA_LIBRARY} ${PTHREAD_LIBRARY} ${MCPO_LIBRARY} ${Boost_LIBRARIES} ${LOG4CXX_LIBRARY} ddcn_crypto)
+
+# Installation of files
+
+install(TARGETS ddcn_service DESTINATION bin)
+
