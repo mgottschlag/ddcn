@@ -21,3 +21,6 @@ QT4_WRAP_CPP(MOC_SRC ${MOC_H})
 
 add_executable(ddcn_gcc ${SRC} ${MOC_SRC})
 target_link_libraries(ddcn_gcc ${QT_LIBRARIES})
+
+install(TARGETS ddcn_gcc DESTINATION bin)
+install(PROGRAMS ddcn_g++ DESTINATION bin)

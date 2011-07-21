@@ -1,0 +1,4 @@
+#!/bin/bash
+
+DDCN_LANGUAGE="c++" ddcn_gcc $@
+

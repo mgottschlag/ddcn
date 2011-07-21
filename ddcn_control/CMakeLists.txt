@@ -46,3 +46,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(ddcn_control ${SRC} ${UIS_H} ${MOC_SRC} ${QRC_SRC})
 target_link_libraries(ddcn_control ${QT_LIBRARIES})
+
+install(TARGETS ddcn_control DESTINATION bin)
+
