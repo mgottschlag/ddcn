@@ -65,10 +65,13 @@ public:
 			FreeCompilerSlots &freeSlots = slotList.last();
 			if (freeSlots.toolChainVersions.contains(toolChain)) {
 				freeSlots.slotCount--;
+				freeSlotCount--;
+				// Take a copy as the reference is invalidated in removeLast()
+				NetworkNode *node = freeSlots.node;
 				if (freeSlots.slotCount == 0) {
 					slotList.removeLast();
 				}
-				return freeSlots.node;
+				return node;
 			} else {
 				freeSlotCount -= freeSlots.slotCount;
 				slotList.removeLast();
