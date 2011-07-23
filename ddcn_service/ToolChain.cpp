@@ -100,7 +100,8 @@ bool ToolChain::isCompatible(const QString &sourceToolChain,
 	QString targetTarget = targetToolChain.left(targetToolChain.indexOf("/"));
 	QString targetVersion = targetToolChain.mid(targetToolChain.indexOf("/") + 1);
 	// We only have backwards compatibility
-	if (sourceVersion.toFloat() > targetVersion.toFloat()) {
+	// (0.1f = comparison delta :) )
+	if (sourceVersion.toFloat() <= targetVersion.toFloat() + 0.1f) {
 		return false;
 	}
 	// Check whether the CPU architecture is compatible
