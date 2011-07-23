@@ -146,8 +146,13 @@ int Application::executeJob(QString toolChain, QStringList parameters,
 		return -1;
 	}
 	qDebug("Sending job, toolchain: %s", toolChain.toAscii().data());
-	QDBusReply<JobResult> reply = interface.call("executeJob", parameters,
-			toolChain, QDir::currentPath(), stdinData, language);
+	QList<QVariant> args;
+	args <<  parameters << toolChain << QDir::currentPath() << stdinData
+		<< language;
+	QDBusMessage msg = QDBusMessage::createMethodCall(interface.service(), interface.path(), interface.interface(), "executeJob");
+	msg.setArguments(args);
+	QDBusReply<JobResult> reply = QDBusConnection::sessionBus().call(msg,
+			QDBus::Block, 60000);
 	if (!reply.isValid()) {
 		qCritical(reply.error().message().toAscii().data());
 		qCritical("Error: Could not call compiler service (executeJob()).");
