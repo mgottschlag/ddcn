@@ -192,6 +192,7 @@ void CompilerService::loadToolChains() {
 	if (this->toolChains.count() < 1) {
 		qFatal("No ToolChains available!");
 	}
+	emit toolChainsChanged();
 	network->setToolChains(toolChains);
 }
 

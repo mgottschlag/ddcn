@@ -34,7 +34,6 @@ ToolChain::ToolChain(QString path) {
 	QString gccPath = QString(path).replace("*", "gcc");
 	qDebug("Toolchain path: %s", path.toAscii().data());
 	if (QFile(gccPath).exists()) {
-		//TODO zurückgeändert
 		QProcess *compiler = new QProcess();
 		QProcessEnvironment environment = compiler->processEnvironment();
 		environment.value("LANG", "C");
