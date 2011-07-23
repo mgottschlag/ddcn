@@ -479,11 +479,11 @@ void CompilerNetwork::askForFreeSlots() {
 void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	NodeStatusPacket nodeStatus;
 	// TODO: Get real data
-	nodeStatus.maxThreads = 2;
-	nodeStatus.currentThreads = 1;
-	nodeStatus.delegatedJobs = 0;
-	nodeStatus.remoteJobs = 0;
-	nodeStatus.groupCount = groupMemberships.count();
+	nodeStatus.maxThreads = qToBigEndian(2);
+	nodeStatus.currentThreads = qToBigEndian(1);
+	nodeStatus.delegatedJobs = qToBigEndian(0);
+	nodeStatus.remoteJobs = qToBigEndian(0);
+	nodeStatus.groupCount = qToBigEndian(groupMemberships.count());
 	QByteArray packetData;
 	packetData.resize(sizeof(nodeStatus));
 	memcpy(packetData.data(), &nodeStatus, sizeof(nodeStatus));
@@ -520,11 +520,11 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 		return;
 	}
 	NodeStatus status;
-	status.currentThreads = nodeStatus->currentThreads;
-	status.maxThreads =nodeStatus->maxThreads;
-	status.delegatedJobs = nodeStatus->delegatedJobs;
-	status.localJobs = nodeStatus->localJobs;
-	status.remoteJobs = nodeStatus->remoteJobs;
+	status.currentThreads = qFromBigEndian(nodeStatus->currentThreads);
+	status.maxThreads = qFromBigEndian(nodeStatus->maxThreads);
+	status.delegatedJobs = qFromBigEndian(nodeStatus->delegatedJobs);
+	status.localJobs = qFromBigEndian(nodeStatus->localJobs);
+	status.remoteJobs = qFromBigEndian(nodeStatus->remoteJobs);
 	// Parse group info
 	unsigned int groupCount = nodeStatus->groupCount;
 	char *groupData = (char*)packet.getPayloadData() + sizeof(NodeStatusPacket);
@@ -597,6 +597,8 @@ void CompilerNetwork::createJobRequests() {
 			lastWaiting = waitingPreprocessingJobs.last();
 		} else if (!waitingJobs.empty()) {
 			lastWaiting = waitingJobs.last();
+		} else {
+			qFatal("createJobRequests(): waitingJob lists all empty!");
 		}
 		assert(lastWaiting != NULL);
 		NetworkNode *target = freeRemoteSlots.removeFirst(lastWaiting->getToolchain().getVersion());
