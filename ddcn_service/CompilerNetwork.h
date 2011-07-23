@@ -87,6 +87,18 @@ public:
 		return maxFreeSlotCount;
 	}
 private:
+	static bool isCompatible(QString toolChain, FreeCompilerSlots &freeSlots) {
+		if (freeSlots.toolChainVersions.contains(toolChain)) {
+			return true;
+		}
+		foreach (QString version, freeSlots.toolChainVersions) {
+			if (ToolChain::isCompatible(toolChain, version)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	QList<FreeCompilerSlots> slotList;
 	unsigned int freeSlotCount;
 	unsigned int maxFreeSlotCount;
@@ -172,6 +184,8 @@ signals:
 	void receivedJob(Job *job);
 	void remoteJobAborted(Job *job);
 	void nodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups);
+	// TODO: Not connected to anything yet
+	void outgoingJobCancelled(Job *job);
 private:
 	TrustedPeer *getTrustedPeer(const PublicKey &publicKey);
 	TrustedGroup *getTrustedGroup(const PublicKey &publicKey);

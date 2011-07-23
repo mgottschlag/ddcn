@@ -90,3 +90,47 @@ QString ToolChain::getPath(QString language) const {
 	}
 }
 
+
+bool ToolChain::isCompatible(const QString &sourceToolChain,
+		const QString &targetToolChain, QStringList *compatibilityParameters) {
+	if (sourceToolChain == targetToolChain) {
+		return true;
+	}
+	QString sourceTarget = sourceToolChain.left(sourceToolChain.indexOf("/"));
+	QString sourceVersion = sourceToolChain.mid(sourceToolChain.indexOf("/") + 1);
+	QString targetTarget = targetToolChain.left(targetToolChain.indexOf("/"));
+	QString targetVersion = targetToolChain.mid(targetToolChain.indexOf("/") + 1);
+	// We only have backwards compatibility
+	if (sourceVersion.toFloat() > targetVersion.toFloat()) {
+		return false;
+	}
+	// Check whether the CPU architecture is compatible
+	QString sourceArch = sourceTarget.left(sourceTarget.indexOf("-"));
+	QString targetArch = targetTarget.left(targetTarget.indexOf("-"));
+	bool archCompatible = false;
+	if ((sourceArch == "i686" || sourceArch == "i586" || sourceArch == "i486")
+			&& (targetArch == "x86_64" || targetArch == "amd64")) {
+		archCompatible = true;
+		// 64bit intel compilers can usually compile 32bit code
+		if (compatibilityParameters != NULL) {
+			compatibilityParameters->append("-m32");
+		}
+	} else if (sourceArch == targetArch) {
+		archCompatible = true;
+	}
+	if (!archCompatible) {
+		return false;
+	}
+	// Check whether the operating system is compatible
+	if (sourceTarget.contains("linux") && targetTarget.contains("linux")) {
+		// Both are linux
+		return true;
+	} else if (sourceTarget.mid(sourceTarget.indexOf("-"))
+			== targetTarget.mid(targetTarget.indexOf("-"))) {
+		// The target triple only has a different but compatible architecture
+		return true;
+	} else {
+		return false;
+	}
+}
+
