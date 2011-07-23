@@ -108,9 +108,8 @@ void CompilerNetwork::setLocalKey(const PrivateKey &privateKey) {
 	}
 	emit localKeyChanged(privateKey);
 }
-void CompilerNetwork::generateLocalKey() {
-	// TODO: Let the user choose the key length
-	PrivateKey privateKey = PrivateKey::generate(2048);
+void CompilerNetwork::generateLocalKey(int keyLength) {
+	PrivateKey privateKey = PrivateKey::generate(keyLength);
 	setLocalKey(privateKey);
 }
 PrivateKey CompilerNetwork::getLocalKey() {

@@ -119,17 +119,68 @@ class CompilerNetwork : public QObject {
 	           WRITE setEncryption
 	           NOTIFY encryptionChanged)
 public:
+	/**
+	 * Creates a CompilerNetwork object.
+	 *
+	 * This does not make much sense on its own, you at least want to connect
+	 * the signals to a CompilerService object.
+	 */
 	CompilerNetwork();
+	/**
+	 * Destructor.
+	 */
 	~CompilerNetwork();
 
+	/**
+	 * Sets the name of this peer.
+	 * The name is loaded from the settings file on startup, the default value
+	 * is "ddcn_node". This name is sent every time another peer asks for the
+	 * status of this peer.
+	 * @param peerName New name of the peer.
+	 */
 	void setPeerName(QString peerName);
+	/**
+	 * Returns the current name of this peer.
+	 * @return Name of this peer.
+	 */
 	QString getPeerName();
 
+	/**
+	 * @todo This function is not implemented and should be removed.
+	 */
 	void setEncryption(bool encryptionEnabled);
+	/**
+	 * @todo This function is not implemented and should be removed.
+	 */
 	bool getEncryption();
 
+	/**
+	 * Enables compression of outgoing source files.
+	 * @param compressionEnabled True if outgoing text files shall be
+	 * compressed.
+	 */
+	void setCompression(bool compressionEnabled);
+	/**
+	 * Returns whether outgoing shource files are sent compressed.
+	 * @return True if outgoing text fules are sent compressed.
+	 */
+	bool getCompression();
+
+	/**
+	 * Sets the private key of the local node.
+	 * This key is used to authenticate this peer at other peers.
+	 * @param privateKey New private key for this peer.
+	 */
 	void setLocalKey(const PrivateKey &privateKey);
-	void generateLocalKey();
+	/**
+	 * Automatically generates a new RSA private key for this network node.
+	 * @param keyLength The key length in bits of the new key.
+	 */
+	void generateLocalKey(int keyLength);
+	/**
+	 * Returns the private key of this node.
+	 * @return Local private key.
+	 */
 	PrivateKey getLocalKey();
 
 	void addTrustedPeer(QString name, const PublicKey &publicKey);
@@ -150,17 +201,48 @@ public:
 		return groupMemberships;
 	}
 
+	/**
+	 * Adds a job to the list for the jobs waiting to be delegated to other
+	 * peers. Note that it is still possible to cancel the job as long as it
+	 * has not actually be sent to another peer.
+	 *
+	 * @param job Job to be delegated.
+	 */
 	void delegateOutgoingJob(Job *job);
+	/**
+	 * Removes one job from the list of the jobs waiting to be delegated. This
+	 * does not return any job which has really been sent to another peer, this
+	 * is done to ensure that no work is done twice.
+	 */
 	Job *cancelOutgoingJob();
+	/**
+	 * Rejects an job which has been received from another peer. This causes
+	 * outgoingJobCancelled() to be emitted on the other end.
+	 *
+	 * @param job Job to be rejected.
+	 */
 	void rejectIncomingJob(Job *job);
 
 	void setFreeLocalSlots(unsigned int localSlots);
 	unsigned int getFreeLocalSlots();
 
+	/**
+	 * Asks all connected peers in the network for their identity, load and
+	 * group membership list.
+	 * This information is returned via the signal nodeStatusChanged when a
+	 * peer responds.
+	 */
 	void queryNetworkStatus();
 
+	/**
+	 * Shall be called by CompilerNetwork whenever an incoming job is finished.
+	 * @param job Job which has been executed.
+	 */
 	void onDelegatedJobFinished(Job *job);
 
+	/**
+	 * Updates the list of the toolchains this node supports.
+	 */
 	void setToolChains(QList<ToolChain> toolChains) {
 		this->toolChains = toolChains;
 	}
