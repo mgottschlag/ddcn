@@ -134,12 +134,12 @@ void CompilerServiceAdaptor::shutdown() {
 	emit onShutdownRequest();
 }
 
-void CompilerServiceAdaptor::addToolChain(QString path) {
-	this->service->addToolChain(path);
+bool CompilerServiceAdaptor::addToolChain(QString path) {
+	return this->service->addToolChain(path);
 }
 
-void CompilerServiceAdaptor::removeToolChain(QString path) {
-	this->service->removeToolChain(path);
+bool CompilerServiceAdaptor::removeToolChain(QString path) {
+	return this->service->removeToolChain(path);
 }
 
 void CompilerServiceAdaptor::localCompilationJobFinished(Job *job) {

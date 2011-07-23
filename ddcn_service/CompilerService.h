@@ -60,15 +60,19 @@ public:
        // return this->maxThreadCount;
        return QThread::idealThreadCount();
     }
-
-    void addToolChain(QString path) {
+    bool addToolChain(QString path) {
         ToolChain toolChain(path);
-        if (this->toolChains.indexOf(toolChain) >= 0 && QFile(path).exists()) {
+		if (toolChain.getPath() == "") {
+			return false;
+		}
+		path.replace("*", "gcc");
+        if (this->toolChains.indexOf(toolChain) < 0 && QFile(path).exists()) {
             this->toolChains.append(toolChain);
             saveToolChains();
         }
         network->setToolChains(toolChains);
         emit toolChainsChanged();
+		return true;
     }
 
 	void setMaxThreadCount(int count) {
@@ -77,12 +81,15 @@ public:
 		emit maxThreadCountChanged(this->maxThreadCount);
 	}
 
-    void removeToolChain(QString path) {
+    bool removeToolChain(QString path) {
         ToolChain toolChain(path);
+		bool returnValue = false;
         if (this->toolChains.removeOne(toolChain)) {
             saveToolChains();
+			returnValue = true;
         }
         emit toolChainsChanged();
+		return returnValue;
     }
 public slots:
     void onIncomingJob(Job *job);

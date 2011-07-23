@@ -56,8 +56,8 @@ public slots:
 	JobResult executeJob(QStringList parameters, QString toolChain,
 		QString workingPath, const QByteArray &stdinData,
 		QString language, const QDBusMessage &message);
-	void addToolChain(QString path);
-	void removeToolChain(QString path);
+	bool addToolChain(QString path);
+	bool removeToolChain(QString path);
 	void localCompilationJobFinished(Job *job);
 private slots:
 	void onCurrentThreadCountChanged(int threadCount);
