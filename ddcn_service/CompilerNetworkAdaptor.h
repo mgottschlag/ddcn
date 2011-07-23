@@ -59,6 +59,9 @@ public slots:
 	void setEncryption(bool encryptionEnabled);
 	bool getEncryption();
 
+	void setCompression(bool compressionEnabled);
+	bool getCompression();
+
 	void setLocalKey(QString privateKey);
 	void generateLocalKey(int keyLength = 2048);
 	QString getLocalKey();
@@ -81,6 +84,7 @@ private slots:
 	// used to forward the signals of the encapsulated class to dbus
 	void onPeerNameChanged(QString peerName);
 	void onEncryptionChanged(bool encryptionEnabled);
+	void onCompressionChanged(bool compressionEnabled);
 	void onLocalKeyChanged(const PrivateKey &privateKey);
 	void onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers);
 	void onTrustedGroupsChanged(const QList<TrustedGroup*> &trustedGroups);
@@ -89,6 +93,7 @@ private slots:
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
+	void compressionChanged(bool compressionEnabled);
 	void publicKeyChanged(QString publicKey);
 	void trustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers);
 	void trustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups);

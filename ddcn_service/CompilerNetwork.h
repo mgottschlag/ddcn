@@ -259,6 +259,7 @@ private slots:
 signals:
 	void peerNameChanged(QString peerName);
 	void encryptionChanged(bool encryptionEnabled);
+	void compressionChanged(bool compressionEnabled);
 	void localKeyChanged(const PrivateKey &privateKey);
 	void trustedPeersChanged(QList<TrustedPeer*> trustedPeers);
 	void trustedGroupsChanged(QList<TrustedGroup*> trustedGroups);
@@ -310,6 +311,7 @@ private:
 
 	QString peerName;
 	bool encryptionEnabled;
+	bool compressionEnabled;
 	PrivateKey localKey;
 
 	// TODO: Do we need much lookups here? A hash map then would be faster.
