@@ -282,6 +282,7 @@ void TLS::continueHandshake() {
 	AcceptConnectState::List handshakeState = doHandshake();
 	if (handshakeState == AcceptConnectState::Error) {
 		emit error();
+		return;
 	} else if (handshakeState == AcceptConnectState::Finished) {
 		emit handshakeComplete();
 		// TODO: Debug
