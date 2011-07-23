@@ -31,7 +31,28 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QUrl>
 #include <QProcess>
 #include <QDBusInterface>
+#include <QFileDialog>
 #include "SettingsDialog.h"
+#include <QDBusReply>
+
+QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info)
+{
+	argument.beginStructure();
+	argument << info.version << info.path;
+	argument.endStructure();
+	return argument;
+}
+const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info)
+{
+	argument.beginStructure();
+	QString version;
+	QString path;
+	argument >> version >> path;
+	argument.endStructure();
+	info.version = version;
+	info.path = path;
+	return argument;
+}
 
 QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo) {
 	argument.beginStructure();
@@ -59,7 +80,10 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeS
 	return argument;
 }
 
-MainWindow::MainWindow() : maxThreads(0), currentThreads(0) {
+MainWindow::MainWindow() : maxThreads(0), currentThreads(0),
+	dbusService("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService"),
+	dbusNetwork("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork")
+{
 	ui.setupUi(this);
 	serviceActive = false;
 	emit serviceStatusChanged(false);
@@ -108,7 +132,12 @@ MainWindow::MainWindow() : maxThreads(0), currentThreads(0) {
 			SLOT(onNumberOfRemoteJobsChanged(int)));
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
 			"org.ddcn.CompilerService", "toolChainsChanged", this,
-			SLOT(onToolChainsChanged(QList<ToolChainInfo> toolChains))); //TODO ToolChainInfo importieren
+			SLOT(onToolChainsChanged(QList<ToolChainInfo>)));
+
+	if(dbusService.isValid()) {
+		QDBusReply<QList<ToolChainInfo> > reply = dbusService.call("getToolChains");
+		updateToolChainList(reply.value());
+	}
 }
 
 void MainWindow::startService() {
@@ -160,25 +189,58 @@ void MainWindow::openHelp() {
 	}
 }
 void MainWindow::addToolChain() {
-	QMessageBox::critical(this, "Error!", "Not yet implemented.");
-	// TODO
+	QString fileName = QFileDialog::getOpenFileName(this,
+									tr("Add new toolchain"), "/", NULL).replace("gcc", "*").replace("g++", "*");
+	if (dbusService.isValid() && fileName != "") {
+		QDBusReply<bool> reply = dbusService.call("addToolChain", fileName);
+		if (!reply.value()) {
+			QMessageBox::critical(this, "Error!", "Could not add the toolchain you have specified."
+				"\nPossible reasons are:"
+				"\n- the file does not exist."
+				"\n- could not execute the compiler (for version check)."
+			);
+		}
+	} else if (!dbusService.isValid()) {
+		QMessageBox::critical(this, "Error!", "Connection to Service interrupted.");
+	}
 }
+
 void MainWindow::removeToolChain() {
-	QMessageBox::critical(this, "Error!", "Not yet implemented.");
-	// TODO
+	//QMessageBox::critical(this, "Error!", "Not yet implemented.");
+	QList<QListWidgetItem*> items = ui.toolChainList->selectedItems();
+	if (dbusService.isValid()) {
+		if (items.count() > 0) {
+			foreach (QListWidgetItem *i, items) {
+				QString path = findToolChainPathOfListItem(i);
+				dbusService.call("removeToolChain", path);
+			}
+		} else {
+			QMessageBox::critical(this, "Error!", "Please select some items first.");
+		}
+	} else {
+		QMessageBox::critical(this, "Error!", "Connection to Service interrupted.");
+	}
 }
+
+QString MainWindow::findToolChainPathOfListItem(QListWidgetItem *item) {
+	for (int i=0; i < ui.toolChainList->count(); i++) {
+		if (ui.toolChainList->item(i) == item) {
+			return toolChainPaths.at(i);
+		}
+	}	
+}
+
+
 void MainWindow::refreshNetworkStatus() {
 	onlinePeerModel.clear();
-	QDBusInterface dbusInterface("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork");
-	if (!dbusInterface.isValid()) {
+	if (!dbusNetwork.isValid()) {
 		return;
 	}
-	dbusInterface.call("queryNetworkStatus");
+	dbusNetwork.call("queryNetworkStatus");
 }
 
 void MainWindow::pollServiceStatus() {
-	QDBusInterface dbusInterface("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService");
-	bool active = dbusInterface.isValid();
+	bool active = dbusService.isValid();
 	if (active != serviceActive) {
 		serviceActive = active;
 		updateStatusText();
@@ -209,4 +271,15 @@ void MainWindow::onNodeStatusChanged(QString publicKey, QString fingerprint,
 	onlinePeerModel.updateNode("unknown", fingerprint, false,
 			(float)nodeStatus.currentThreads / nodeStatus.maxThreads, false);
 	// TODO
+}
+
+void MainWindow::updateToolChainList(QList< ToolChainInfo > toolChains) {
+	ui.toolChainList->clear();
+	toolChainPaths.clear();
+	if (!toolChains.empty()) {
+		foreach (ToolChainInfo t , toolChains) {
+			toolChainPaths.append(t.path);
+			ui.toolChainList->addItem(QString("%1: %2").arg(t.version).arg(t.path));
+		}
+	}
 }

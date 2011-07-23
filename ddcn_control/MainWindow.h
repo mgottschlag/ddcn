@@ -36,6 +36,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDBusArgument>
 
 #include "ui_MainWindow.h"
+#include <QDBusInterface>
+#include <QMessageBox>
 
 struct NodeStatus {
 	int maxThreads;
@@ -46,6 +48,18 @@ struct NodeStatus {
 };
 
 Q_DECLARE_METATYPE(NodeStatus)
+
+
+struct ToolChainInfo {
+	QString path;
+	QString version;
+};
+
+Q_DECLARE_METATYPE(ToolChainInfo)
+Q_DECLARE_METATYPE(QList<ToolChainInfo>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info);
+const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info);
 
 QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo);
 const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo);
@@ -85,7 +99,9 @@ private slots:
 	void updateThreadCount() {
 		ui.labelWorkload->setText(QString("%1 / %2").arg(this->currentThreads).arg(this->maxThreads));
 	}
-	//void onToolChainsChanged(QList<ToolChainInfo> toolChains);
+	void onToolChainsChanged(QList<ToolChainInfo> toolChains) {
+		updateToolChainList(toolChains);
+	}
 signals:
 	void serviceStatusChanged(bool active);
 private:
@@ -98,12 +114,19 @@ private:
 	int currentThreads;
 	int maxThreads;
 
+	QDBusInterface dbusNetwork;
+	QDBusInterface dbusService;
+	
 	QLabel statusLabel;
+
+	QStringList toolChainPaths;
 
 	OnlinePeerModel onlinePeerModel;
 	OnlineGroupModel onlineGroupModel;
 
 	OnlinePeerItemDelegate onlinePeerItemDelegate;
+    QString findToolChainPathOfListItem(QListWidgetItem* item);
+	void updateToolChainList(QList<ToolChainInfo> toolChains);
 };
 
 #endif
