@@ -602,7 +602,11 @@ void CompilerNetwork::createJobRequests() {
 		} else {
 			qFatal("createJobRequests(): waitingJob lists all empty!");
 		}
-		assert(lastWaiting != NULL);
+		//assert(lastWaiting != NULL);
+		if (lastWaiting == NULL) {
+			// TODO: Why does this happen?
+			break;
+		}
 		NetworkNode *target = freeRemoteSlots.removeFirst(lastWaiting->getToolchain().getVersion());
 		if (!target) {
 			qDebug("createJobRequests: Cannot send job request, no target available.");
@@ -780,6 +784,8 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 			toolChainInfo = toolChains[i];
 			toolchainSupported = true;
 			break;
+		} else {
+			qDebug("Incompatible: %s/%s", toolchain.toAscii().data(), toolChains[i].getVersion().toAscii().data());
 		}
 	}
 	if (!toolchainSupported) {
@@ -790,6 +796,9 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 		stream << false;
 		Packet packet = Packet::fromData(PacketType::JobFinished, packetData);
 		network->send(node, packet);
+		return;
+	} else {
+		qDebug("Toolchain chosen: %s", toolChainInfo.getPath().toAscii().data());
 	}
 	// Create job
 	Job *job = new Job(inputFiles, outputFiles, QStringList(), QStringList(),
