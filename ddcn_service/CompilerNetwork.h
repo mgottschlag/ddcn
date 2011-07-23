@@ -63,7 +63,7 @@ public:
 	NetworkNode *removeFirst(QString toolChain) {
 		while (!slotList.empty()) {
 			FreeCompilerSlots &freeSlots = slotList.last();
-			if (freeSlots.toolChainVersions.contains(toolChain)) {
+			if (isCompatible(toolChain, freeSlots)) {
 				freeSlots.slotCount--;
 				freeSlotCount--;
 				// Take a copy as the reference is invalidated in removeLast()
