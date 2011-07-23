@@ -788,6 +788,7 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 			qDebug("Incompatible: %s/%s", toolchain.toAscii().data(), toolChains[i].getVersion().toAscii().data());
 		}
 	}
+	compilerParameters.append(compatibilityParameters);
 	if (!toolchainSupported) {
 		QByteArray packetData;
 		QDataStream stream(&packetData, QIODevice::WriteOnly);
