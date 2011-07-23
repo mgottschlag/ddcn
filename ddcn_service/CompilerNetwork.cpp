@@ -259,6 +259,8 @@ void CompilerNetwork::onDelegatedJobFinished(Job *job) {
 	QByteArray packetData;
 	QDataStream stream(&packetData, QIODevice::WriteOnly);
 	stream << qToBigEndian(incoming->getId());
+	// The job was executed
+	stream << true;
 	stream << qToBigEndian(result.returnValue);
 	stream << result.stdout;
 	stream << result.stderr;
@@ -769,16 +771,26 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 		inputFile.close();
 	}
 	// Get toolchain path
+	bool toolchainSupported = false;
+	QStringList compatibilityParameters;
 	ToolChain toolChainInfo;
 	for (int i = 0; i < toolChains.size(); i++) {
-		if (toolChains[i].getVersion() == toolchain) {
-			// TODO: Rather pass the whole ToolChain class here so that the job
-			// can get the right filename for the language (gcc/g++)?
+		if (ToolChain::isCompatible(toolchain, toolChains[i].getVersion(),
+				&compatibilityParameters)) {
 			toolChainInfo = toolChains[i];
+			toolchainSupported = true;
 			break;
 		}
 	}
-	// TODO: Error checking - toolchain unsupported?
+	if (!toolchainSupported) {
+		QByteArray packetData;
+		QDataStream stream(&packetData, QIODevice::WriteOnly);
+		stream << qToBigEndian(id);
+		// The job was not executed
+		stream << false;
+		Packet packet = Packet::fromData(PacketType::JobFinished, packetData);
+		network->send(node, packet);
+	}
 	// Create job
 	Job *job = new Job(inputFiles, outputFiles, QStringList(), QStringList(),
 			compilerParameters, toolChainInfo, QDir::tempPath(), true, false,
@@ -820,6 +832,18 @@ void CompilerNetwork::onJobFinished(NetworkNode *node, const Packet &packet) {
 		return;
 	}
 	Job *job = outgoing->getJob();
+	// The peer might not have executed the job at all e.g. if the toolchain
+	// was removed before the job could be completed
+	bool executed;
+	stream >> executed;
+	if (!executed) {
+		emit outgoingJobCancelled(job);
+		// Delete the job
+		job->setOutgoingJob(NULL);
+		delete outgoing;
+		delegatedJobs.removeAt(outgoingIndex);
+		return;
+	}
 	// Get output data
 	int returnValue;
 	stream >> returnValue;

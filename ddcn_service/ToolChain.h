@@ -68,6 +68,10 @@ public:
 			return false;
 		}
 	}
+
+	static bool isCompatible(const QString &sourceToolChain,
+			const QString &targetToolChain,
+			QStringList *compatibilityParameters = NULL);
 private:
 	QString version;
 	QString path;

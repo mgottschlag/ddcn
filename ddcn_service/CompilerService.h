@@ -101,6 +101,7 @@ private slots:
 	void onRemoteJobAborted(Job *job);
     	void onLocalCompileFinished(Job *job);
     	void onRemoteCompileFinished(Job *job);
+	void onOutgoingJobCancelled(Job *job);
 private:
     bool removeJob(Job *job);
     void manageJobs();

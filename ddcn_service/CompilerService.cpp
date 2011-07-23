@@ -42,6 +42,7 @@ CompilerService::CompilerService(CompilerNetwork *network)
 	// Connect network signals
 	connect(network, SIGNAL(receivedJob(Job*)), this, SLOT(onReceivedJob(Job*)));
 	connect(network, SIGNAL(remoteJobAborted(Job*)), this, SLOT(onRemoteJobAborted(Job*)));
+	connect(network, SIGNAL(outgoingJobCancelled(Job*)), this, SLOT(onOutgoingJobCancelled(Job*)));
 	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 }
 
@@ -257,6 +258,10 @@ void CompilerService::onRemoteJobAborted(Job *job) {
 		// However, we have to free one thread as the process will be killed
 		setCurrentThreadCount(this->currentThreadCount - 1);
 	}
+}
+void CompilerService::onOutgoingJobCancelled(Job *job) {
+	emit numberOfJobsInRemoteQueueChanged(this->remoteJobQueue.count());
+	this->remoteJobQueue.append(job);
 }
 
 unsigned int CompilerService::computeFreeLocalSlotCount() {
