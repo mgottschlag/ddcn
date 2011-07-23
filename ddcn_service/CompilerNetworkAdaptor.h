@@ -60,7 +60,7 @@ public slots:
 	bool getEncryption();
 
 	void setLocalKey(QString privateKey);
-	void generateLocalKey();
+	void generateLocalKey(int keyLength = 2048);
 	QString getLocalKey();
 
 	void addTrustedPeer(QString name, QString publicKey);

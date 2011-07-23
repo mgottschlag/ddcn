@@ -81,8 +81,8 @@ void CompilerNetworkAdaptor::setLocalKey(QString privateKey) {
 	}
 	network->setLocalKey(key);
 }
-void CompilerNetworkAdaptor::generateLocalKey() {
-	network->generateLocalKey();
+void CompilerNetworkAdaptor::generateLocalKey(int keyLength) {
+	network->generateLocalKey(keyLength);
 }
 QString CompilerNetworkAdaptor::getLocalKey() {
 	// We only want to pass back the public key
