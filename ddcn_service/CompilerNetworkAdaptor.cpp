@@ -74,6 +74,13 @@ bool CompilerNetworkAdaptor::getEncryption() {
 	return network->getEncryption();
 }
 
+void CompilerNetworkAdaptor::setCompression(bool compressionEnabled) {
+	network->setCompression(compressionEnabled);
+}
+bool CompilerNetworkAdaptor::getCompression() {
+	return network->getCompression();
+}
+
 void CompilerNetworkAdaptor::setLocalKey(QString privateKey) {
 	PrivateKey key = PrivateKey::fromPEM(privateKey);
 	if (!key.isValid()) {
@@ -153,6 +160,9 @@ void CompilerNetworkAdaptor::onPeerNameChanged(QString peerName) {
 }
 void CompilerNetworkAdaptor::onEncryptionChanged(bool encryptionEnabled) {
 	emit encryptionChanged(encryptionEnabled);
+}
+void CompilerNetworkAdaptor::onCompressionChanged(bool compressionEnabled) {
+	emit compressionChanged(compressionEnabled);
 }
 void CompilerNetworkAdaptor::onLocalKeyChanged(const PrivateKey &privateKey) {
 	emit publicKeyChanged(PublicKey(privateKey).toPEM());

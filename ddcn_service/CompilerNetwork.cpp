@@ -26,8 +26,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerNetwork.h"
 
-CompilerNetwork::CompilerNetwork() : encryptionEnabled(true), freeLocalSlots(0),
-		lastJobId(0),
+CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
+		compressionEnabled(true), freeLocalSlots(0), lastJobId(0),
 		settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	// Load peer name and public key from configuration
 	if (!settings.value("name").isValid()) {
@@ -95,6 +95,14 @@ void CompilerNetwork::setEncryption(bool encryptionEnabled) {
 }
 bool CompilerNetwork::getEncryption() {
 	return encryptionEnabled;
+}
+
+void CompilerNetwork::setCompression(bool compressionEnabled) {
+	this->compressionEnabled = compressionEnabled;
+	emit compressionChanged(compressionEnabled);
+}
+bool CompilerNetwork::getCompression() {
+	return compressionEnabled;
 }
 
 void CompilerNetwork::setLocalKey(const PrivateKey &privateKey) {
@@ -757,6 +765,8 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 	stream >> language;
 	QStringList compilerParameters;
 	stream >> compilerParameters;
+	bool inputCompressed;
+	stream >> inputCompressed;
 	QList<QByteArray> fileContent;
 	stream >> fileContent;
 	// Create input files
@@ -770,7 +780,11 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 		if (!inputFile.open(QIODevice::WriteOnly)) {
 			qFatal("Could not open previously created temporary file.");
 		}
-		inputFile.write(fileContent[i]);
+		if (inputCompressed) {
+			inputFile.write(qUncompress(fileContent[i]));
+		} else {
+			inputFile.write(fileContent[i]);
+		}
 		inputFile.close();
 	}
 	// Get toolchain path
@@ -997,7 +1011,11 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 		if (!file.open(QIODevice::ReadOnly)) {
 			qFatal("Could not open previously created temporary file.");
 		}
-		fileContent.append(file.readAll());
+		if (compressionEnabled) {
+			fileContent.append(qCompress(file.readAll()));
+		} else {
+			fileContent.append(file.readAll());
+		}
 	}
 	// Get parameters
 	QStringList compilerParameters = job->getCompilerParameters();
@@ -1009,6 +1027,7 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	stream << toolchain.getVersion();
 	stream << job->getLanguage();
 	stream << compilerParameters;
+	stream << compressionEnabled;
 	stream << fileContent;
 	Packet packet = Packet::fromData(PacketType::JobData, packetData);
 	network->send(request->target, packet);
