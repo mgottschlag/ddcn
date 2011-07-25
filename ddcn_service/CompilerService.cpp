@@ -32,7 +32,6 @@ QString CompilerService::settingToolChainPath("path");
 QString CompilerService::settingToolChainVersion("version");
 QString CompilerService::settingMaxThreadCount("maxThreadCount");
 
-
 CompilerService::CompilerService(CompilerNetwork *network)
 		: settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	this->network = network;
@@ -66,7 +65,6 @@ void CompilerService::addJob(Job *job) {
 		emit numberOfJobsInLocalQueueChanged(this->localJobQueue.count());
 	}
 	network->setFreeLocalSlots(computeFreeLocalSlotCount());
-	//TODO DEBUG:qCritical("Job hinzugefuegt");
 	manageJobs();
 }
 
@@ -268,6 +266,7 @@ void CompilerService::onOutgoingJobCancelled(Job *job) {
 unsigned int CompilerService::computeFreeLocalSlotCount() {
 	// free slots = 2*max threads - active jobs, so that every thread has one
 	// more job in the queue
+	//TODO is this correct?
 	return std::max(maxThreadCount - localJobQueue.size() - remoteJobQueue.size(), 0);
 }
 
