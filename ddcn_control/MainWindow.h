@@ -76,6 +76,14 @@ public slots:
 	void addToolChain();
 	void removeToolChain();
 	void refreshNetworkStatus();
+	void addTrustedPeer();
+	void removeTrustedPeer();
+	void addTrustedGroup();
+	void removeTrustedGroup();
+	void joinGroup();
+	void leaveGroup();
+	void createGroup();
+	void exportPrivateGroupKey();
 private slots:
 	void pollServiceStatus();
 	void serviceStartTimeout();
@@ -116,7 +124,7 @@ private:
 
 	QDBusInterface dbusNetwork;
 	QDBusInterface dbusService;
-	
+
 	QLabel statusLabel;
 
 	QStringList toolChainPaths;

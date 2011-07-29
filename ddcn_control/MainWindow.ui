@@ -28,7 +28,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>4</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -337,13 +337,103 @@
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Peers</string>
+        <string>Trust settings</string>
        </attribute>
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="label_14">
+          <property name="text">
+           <string>Trusted peers:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QListWidget" name="trustedPeerList"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="addTrustedPeerButton">
+          <property name="text">
+           <string>Add trusted peer</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="removeTrustedPeerButton">
+          <property name="text">
+           <string>Remove selected trusted peer</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QPushButton" name="addTrustedGroupButton">
+          <property name="text">
+           <string>Add trusted group</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QPushButton" name="removeTrustedGroupButton">
+          <property name="text">
+           <string>Remove selected trusted group</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="2">
+         <widget class="QLabel" name="label_15">
+          <property name="text">
+           <string>Trusted groups:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0" colspan="2">
+         <widget class="QListWidget" name="trustedGroupList"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_3">
        <attribute name="title">
-        <string>Groups</string>
+        <string>Group membership</string>
        </attribute>
+       <layout class="QGridLayout" name="gridLayout_6">
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="label_16">
+          <property name="text">
+           <string>Group membership:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QListWidget" name="groupMembershipList"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="createGroupButton">
+          <property name="text">
+           <string>Create new group</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="exportPrivateGroupKeyButton">
+          <property name="text">
+           <string>Export private group key</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QPushButton" name="joinGroupButton">
+          <property name="text">
+           <string>Join group</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QPushButton" name="leaveGroupButton">
+          <property name="text">
+           <string>Leave selected group</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_4">
        <attribute name="title">
@@ -836,6 +926,310 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>addTrustedPeerButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>addTrustedPeer()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>171</x>
+     <y>270</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>addTrustedGroupButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>addTrustedGroup()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>171</x>
+     <y>480</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>removeTrustedPeerButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>removeTrustedPeer()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>497</x>
+     <y>270</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>removeTrustedGroupButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>removeTrustedGroup()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>497</x>
+     <y>480</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>addTrustedGroupButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>171</x>
+     <y>480</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>addTrustedPeerButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>171</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>removeTrustedGroupButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>497</x>
+     <y>480</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>removeTrustedPeerButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>497</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>trustedPeerList</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>trustedGroupList</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>386</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>groupMembershipList</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>265</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>createGroupButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>171</x>
+     <y>447</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>joinGroupButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>171</x>
+     <y>480</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>exportPrivateGroupKeyButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>497</x>
+     <y>447</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>serviceStatusChanged(bool)</signal>
+   <receiver>leaveGroupButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>497</x>
+     <y>480</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>createGroupButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>createGroup()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>171</x>
+     <y>447</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>joinGroupButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>joinGroup()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>171</x>
+     <y>480</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>exportPrivateGroupKeyButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>exportPrivateGroupKey()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>497</x>
+     <y>447</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>leaveGroupButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>leaveGroup()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>497</x>
+     <y>480</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>serviceStatusChanged(bool)</signal>
@@ -846,5 +1240,13 @@
   <slot>addToolChain()</slot>
   <slot>removeToolChain()</slot>
   <slot>refreshNetworkStatus()</slot>
+  <slot>addTrustedPeer()</slot>
+  <slot>removeTrustedPeer()</slot>
+  <slot>addTrustedGroup()</slot>
+  <slot>removeTrustedGroup()</slot>
+  <slot>createGroup()</slot>
+  <slot>exportPrivateGroupKey()</slot>
+  <slot>joinGroup()</slot>
+  <slot>leaveGroup()</slot>
  </slots>
 </ui>

@@ -45,7 +45,7 @@ QT4_WRAP_UI(UIS_H ${UIS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(ddcn_control ${SRC} ${UIS_H} ${MOC_SRC} ${QRC_SRC})
-target_link_libraries(ddcn_control ${QT_LIBRARIES})
+target_link_libraries(ddcn_control ddcn_crypto ${QT_LIBRARIES})
 
 install(TARGETS ddcn_control DESTINATION bin)
 
