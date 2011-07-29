@@ -34,16 +34,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int main(int argc, char **argv) {
 	QCoreApplication app(argc, argv);
 	// Register meta types
-	qDBusRegisterMetaType<TrustedPeerInfo>();
-	qDBusRegisterMetaType<QList<TrustedPeerInfo> >();
-	qDBusRegisterMetaType<TrustedGroupInfo>();
-	qDBusRegisterMetaType<QList<TrustedGroupInfo> >();
-	qDBusRegisterMetaType<GroupMembershipInfo>();
-	qDBusRegisterMetaType<QList<GroupMembershipInfo> >();
-	qDBusRegisterMetaType<ToolChainInfo>();
-	qDBusRegisterMetaType<QList<ToolChainInfo> >();
-	qDBusRegisterMetaType<NodeStatus>();
-	qDBusRegisterMetaType<JobResult>();
+	registerCustomDBusTypes();
 	qRegisterMetaType<ariba::utility::NodeID>();
 	qRegisterMetaType<ariba::utility::LinkID>();
 	qRegisterMetaType<ariba::DataMessage>();

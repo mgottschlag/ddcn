@@ -89,4 +89,6 @@ Q_DECLARE_METATYPE(NodeStatus)
 QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo);
 const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo);
 
+void registerCustomDBusTypes();
+
 #endif
