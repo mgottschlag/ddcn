@@ -20,6 +20,7 @@ set(SRC
 	OnlinePeerModel.cpp
 	OnlineGroupModel.cpp
 	OnlinePeerItemDelegate.cpp
+	../ddcn_service/DBusStructs.cpp
 )
 
 set(MOC_H

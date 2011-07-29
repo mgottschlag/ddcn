@@ -31,9 +31,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char **argv) {
 	Q_INIT_RESOURCE(icons);
-	qDBusRegisterMetaType<NodeStatus>();
-	qDBusRegisterMetaType<ToolChainInfo>();
-	qDBusRegisterMetaType<QList<ToolChainInfo> >();
+	registerCustomDBusTypes();
 	QApplication app(argc, argv);
 
 	// Show main window

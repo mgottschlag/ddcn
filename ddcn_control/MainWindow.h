@@ -30,6 +30,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "OnlinePeerModel.h"
 #include "OnlineGroupModel.h"
 #include "OnlinePeerItemDelegate.h"
+#include "../ddcn_service/DBusStructs.h"
 
 #include <QMainWindow>
 #include <QTimer>
@@ -38,31 +39,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ui_MainWindow.h"
 #include <QDBusInterface>
 #include <QMessageBox>
-
-struct NodeStatus {
-	int maxThreads;
-	int currentThreads;
-	int localJobs;
-	int delegatedJobs;
-	int remoteJobs;
-};
-
-Q_DECLARE_METATYPE(NodeStatus)
-
-
-struct ToolChainInfo {
-	QString path;
-	QString version;
-};
-
-Q_DECLARE_METATYPE(ToolChainInfo)
-Q_DECLARE_METATYPE(QList<ToolChainInfo>)
-
-QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info);
-const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info);
-
-QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo);
-const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo);
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
@@ -110,6 +86,9 @@ private slots:
 	void onToolChainsChanged(QList<ToolChainInfo> toolChains) {
 		updateToolChainList(toolChains);
 	}
+	void onTrustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers);
+	void onTrustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups);
+	void onGroupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships);
 signals:
 	void serviceStatusChanged(bool active);
 private:
@@ -135,6 +114,10 @@ private:
 	OnlinePeerItemDelegate onlinePeerItemDelegate;
     QString findToolChainPathOfListItem(QListWidgetItem* item);
 	void updateToolChainList(QList<ToolChainInfo> toolChains);
+
+	QStringList trustedPeerKeys;
+	QStringList trustedGroupKeys;
+	QStringList groupMembershipKeys;
 };
 
 #endif
