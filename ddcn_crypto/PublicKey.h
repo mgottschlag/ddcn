@@ -33,35 +33,136 @@ class PublicKeyData;
 class PrivateKey;
 class TLS;
 
+/**
+ * Wraps around an OpenSSL public key.
+ *
+ * This class has conversion operators to PrivateKey which let the user fetch
+ * the private key from the key pair if (and only if) the data is available.
+ *
+ * The class uses implicit data sharing and copy-on-write to ensure good
+ * performance when passing keys by value.
+ *
+ * It is possible for a PublicKey to be invalid if it does not contain any key
+ * information, e.g. after the default constructor has been called. In this case
+ * isValid() returns false.
+ */
 class PublicKey {
 public:
+	/**
+	 * Default constructor.
+	 *
+	 * Creates an invalid key.
+	 */
 	PublicKey();
+	/**
+	 * Copy constructor.
+	 */
 	PublicKey(const PublicKey &other);
+	/**
+	 * Constructor.
+	 *
+	 * Creates a public key from the private key. This always succeeds, in
+	 * contrast to conversions from a public to a private key.
+	 */
 	PublicKey(const PrivateKey &other);
+	/**
+	 * Destructor.
+	 */
 	~PublicKey();
 
+	/**
+	 * Creates a public key from  the PEM text representation.
+	 *
+	 * @param data PEM key data.
+	 * @return Public key holding the data, or an invalid key if the passed data
+	 * is invalid.
+	 */
 	static PublicKey fromPEM(QString data);
+	/**
+	 * Creates a public key from binary DER data.
+	 *
+	 * @param data Binary DER key data.
+	 * @return Public key holding the data, or an invalid key if the passed data
+	 * is invalid.
+	 */
 	static PublicKey fromDER(QByteArray data);
+	/**
+	 * Creates the PEM representation from the key.
+	 *
+	 * @return PEM representation.
+	 */
 	QString toPEM() const;
+	/**
+	 * Creates the DER binary representation from the key.
+	 *
+	 * @return DER representation.
+	 */
 	QByteArray toDER() const;
 
+	/**
+	 * Creates an SHA-1 fingerprint of the public key.
+	 *
+	 * @return SHA-1 fingerprint.
+	 */
 	QString fingerprint() const;
+	/**
+	 * Gets a 32-bit hash value from the key data.
+	 *
+	 * Useful if you want to use the key as the key to a QMap or similar.
+	 *
+	 * @return Hash value.
+	 */
 	unsigned int hash() const;
 
+	/**
+	 * Saves the key PEM-encoded.
+	 *
+	 * @param fileName File to save the key to.
+	 * @return True if the key could be saved.
+	 */
 	bool save(QString fileName) const;
+	/**
+	 * Loads the key from a file containing the PEM-encoded key data.
+	 *
+	 * @param fileName File to load the key from.
+	 * @return Loaded key or an invalid key if the key could not be loaded.
+	 */
 	static PublicKey load(QString fileName);
 
+	/**
+	 * Returns whether this key object is valid.
+	 *
+	 * @return False if the PublicKey does not contain any valid key.
+	 */
 	bool isValid() const {
 		return keyData != NULL;
 	}
 
+	/**
+	 * Assignment operator.
+	 */
 	PublicKey &operator=(const PublicKey &other);
+	/**
+	 * Assignment operator to convert a private key into a public key.
+	 */
 	PublicKey &operator=(const PrivateKey &other);
+	/**
+	 * Checks whether the two keys are identical.
+	 */
 	bool operator==(const PublicKey &other) const;
+	/**
+	 * Checks whether the two keys are identical.
+	 *
+	 * This works as if you converted the private key to a public key and
+	 * compared afterwards.
+	 */
 	bool operator==(const PrivateKey &other) const;
 private:
 	PublicKey(PublicKeyData *keyData);
 
+	/**
+	 * Implicitly shared key data.
+	 */
 	PublicKeyData *keyData;
 
 	friend class PrivateKey;
@@ -69,34 +170,133 @@ private:
 	friend class TLS;
 };
 
+/**
+ * Wraps around an OpenSSL public key.
+ *
+ * This class has conversion operators to PublicKey which let the user fetch
+ * the public key from the key pair.
+ *
+ * The class uses implicit data sharing and copy-on-write to ensure good
+ * performance when passing keys by value.
+ *
+ * It is possible for a PrivateKey to be invalid if it does not contain any key
+ * information, e.g. after the default constructor has been called. In this case
+ * isValid() returns false.
+ */
 class PrivateKey {
 public:
+	/**
+	 * Default constructor.
+	 *
+	 * Creates an invalid key.
+	 */
 	PrivateKey();
+	/**
+	 * Copy constructor.
+	 */
 	PrivateKey(const PrivateKey &other);
+	/**
+	 * Constructor.
+	 *
+	 * Creates a private key from the public key. This failes and leaves the
+	 * key invalid if the other key does not already contain a private key
+	 * internally.
+	 */
 	PrivateKey(const PublicKey &other);
+	/**
+	 * Destructor.
+	 */
 	~PrivateKey();
 
+	/**
+	 * Creates a new random key pair.
+	 *
+	 * @param bits Number of bits of the new key pair.
+	 * @return Generated private key.
+	 */
 	static PrivateKey generate(unsigned int bits = 2048);
 
+	/**
+	 * Creates a private key from  the PEM text representation.
+	 *
+	 * @param data PEM key data.
+	 * @return Private key holding the data, or an invalid key if the passed data
+	 * is invalid.
+	 */
 	static PrivateKey fromPEM(QString data);
+	/**
+	 * Creates a private key from binary DER data.
+	 *
+	 * @param data Binary DER key data.
+	 * @return Private key holding the data, or an invalid key if the passed
+	 * data is invalid.
+	 */
 	static PrivateKey fromDER(QByteArray data);
+	/**
+	 * Creates the PEM representation from the key.
+	 *
+	 * @return PEM representation.
+	 */
 	QString toPEM() const;
+	/**
+	 * Creates the DER binary representation from the key.
+	 *
+	 * @return DER representation.
+	 */
 	QByteArray toDER() const;
 
+	/**
+	 * Saves the key PEM-encoded.
+	 *
+	 * @param fileName File to save the key to.
+	 * @return True if the key could be saved.
+	 */
 	bool save(QString fileName) const;
+	/**
+	 * Loads the key from a file containing the PEM-encoded key data.
+	 *
+	 * @param fileName File to load the key from.
+	 * @return Loaded key or an invalid key if the key could not be loaded.
+	 */
 	static PrivateKey load(QString fileName);
 
+	/**
+	 * Returns whether this key object is valid.
+	 *
+	 * @return False if the PrivateKey does not contain any valid key.
+	 */
 	bool isValid() const {
 		return keyData != NULL;
 	}
 
+	/**
+	 * Assignment operator.
+	 */
 	PrivateKey &operator=(const PrivateKey &other);
+	/**
+	 * Assignment operator to create a private key from a public key.
+	 *
+	 * This returns an invalid key if the public key does not already contain
+	 * private key data.
+	 */
 	PrivateKey &operator=(const PublicKey &other);
+	/**
+	 * Checks whether the two keys are identical.
+	 */
 	bool operator==(const PrivateKey &other) const;
+	/**
+	 * Checks whether the two keys are identical.
+	 *
+	 * This works as if you converted the private key to a public key and
+	 * compared afterwards.
+	 */
 	bool operator==(const PublicKey &other) const;
 private:
 	PrivateKey(PublicKeyData *keyData);
 
+	/**
+	 * Implicitly shared key data.
+	 */
 	PublicKeyData *keyData;
 
 	friend class PublicKey;

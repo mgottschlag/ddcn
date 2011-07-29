@@ -40,9 +40,19 @@ public:
 		}
 	}
 
+	/**
+	 * Increases the reference count for this key data object.
+	 * @note This is not thread-safe.
+	 */
 	void grab() {
 		refCount++;
 	}
+	/**
+	 * Decreases the reference count for this key data object.
+	 *
+	 * This deletes the object if the reference count goes down to 0.
+	 * @note This is not thread-safe.
+	 */
 	void drop() {
 		if (--refCount == 0) {
 			delete this;
