@@ -39,51 +39,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDBusReply>
 #include <cassert>
 
-QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info)
-{
-	argument.beginStructure();
-	argument << info.version << info.path;
-	argument.endStructure();
-	return argument;
-}
-const QDBusArgument &operator>>(const QDBusArgument &argument, ToolChainInfo &info)
-{
-	argument.beginStructure();
-	QString version;
-	QString path;
-	argument >> version >> path;
-	argument.endStructure();
-	info.version = version;
-	info.path = path;
-	return argument;
-}
-
-QDBusArgument &operator<<(QDBusArgument &argument, const NodeStatus &nodeStatusInfo) {
-	argument.beginStructure();
-	argument << nodeStatusInfo.maxThreads;
-	argument << nodeStatusInfo.currentThreads;
-	argument << nodeStatusInfo.localJobs;
-	argument << nodeStatusInfo.delegatedJobs;
-	argument << nodeStatusInfo.remoteJobs;
-	argument.endStructure();
-	return argument;
-}
-const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeStatusInfo) {
-	argument.beginStructure();
-	argument >> nodeStatusInfo.maxThreads;
-	qDebug("maxThreads: %d", nodeStatusInfo.maxThreads);
-	argument >> nodeStatusInfo.currentThreads;
-	qDebug("currentThreads: %d", nodeStatusInfo.currentThreads);
-	argument >> nodeStatusInfo.localJobs;
-	qDebug("localJobs: %d", nodeStatusInfo.localJobs);
-	argument >> nodeStatusInfo.delegatedJobs;
-	qDebug("delegatedJobs: %d", nodeStatusInfo.delegatedJobs);
-	argument >> nodeStatusInfo.remoteJobs;
-	qDebug("remoteJobs: %d", nodeStatusInfo.remoteJobs);
-	argument.endStructure();
-	return argument;
-}
-
 MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	dbusNetwork("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork"),
 	dbusService("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService")
@@ -137,6 +92,15 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
 			"org.ddcn.CompilerService", "toolChainsChanged", this,
 			SLOT(onToolChainsChanged(QList<ToolChainInfo>)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
+			"org.ddcn.CompilerNetwork", "trustedPeersChanged", this,
+			SLOT(onTrustedPeersChanged(QList<TrustedPeerInfo>)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
+			"org.ddcn.CompilerNetwork", "trustedGroupsChanged", this,
+			SLOT(onTrustedGroupsChanged(QList<TrustedGroupInfo>)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
+			"org.ddcn.CompilerNetwork", "groupMembershipsChanged", this,
+			SLOT(onGroupMembershipsChanged(QList<GroupMembershipInfo>)));
 
 	if(dbusService.isValid()) {
 		QDBusReply<QList<ToolChainInfo> > reply = dbusService.call("getToolChains");
@@ -380,6 +344,34 @@ void MainWindow::onNodeStatusChanged(QString publicKey, QString fingerprint,
 	onlinePeerModel.updateNode("unknown", fingerprint, false,
 			(float)nodeStatus.currentThreads / nodeStatus.maxThreads, false);
 	// TODO
+}
+
+void MainWindow::onTrustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers) {
+	ui.trustedPeerList->clear();
+	trustedPeerKeys.clear();
+	foreach (TrustedPeerInfo peer, trustedPeers) {
+		trustedPeerKeys.append(peer.publicKey);
+		PublicKey key = PublicKey::fromPEM(peer.publicKey);
+		ui.trustedPeerList->addItem(peer.name + ": " + key.fingerprint());
+	}
+}
+void MainWindow::onTrustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups) {
+	ui.trustedGroupList->clear();
+	trustedGroupKeys.clear();
+	foreach (TrustedGroupInfo group, trustedGroups) {
+		trustedGroupKeys.append(group.publicKey);
+		PublicKey key = PublicKey::fromPEM(group.publicKey);
+		ui.trustedGroupList->addItem(group.name + ": " + key.fingerprint());
+	}
+}
+void MainWindow::onGroupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships) {
+	ui.groupMembershipList->clear();
+	groupMembershipKeys.clear();
+	foreach (GroupMembershipInfo group, groupMemberships) {
+		groupMembershipKeys.append(group.privateKey);
+		PrivateKey key = PrivateKey::fromPEM(group.privateKey);
+		ui.groupMembershipList->addItem(group.name + ": " + PublicKey(key).fingerprint());
+	}
 }
 
 void MainWindow::updateToolChainList(QList< ToolChainInfo > toolChains) {
