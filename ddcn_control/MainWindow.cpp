@@ -235,7 +235,12 @@ void MainWindow::addTrustedPeer() {
 	dbusNetwork.call("addTrustedPeer", peerName, pemKey);
 }
 void MainWindow::removeTrustedPeer() {
-	// TODO
+	QList<QListWidgetItem*> selected = ui.trustedPeerList->selectedItems();
+	if (selected.empty()) {
+		return;
+	}
+	int selectedIndex = ui.trustedPeerList->row(selected[0]);
+	dbusNetwork.call("removeTrustedPeer", "", trustedPeerKeys[selectedIndex]);
 }
 void MainWindow::addTrustedGroup() {
 	// Show a dialog to fetch the public key of the group
@@ -266,7 +271,12 @@ void MainWindow::addTrustedGroup() {
 	dbusNetwork.call("addTrustedGroup", groupName, pemKey);
 }
 void MainWindow::removeTrustedGroup() {
-	// TODO
+	QList<QListWidgetItem*> selected = ui.trustedGroupList->selectedItems();
+	if (selected.empty()) {
+		return;
+	}
+	int selectedIndex = ui.trustedGroupList->row(selected[0]);
+	dbusNetwork.call("removeTrustedGroup", "", trustedGroupKeys[selectedIndex]);
 }
 void MainWindow::joinGroup() {
 	// Show a dialog to fetch the private key of the group
@@ -293,7 +303,13 @@ void MainWindow::joinGroup() {
 	// We do not have to refresh the list, this is done by a change signal from the service
 }
 void MainWindow::leaveGroup() {
-	// TODO
+	QList<QListWidgetItem*> selected = ui.groupMembershipList->selectedItems();
+	if (selected.empty()) {
+		return;
+	}
+	int selectedIndex = ui.groupMembershipList->row(selected[0]);
+	PublicKey key = PrivateKey::fromPEM(groupMembershipKeys[selectedIndex]);
+	dbusNetwork.call("removeGroupMembership", "", key.toPEM());
 }
 void MainWindow::createGroup() {
 	// Let the user select a name to identify this group
@@ -309,7 +325,21 @@ void MainWindow::createGroup() {
 	dbusNetwork.call("addGroupMembership", peerName, pemKey);
 }
 void MainWindow::exportPrivateGroupKey() {
-	// TODO
+	QList<QListWidgetItem*> selected = ui.groupMembershipList->selectedItems();
+	if (selected.empty()) {
+		return;
+	}
+	int selectedIndex = ui.groupMembershipList->row(selected[0]);
+	PrivateKey key = PrivateKey::fromPEM(groupMembershipKeys[selectedIndex]);
+	// Let the user select a target file
+	QString fileName = QFileDialog::getSaveFileName(this, "Select the place where to save the group key");
+	if (fileName == "") {
+		return;
+	}
+	if (!key.save(fileName)) {
+		QMessageBox::critical(this, "Error!",
+				"Could not save the private key of the group!");
+	}
 }
 
 void MainWindow::pollServiceStatus() {
