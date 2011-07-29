@@ -122,3 +122,16 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeS
 	argument.endStructure();
 	return argument;
 }
+
+void registerCustomDBusTypes() {
+	qDBusRegisterMetaType<TrustedPeerInfo>();
+	qDBusRegisterMetaType<QList<TrustedPeerInfo> >();
+	qDBusRegisterMetaType<TrustedGroupInfo>();
+	qDBusRegisterMetaType<QList<TrustedGroupInfo> >();
+	qDBusRegisterMetaType<GroupMembershipInfo>();
+	qDBusRegisterMetaType<QList<GroupMembershipInfo> >();
+	qDBusRegisterMetaType<ToolChainInfo>();
+	qDBusRegisterMetaType<QList<ToolChainInfo> >();
+	qDBusRegisterMetaType<NodeStatus>();
+	qDBusRegisterMetaType<JobResult>();
+}
