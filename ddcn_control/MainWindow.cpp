@@ -26,14 +26,18 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "MainWindow.h"
 
+#include "SettingsDialog.h"
+#include "../ddcn_crypto/PublicKey.h"
+
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QUrl>
 #include <QProcess>
 #include <QDBusInterface>
 #include <QFileDialog>
-#include "SettingsDialog.h"
+#include <QInputDialog>
 #include <QDBusReply>
+#include <cassert>
 
 QDBusArgument &operator<<(QDBusArgument &argument, const ToolChainInfo &info)
 {
@@ -80,9 +84,9 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, NodeStatus &nodeS
 	return argument;
 }
 
-MainWindow::MainWindow() : maxThreads(0), currentThreads(0),
-	dbusService("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService"),
-	dbusNetwork("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork")
+MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
+	dbusNetwork("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork"),
+	dbusService("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService")
 {
 	ui.setupUi(this);
 	serviceActive = false;
@@ -160,6 +164,7 @@ void MainWindow::stopService() {
 	if (!serviceActive) {
 		return;
 	}
+	dbusService.call("shutdown");
 	// TODO
 }
 void MainWindow::showSettings() {
@@ -227,7 +232,10 @@ QString MainWindow::findToolChainPathOfListItem(QListWidgetItem *item) {
 		if (ui.toolChainList->item(i) == item) {
 			return toolChainPaths.at(i);
 		}
-	}	
+	}
+	// This should not be reached as this function must be called with a valid item
+	assert(false);
+	return "";
 }
 
 
@@ -237,6 +245,107 @@ void MainWindow::refreshNetworkStatus() {
 		return;
 	}
 	dbusNetwork.call("queryNetworkStatus");
+}
+
+void MainWindow::addTrustedPeer() {
+	// Show a dialog to fetch the public key of the group
+	QString keyFile = QFileDialog::getOpenFileName(this, tr("Select the PEM public key of the peer"));
+	if (keyFile == "") {
+		return;
+	}
+	PublicKey publicKey = PublicKey::load(keyFile);
+	if (!publicKey.isValid()) {
+		QMessageBox::critical(this, "Error!",
+				"The selected file does not contain a valid PEM encoded public key!");
+		return;
+	}
+	// Let the user select a name to identify this group
+	bool ok;
+	QString peerName = QInputDialog::getText(this, "Name of this peer",
+			"Enter the name of this group", QLineEdit::Normal, "unknown-peer", &ok);
+	if (!ok) {
+		return;
+	}
+	// Add the peer
+	QString pemKey = publicKey.toPEM();
+	dbusNetwork.call("addTrustedPeer", peerName, pemKey);
+}
+void MainWindow::removeTrustedPeer() {
+	// TODO
+}
+void MainWindow::addTrustedGroup() {
+	// Show a dialog to fetch the public key of the group
+	QString keyFile = QFileDialog::getOpenFileName(this, tr("Select the PEM public key of the group"));
+	if (keyFile == "") {
+		return;
+	}
+	PublicKey publicKey = PublicKey::load(keyFile);
+	if (!publicKey.isValid()) {
+		// It might be a private key, which is common if this is a group which
+		// we already are a member in
+		publicKey = PrivateKey::load(keyFile);
+	}
+	if (!publicKey.isValid()) {
+		QMessageBox::critical(this, "Error!",
+				"The selected file does not contain a valid PEM encoded public key!");
+		return;
+	}
+	// Let the user select a name to identify this group
+	bool ok;
+	QString groupName = QInputDialog::getText(this, "Name of this group",
+			"Enter the name of this group", QLineEdit::Normal, "unknown-group", &ok);
+	if (!ok) {
+		return;
+	}
+	// Add the group
+	QString pemKey = publicKey.toPEM();
+	dbusNetwork.call("addTrustedGroup", groupName, pemKey);
+}
+void MainWindow::removeTrustedGroup() {
+	// TODO
+}
+void MainWindow::joinGroup() {
+	// Show a dialog to fetch the private key of the group
+	QString keyFile = QFileDialog::getOpenFileName(this, tr("Select the PEM private key of the group"));
+	if (keyFile == "") {
+		return;
+	}
+	PrivateKey privateKey = PrivateKey::load(keyFile);
+	if (!privateKey.isValid()) {
+		QMessageBox::critical(this, "Error!",
+				"The selected file does not contain a valid PEM encoded private key!");
+		return;
+	}
+	// Let the user select a name to identify this group
+	bool ok;
+	QString groupName = QInputDialog::getText(this, "Name of this group",
+			"Enter the name of this group", QLineEdit::Normal, "unknown-group", &ok);
+	if (!ok) {
+		return;
+	}
+	// Add the group
+	QString pemKey = privateKey.toPEM();
+	dbusNetwork.call("addGroupMembership", groupName, pemKey);
+	// We do not have to refresh the list, this is done by a change signal from the service
+}
+void MainWindow::leaveGroup() {
+	// TODO
+}
+void MainWindow::createGroup() {
+	// Let the user select a name to identify this group
+	bool ok;
+	QString peerName = QInputDialog::getText(this, "Name of this group",
+			"Enter the name of this group", QLineEdit::Normal, "unknown-group", &ok);
+	if (!ok) {
+		return;
+	}
+	// Automatically generate a random key pair for the group
+	PrivateKey privateKey = PrivateKey::generate();
+	QString pemKey = privateKey.toPEM();
+	dbusNetwork.call("addGroupMembership", peerName, pemKey);
+}
+void MainWindow::exportPrivateGroupKey() {
+	// TODO
 }
 
 void MainWindow::pollServiceStatus() {
