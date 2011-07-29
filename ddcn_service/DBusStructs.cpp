@@ -59,14 +59,14 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, TrustedGroupInfo 
 QDBusArgument &operator<<(QDBusArgument &argument, const GroupMembershipInfo &info)
 {
 	argument.beginStructure();
-	argument << info.name << info.publicKey;
+	argument << info.name << info.privateKey;
 	argument.endStructure();
 	return argument;
 }
 const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipInfo &info)
 {
 	argument.beginStructure();
-	argument >> info.name >> info.publicKey;
+	argument >> info.name >> info.privateKey;
 	argument.endStructure();
 	return argument;
 }

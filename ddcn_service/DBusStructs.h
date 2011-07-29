@@ -58,7 +58,7 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, TrustedGroupInfo 
 
 struct GroupMembershipInfo {
 	QString name;
-	QString publicKey;
+	QString privateKey;
 };
 
 Q_DECLARE_METATYPE(GroupMembershipInfo)

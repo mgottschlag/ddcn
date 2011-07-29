@@ -197,7 +197,7 @@ TrustedGroupInfo CompilerNetworkAdaptor::toTrustedGroupInfo(TrustedGroup *truste
 GroupMembershipInfo CompilerNetworkAdaptor::toGroupMembershipInfo(GroupMembership *groupMembership) {
 	GroupMembershipInfo info;
 	info.name = groupMembership->getName();
-	info.publicKey = PublicKey(groupMembership->getPrivateKey()).toPEM();
+	info.privateKey = groupMembership->getPrivateKey().toPEM();
 	return info;
 }
 QList<TrustedPeerInfo> CompilerNetworkAdaptor::toTrustedPeerInfo(const QList<TrustedPeer*> &trustedPeers) {
