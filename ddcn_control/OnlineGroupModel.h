@@ -29,8 +29,23 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QAbstractItemModel>
 
+struct OnlineGroupInfo {
+	QString name;
+	QString key;
+	unsigned int memberCount;
+	bool trusted;
+	float load;
+	bool member;
+};
+
 class OnlineGroupModel : public QAbstractItemModel {
 public:
+	OnlineGroupModel();
+
+	void clear();
+
+	void addNodeToGroup(QString name, QString key, bool trusted, float load, bool member);
+
 	virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
 	virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 	virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
@@ -39,7 +54,9 @@ public:
 	virtual QModelIndex parent(const QModelIndex &index) const {
 		return QModelIndex();
 	}
+	bool hasChildren(const QModelIndex &parent = QModelIndex()) const;
 private:
+	QList<OnlineGroupInfo> onlineGroups;
 };
 
 #endif
