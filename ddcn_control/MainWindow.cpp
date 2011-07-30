@@ -73,6 +73,7 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	ui.onlineGroupList->setColumnWidth(3, 80);
 	ui.onlineGroupList->setColumnWidth(4, 40);
 	ui.onlineGroupList->setUniformRowHeights(true);
+	ui.onlineGroupList->setItemDelegate(&onlineGroupItemDelegate);
 	// We can already connect the signals here, even if the service is not yet
 	// running
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
