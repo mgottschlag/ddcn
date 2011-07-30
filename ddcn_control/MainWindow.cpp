@@ -38,6 +38,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QInputDialog>
 #include <QDBusReply>
 #include <cassert>
+#include <QCloseEvent>
 
 MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	dbusNetwork("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork"),
@@ -106,6 +107,8 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 		QDBusReply<QList<ToolChainInfo> > reply = dbusService.call("getToolChains");
 		updateToolChainList(reply.value());
 	}
+	refreshAllWidgets();
+	pollServiceStatus();
 }
 
 void MainWindow::startService() {
@@ -346,10 +349,10 @@ void MainWindow::pollServiceStatus() {
 	bool active = dbusService.isValid();
 	if (active != serviceActive) {
 		serviceActive = active;
-		updateStatusText();
 		if (serviceTimeoutTimer.isActive()) {
 			serviceTimeoutTimer.stop();
 		}
+		refreshAllWidgets();
 		emit serviceStatusChanged(active);
 	}
 }
@@ -404,6 +407,26 @@ void MainWindow::onGroupMembershipsChanged(const QList<GroupMembershipInfo> &gro
 	}
 }
 
+void MainWindow::closeEvent(QCloseEvent *event) {
+	if (serviceActive) {
+		QMessageBox::StandardButton button = QMessageBox::question(this,
+				"Close service?",
+				"The local DDCN service is still running, do you want to stop it?",
+				QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+				QMessageBox::Cancel);
+		if (button == QMessageBox::No) {
+			// Don't do anything here, just close the window
+			event->accept();
+		} else if (button == QMessageBox::Yes) {
+			stopService();
+			event->accept();
+		} else {
+			// Do not close the window
+			event->ignore();
+		}
+	}
+}
+
 void MainWindow::updateToolChainList(QList< ToolChainInfo > toolChains) {
 	ui.toolChainList->clear();
 	toolChainPaths.clear();
@@ -412,5 +435,26 @@ void MainWindow::updateToolChainList(QList< ToolChainInfo > toolChains) {
 			toolChainPaths.append(t.path);
 			ui.toolChainList->addItem(QString("%1: %2").arg(t.version).arg(t.path));
 		}
+	}
+}
+
+void MainWindow::refreshAllWidgets() {
+	updateStatusText();
+	if (serviceActive) {
+		QDBusReply<QString> nameReply = dbusNetwork.call("getPeerName");
+		ui.localNameLabel->setText(nameReply.value());
+		// TODO
+	} else {
+		ui.localNameLabel->setText("<not connected>");
+		ui.localKeyLabel->setText("<not connected>");
+		ui.threadCountLabel->setText("1");
+		ui.serviceActiveLabel->setText("no");
+		ui.labelLocalJobs->setText("0");
+		ui.labelRemoteJobs->setText("0");
+		ui.labelDelegatedJobs->setText("0");
+		ui.labelCompletedJobs->setText("0");
+		ui.workloadBar->setMaximum(1);
+		ui.workloadBar->setValue(0);
+		// TODO: 2. tab and following
 	}
 }
