@@ -78,7 +78,7 @@ private slots:
 		ui.labelLocalJobs->setText(QString::number(noj));
 	}
 	void onNumberOfRemoteJobsChanged(int noj) {
-		ui.labelRemoteJobs->setText(QString::number(noj));
+		ui.labelIncomingJobs->setText(QString::number(noj));
 	}
 	void updateThreadCount() {
 		ui.workloadBar->setMaximum(this->maxThreads);

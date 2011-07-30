@@ -132,7 +132,6 @@ void MainWindow::stopService() {
 		return;
 	}
 	dbusService.call("shutdown");
-	// TODO
 }
 void MainWindow::showSettings() {
 	if (!serviceActive) {
@@ -443,18 +442,52 @@ void MainWindow::refreshAllWidgets() {
 	if (serviceActive) {
 		QDBusReply<QString> nameReply = dbusNetwork.call("getPeerName");
 		ui.localNameLabel->setText(nameReply.value());
+		QDBusReply<QString> keyReply = dbusNetwork.call("getLocalKey");
+		PublicKey key = PublicKey::fromPEM(keyReply.value());
+		QString fingerprint = key.fingerprint();
+		ui.localKeyLabel->setText(fingerprint.left(8) + "..." + fingerprint.right(8));
+		ui.localKeyLabel->setToolTip(fingerprint);
+		QDBusReply<int> intReply = dbusService.call("getMaxThreadCount");
+		int maxThreadCount = intReply.value();
+		intReply = dbusService.call("getCurrentThreadCount");
+		int currentThreadCount = intReply.value();
+		ui.threadCountLabel->setText(QString::number(maxThreadCount));
+		ui.serviceActiveLabel->setText("yes");
+		intReply = dbusService.call("getNumberOfJobsInLocalQueue");
+		ui.labelLocalJobs->setText(QString::number(intReply.value()));
+		intReply = dbusService.call("getNumberOfJobsInRemoteQueue");
+		ui.labelIncomingJobs->setText(QString::number(intReply.value()));
 		// TODO
+		ui.labelDelegatedJobs->setText("0");
+		ui.labelCompletedJobs->setText("0");
+		ui.workloadBar->setMaximum(maxThreadCount);
+		ui.workloadBar->setValue(currentThreadCount);
+		// TODO
+		ui.trustedPeerList->clear();
+		ui.trustedGroupList->clear();
+		ui.groupMembershipList->clear();
+		QDBusReply<QList<ToolChainInfo> > toolChains = dbusService.call("getToolChains");
+		updateToolChainList(toolChains.value());
+		ui.logList->clear();
+		onlinePeerModel.clear();
+		// TODO: Online group model
 	} else {
 		ui.localNameLabel->setText("<not connected>");
 		ui.localKeyLabel->setText("<not connected>");
 		ui.threadCountLabel->setText("1");
 		ui.serviceActiveLabel->setText("no");
 		ui.labelLocalJobs->setText("0");
-		ui.labelRemoteJobs->setText("0");
+		ui.labelIncomingJobs->setText("0");
 		ui.labelDelegatedJobs->setText("0");
 		ui.labelCompletedJobs->setText("0");
 		ui.workloadBar->setMaximum(1);
 		ui.workloadBar->setValue(0);
-		// TODO: 2. tab and following
+		ui.trustedPeerList->clear();
+		ui.trustedGroupList->clear();
+		ui.groupMembershipList->clear();
+		ui.toolChainList->clear();
+		ui.logList->clear();
+		onlinePeerModel.clear();
+		// TODO: Online group model
 	}
 }
