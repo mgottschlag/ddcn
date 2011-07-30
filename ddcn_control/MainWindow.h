@@ -30,6 +30,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "OnlinePeerModel.h"
 #include "OnlineGroupModel.h"
 #include "OnlinePeerItemDelegate.h"
+#include "OnlineGroupItemDelegate.h"
 #include "../ddcn_service/DBusStructs.h"
 
 #include <QMainWindow>
@@ -117,6 +118,8 @@ private:
 	OnlineGroupModel onlineGroupModel;
 
 	OnlinePeerItemDelegate onlinePeerItemDelegate;
+	OnlineGroupItemDelegate onlineGroupItemDelegate;
+
     QString findToolChainPathOfListItem(QListWidgetItem* item);
 	void updateToolChainList(QList<ToolChainInfo> toolChains);
 
