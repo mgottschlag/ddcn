@@ -133,7 +133,14 @@ public:
         emit toolChainsChanged();
 		return returnValue;
     }
-    
+
+	int getNumberOfJobsInLocalQueue() {
+		return localJobQueue.count();
+	}
+	int getNumberOfJobsInRemoteQueue() {
+		return localJobQueue.count();
+	}
+
 public slots:
 	/**
 	 * Adds a job to the list of remote jobs.
@@ -141,7 +148,7 @@ public slots:
 	 * @param job the job to be added.
 	 */
     void onIncomingJob(Job *job);
-	
+
     /**Removes the job from the local queue if it has been executed successfully.
      * Otherwise, moves the job to the end of the list in order to execute it again.
      */
@@ -169,7 +176,7 @@ signals:
 	 * @param noj number of jobs in the local queue.
 	 */
 	void numberOfJobsInLocalQueueChanged(int noj);
-	
+
 	/**
 	 * Triggered whenever the number of jobs waiting in the remote queue changes.
 	 * @param noj number of jobs in the local queue.
@@ -239,7 +246,7 @@ private:
 
 	/**
 	 * Checks if the given toolchain is available in the list of toolchains.
-	 * @param target the toolchain to find localy. 
+	 * @param target the toolchain to find localy.
 	 */
     bool isToolChainAvailable(ToolChain target);
 

@@ -58,7 +58,8 @@ public slots:
 		QString language, const QDBusMessage &message);
 	bool addToolChain(QString path);
 	bool removeToolChain(QString path);
-	void localCompilationJobFinished(Job *job);
+	int getNumberOfJobsInLocalQueue();
+	int getNumberOfJobsInRemoteQueue();
 private slots:
 	void onCurrentThreadCountChanged(int threadCount);
 	void onMaxThreadCountChanged(int threadCount);
@@ -66,6 +67,7 @@ private slots:
 	void onNumberOfJobsInRemoteQueueChanged(int noj);
 	void onToolChainsChanged();
 	void requestShutdown();
+	void localCompilationJobFinished(Job *job);
 signals:
 	void currentThreadCountChanged(int threadCount);
 	void maxThreadCountChanged(int threadCount);

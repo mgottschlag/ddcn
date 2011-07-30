@@ -274,6 +274,7 @@ private:
 	TrustedGroup *getTrustedGroup(const PublicKey &publicKey);
 	GroupMembership *getGroupMembership(const PublicKey &publicKey);
 
+	void loadSettings();
 	void saveSettings();
 
 	void askForFreeSlots();

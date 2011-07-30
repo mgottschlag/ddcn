@@ -141,6 +141,12 @@ bool CompilerServiceAdaptor::addToolChain(QString path) {
 bool CompilerServiceAdaptor::removeToolChain(QString path) {
 	return this->service->removeToolChain(path);
 }
+int CompilerServiceAdaptor::getNumberOfJobsInLocalQueue() {
+	return service->getNumberOfJobsInLocalQueue();
+}
+int CompilerServiceAdaptor::getNumberOfJobsInRemoteQueue() {
+	return service->getNumberOfJobsInRemoteQueue();
+}
 
 void CompilerServiceAdaptor::localCompilationJobFinished(Job *job) {
 	QDBusMessage *message(this->jobDBusMessageMap.value(job));

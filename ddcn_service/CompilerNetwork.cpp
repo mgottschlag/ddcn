@@ -33,21 +33,22 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 	if (!settings.value("name").isValid()) {
 		settings.setValue("name", "ddcn_node");
 	}
-	QString name = settings.value("general/name").toString();
+	QString name = settings.value("name").toString();
+	setPeerName(name);
 	// Load key from file in the settings directory
 	QString keyFile = QFileInfo(settings.fileName()).absolutePath() + "/privkey.pem";
-	PrivateKey key = PrivateKey::load(keyFile);
-	if (!key.isValid()) {
+	localKey = PrivateKey::load(keyFile);
+	if (!localKey.isValid()) {
 		qWarning("Warning: Could not read local private key, generating new key.");
-		key = PrivateKey::generate(2048);
-		if (!key.save(keyFile)) {
+		localKey = PrivateKey::generate(2048);
+		if (!localKey.save(keyFile)) {
 			qWarning("Warning: Could not save local private key!");
 		}
 	}
 	// Load trusted peers/groups etc from file
-	// TODO
+	loadSettings();
 	// Initialize ariba
-	network = new NetworkInterface(name, key);
+	network = new NetworkInterface(name, localKey);
 	connect(network,
 	        SIGNAL(peerConnected(NetworkNode*, QString, PublicKey)),
 	        this,
@@ -82,6 +83,7 @@ CompilerNetwork::~CompilerNetwork() {
 void CompilerNetwork::setPeerName(QString peerName) {
 	this->peerName = peerName;
 	network->setName(peerName);
+	settings.setValue("name", peerName);
 	emit peerNameChanged(peerName);
 }
 QString CompilerNetwork::getPeerName() {
@@ -461,6 +463,9 @@ GroupMembership *CompilerNetwork::getGroupMembership(const PublicKey &publicKey)
 	return NULL;
 }
 
+void CompilerNetwork::loadSettings() {
+	// TODO: Load trusted groups, trusted peers, group memberships
+}
 void CompilerNetwork::saveSettings() {
 	// TODO: Save trusted groups, trusted peers, group memberships
 }
