@@ -81,7 +81,8 @@ private slots:
 		ui.labelRemoteJobs->setText(QString::number(noj));
 	}
 	void updateThreadCount() {
-		ui.labelWorkload->setText(QString("%1 / %2").arg(this->currentThreads).arg(this->maxThreads));
+		ui.workloadBar->setMaximum(this->maxThreads);
+		ui.workloadBar->setValue(this->currentThreads);
 	}
 	void onToolChainsChanged(QList<ToolChainInfo> toolChains) {
 		updateToolChainList(toolChains);
@@ -91,7 +92,11 @@ private slots:
 	void onGroupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships);
 signals:
 	void serviceStatusChanged(bool active);
+protected:
+	void closeEvent(QCloseEvent *event);
 private:
+	void refreshAllWidgets();
+
 	Ui::MainWindow ui;
 
 	QTimer serviceStatusTimer;
