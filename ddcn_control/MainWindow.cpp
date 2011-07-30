@@ -207,6 +207,7 @@ QString MainWindow::findToolChainPathOfListItem(QListWidgetItem *item) {
 
 void MainWindow::refreshNetworkStatus() {
 	onlinePeerModel.clear();
+	onlineGroupModel.clear();
 	if (!dbusNetwork.isValid()) {
 		return;
 	}
@@ -371,11 +372,33 @@ void MainWindow::updateStatusText() {
 void MainWindow::onNodeStatusChanged(QString publicKey, QString fingerprint,
 		NodeStatus nodeStatus, QStringList groups) {
 	qDebug("onNodeStatusChanged");
-	// TODO: Trusted, group membership, load
-	//onlinePeerModel.updateNode("unknown", publicKey.left(32), false, 0.0f, false);
-	onlinePeerModel.updateNode("unknown", fingerprint, false,
-			(float)nodeStatus.currentThreads / nodeStatus.maxThreads, false);
-	// TODO
+	float load = (float)nodeStatus.currentThreads / nodeStatus.maxThreads;
+	// Add node to the group list
+	QStringList groupMembershipList;
+	foreach (QString privateKey, groupMembershipKeys) {
+		PublicKey key = PrivateKey::fromPEM(privateKey);
+		groupMembershipList.append(key.toPEM());
+	}
+	bool inTrustedGroup = false;
+	foreach (QString groupKey, groups) {
+		PublicKey key = PublicKey::fromPEM(groupKey);
+		bool trusted = false;
+		bool member = false;
+		if (trustedGroupKeys.contains(groupKey)) {
+			inTrustedGroup = true;
+			trusted = true;
+		}
+		if (groupMembershipList.contains(groupKey)) {
+			member = true;
+		}
+		// TODO: Name
+		onlineGroupModel.addNodeToGroup("unknown", key.fingerprint(), trusted,
+				load, member);
+	}
+	// Add node to the peer list
+	bool trusted = trustedPeerKeys.contains(publicKey);
+	// TODO: Name
+	onlinePeerModel.updateNode("unknown", fingerprint, trusted, load, inTrustedGroup);
 }
 
 void MainWindow::onTrustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers) {
