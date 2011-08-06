@@ -24,12 +24,11 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <QObject>
 #include <QString>
 #include <QFile>
 #include <boost/concept_check.hpp>
 
-class TemporaryFile : public QObject {
+class TemporaryFile {
 public:
 	TemporaryFile(QString extension, QString templateName = "ddcn_tmp_",
 				  QString filename = "");
