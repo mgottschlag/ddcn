@@ -89,7 +89,7 @@ QString OnlineGroupModel::getName(const QModelIndex &index) {
 		return "";
 	}
 	assert(index.row() < onlineGroups.count());
-	return onlineGroups[index.row()].fingerprint;
+	return onlineGroups[index.row()].name;
 }
 void OnlineGroupModel::setTrusted(const QModelIndex &index, bool trusted) {
 	if (!index.isValid()) {
