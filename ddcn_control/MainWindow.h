@@ -91,6 +91,12 @@ private slots:
 	void onTrustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers);
 	void onTrustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups);
 	void onGroupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships);
+
+	void showOnlinePeerListMenu(const QPoint &point);
+	void showOnlineGroupListMenu(const QPoint &point);
+
+	void trustOnlinePeer();
+	void trustOnlineGroup();
 signals:
 	void serviceStatusChanged(bool active);
 protected:
@@ -126,6 +132,9 @@ private:
 	QStringList trustedPeerKeys;
 	QStringList trustedGroupKeys;
 	QStringList groupMembershipKeys;
+
+	QAction *trustOnlinePeerAction;
+	QAction *trustOnlineGroupAction;
 };
 
 #endif

@@ -26,6 +26,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "OnlineGroupModel.h"
 
+#include <cassert>
+
 OnlineGroupModel::OnlineGroupModel() {
 }
 
@@ -35,7 +37,8 @@ void OnlineGroupModel::clear() {
 	reset();
 }
 
-void OnlineGroupModel::addNodeToGroup(QString name, QString key, bool trusted, float load, bool member) {
+void OnlineGroupModel::addNodeToGroup(QString name, QString key,
+		QString fingerprint, bool trusted, float load, bool member) {
 	bool found = false;
 	for (int i = 0; i < onlineGroups.size(); i++) {
 		if (onlineGroups[i].key == key) {
@@ -49,12 +52,51 @@ void OnlineGroupModel::addNodeToGroup(QString name, QString key, bool trusted, f
 		OnlineGroupInfo newGroup;
 		newGroup.name = name;
 		newGroup.key = key;
+		newGroup.fingerprint = fingerprint;
 		newGroup.trusted = trusted;
 		newGroup.load = load;
 		newGroup.member = member;
 		newGroup.memberCount = 1;
 		onlineGroups.append(newGroup);
 	}
+	// TODO: Emit proper change signals, this is way too slow
+	reset();
+}
+
+bool OnlineGroupModel::isTrusted(const QModelIndex &index) {
+	if (!index.isValid()) {
+		return false;
+	}
+	assert(index.row() < onlineGroups.count());
+	return onlineGroups[index.row()].trusted;
+}
+QString OnlineGroupModel::getKey(const QModelIndex &index) {
+	if (!index.isValid()) {
+		return "";
+	}
+	assert(index.row() < onlineGroups.count());
+	return onlineGroups[index.row()].key;
+}
+QString OnlineGroupModel::getFingerprint(const QModelIndex &index) {
+	if (!index.isValid()) {
+		return "";
+	}
+	assert(index.row() < onlineGroups.count());
+	return onlineGroups[index.row()].fingerprint;
+}
+QString OnlineGroupModel::getName(const QModelIndex &index) {
+	if (!index.isValid()) {
+		return "";
+	}
+	assert(index.row() < onlineGroups.count());
+	return onlineGroups[index.row()].fingerprint;
+}
+void OnlineGroupModel::setTrusted(const QModelIndex &index, bool trusted) {
+	if (!index.isValid()) {
+		return;
+	}
+	assert(index.row() < onlineGroups.count());
+	onlineGroups[index.row()].trusted = trusted;
 	// TODO: Emit proper change signals, this is way too slow
 	reset();
 }
@@ -80,7 +122,7 @@ QVariant OnlineGroupModel::data(const QModelIndex &index, int role) const {
 		case 1:
 			return group.name;
 		case 2:
-			return group.key;
+			return group.fingerprint;
 		case 3:
 			return group.memberCount;
 		case 4:

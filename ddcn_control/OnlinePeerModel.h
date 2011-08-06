@@ -32,6 +32,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct OnlinePeerInfo {
 	QString name;
 	QString key;
+	QString fingerprint;
 	bool trusted;
 	float load;
 	bool inTrustedGroup;
@@ -43,7 +44,14 @@ public:
 
 	void clear();
 
-	void updateNode(QString name, QString key, bool trusted, float load, bool inTrustedGroup);
+	void updateNode(QString name, QString key, QString fingerprint, bool trusted,
+			float load, bool inTrustedGroup);
+
+	bool isTrusted(const QModelIndex &index);
+	QString getKey(const QModelIndex &index);
+	QString getFingerprint(const QModelIndex &index);
+	QString getName(const QModelIndex &index);
+	void setTrusted(const QModelIndex &index, bool trusted);
 
 	virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
 	virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;

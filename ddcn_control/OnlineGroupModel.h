@@ -32,6 +32,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct OnlineGroupInfo {
 	QString name;
 	QString key;
+	QString fingerprint;
 	unsigned int memberCount;
 	bool trusted;
 	float load;
@@ -44,7 +45,14 @@ public:
 
 	void clear();
 
-	void addNodeToGroup(QString name, QString key, bool trusted, float load, bool member);
+	void addNodeToGroup(QString name, QString key, QString fingerprint,
+			bool trusted, float load, bool member);
+
+	bool isTrusted(const QModelIndex &index);
+	QString getKey(const QModelIndex &index);
+	QString getFingerprint(const QModelIndex &index);
+	QString getName(const QModelIndex &index);
+	void setTrusted(const QModelIndex &index, bool trusted);
 
 	virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
 	virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
