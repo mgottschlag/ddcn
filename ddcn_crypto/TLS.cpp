@@ -199,10 +199,10 @@ TLS::AcceptConnectState::List TLS::doHandshake() {
 	} else {
 		status = SSL_connect(ssl);
 	}
-	return nonBlockigConnectAccept(status);
+	return nonBlockingConnectAccept(status);
 }
 
-TLS::AcceptConnectState::List TLS::nonBlockigConnectAccept(int status) {
+TLS::AcceptConnectState::List TLS::nonBlockingConnectAccept(int status) {
 	if (status <= 0) {
 		int error = SSL_get_error(ssl, status);
 		if (error == SSL_ERROR_WANT_CONNECT || error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE) {
@@ -285,8 +285,6 @@ void TLS::continueHandshake() {
 		return;
 	} else if (handshakeState == AcceptConnectState::Finished) {
 		emit handshakeComplete();
-		// TODO: Debug
-		//write(QString("test").toAscii());
 	}
 	if (checkOutgoing() && !handshaken) {
 		// The handshake might end with this peer sending data, in which case

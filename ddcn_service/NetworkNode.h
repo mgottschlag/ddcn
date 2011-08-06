@@ -81,7 +81,6 @@ private:
 	unsigned short lastExpectedSerial;
 	unsigned short lastOutgoingSerial;
 
-	// TODO: Remove this
 	friend class NetworkInterface;
 };
 
