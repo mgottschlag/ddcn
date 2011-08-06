@@ -89,7 +89,7 @@ QString OnlinePeerModel::getName(const QModelIndex &index) {
 		return "";
 	}
 	assert(index.row() < onlinePeers.count());
-	return onlinePeers[index.row()].fingerprint;
+	return onlinePeers[index.row()].name;
 }
 void OnlinePeerModel::setTrusted(const QModelIndex &index, bool trusted) {
 	if (!index.isValid()) {
