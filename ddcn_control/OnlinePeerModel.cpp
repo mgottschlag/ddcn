@@ -26,6 +26,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "OnlinePeerModel.h"
 
+#include <cassert>
+
 OnlinePeerModel::OnlinePeerModel() {
 }
 
@@ -35,8 +37,8 @@ void OnlinePeerModel::clear() {
 	reset();
 }
 
-void OnlinePeerModel::updateNode(QString name, QString key, bool trusted,
-		float load, bool inTrustedGroup) {
+void OnlinePeerModel::updateNode(QString name, QString key, QString fingerprint,
+		bool trusted, float load, bool inTrustedGroup) {
 	bool found = false;
 	for (int i = 0; i < onlinePeers.size(); i++) {
 		if (onlinePeers[i].key == key) {
@@ -51,11 +53,50 @@ void OnlinePeerModel::updateNode(QString name, QString key, bool trusted,
 		OnlinePeerInfo newPeer;
 		newPeer.name = name;
 		newPeer.key = key;
+		newPeer.fingerprint = fingerprint;
 		newPeer.trusted = trusted;
 		newPeer.load = load;
 		newPeer.inTrustedGroup = inTrustedGroup;
 		onlinePeers.append(newPeer);
 	}
+	// TODO: Emit proper change signals, this is way too slow
+	reset();
+}
+
+bool OnlinePeerModel::isTrusted(const QModelIndex &index) {
+	if (!index.isValid()) {
+		return false;
+	}
+	assert(index.row() < onlinePeers.count());
+	return onlinePeers[index.row()].trusted;
+}
+QString OnlinePeerModel::getKey(const QModelIndex &index) {
+	if (!index.isValid()) {
+		return "";
+	}
+	assert(index.row() < onlinePeers.count());
+	return onlinePeers[index.row()].key;
+}
+QString OnlinePeerModel::getFingerprint(const QModelIndex &index) {
+	if (!index.isValid()) {
+		return "";
+	}
+	assert(index.row() < onlinePeers.count());
+	return onlinePeers[index.row()].fingerprint;
+}
+QString OnlinePeerModel::getName(const QModelIndex &index) {
+	if (!index.isValid()) {
+		return "";
+	}
+	assert(index.row() < onlinePeers.count());
+	return onlinePeers[index.row()].fingerprint;
+}
+void OnlinePeerModel::setTrusted(const QModelIndex &index, bool trusted) {
+	if (!index.isValid()) {
+		return;
+	}
+	assert(index.row() < onlinePeers.count());
+	onlinePeers[index.row()].trusted = trusted;
 	// TODO: Emit proper change signals, this is way too slow
 	reset();
 }
@@ -81,7 +122,7 @@ QVariant OnlinePeerModel::data(const QModelIndex &index, int role) const {
 		case 1:
 			return peer.name;
 		case 2:
-			return peer.key;
+			return peer.fingerprint;
 		case 3:
 			return peer.load;
 		case 4:

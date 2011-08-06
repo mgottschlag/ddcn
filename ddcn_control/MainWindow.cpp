@@ -39,6 +39,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDBusReply>
 #include <cassert>
 #include <QCloseEvent>
+#include <QMenu>
 
 MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	dbusNetwork("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork"),
@@ -50,6 +51,18 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	connect(&serviceStatusTimer, SIGNAL(timeout()), SLOT(pollServiceStatus()));
 	connect(&serviceTimeoutTimer, SIGNAL(timeout()), SLOT(serviceStartTimeout()));
 	connect(this, SIGNAL(serviceStatusChanged(bool)), SLOT(updateStatusText()));
+	// If the user right-clicks into the online peer/group lists, there shall
+	// be a context menu to trust selected peers/groups
+	ui.onlinePeerList->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui.onlinePeerList, SIGNAL(customContextMenuRequested(const QPoint&)),
+			this, SLOT(showOnlinePeerListMenu(const QPoint &)));
+	ui.onlineGroupList->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui.onlineGroupList, SIGNAL(customContextMenuRequested(const QPoint&)),
+			this, SLOT(showOnlineGroupListMenu(const QPoint &)));
+	trustOnlinePeerAction = new QAction(tr("Trust this peer..."), this);
+	connect(trustOnlinePeerAction, SIGNAL(triggered()), this, SLOT(trustOnlinePeer()));
+	trustOnlineGroupAction = new QAction(tr("Trust this group..."), this);
+	connect(trustOnlineGroupAction, SIGNAL(triggered()), this, SLOT(trustOnlineGroup()));
 	// Setup status bar
 	statusBar()->addWidget(&statusLabel);
 	updateStatusText();
@@ -393,13 +406,13 @@ void MainWindow::onNodeStatusChanged(QString publicKey, QString fingerprint,
 			member = true;
 		}
 		// TODO: Name
-		onlineGroupModel.addNodeToGroup("unknown", key.fingerprint(), trusted,
-				load, member);
+		onlineGroupModel.addNodeToGroup("unknown", groupKey, key.fingerprint(),
+				trusted, load, member);
 	}
 	// Add node to the peer list
 	bool trusted = trustedPeerKeys.contains(publicKey);
 	// TODO: Name
-	onlinePeerModel.updateNode("unknown", fingerprint, trusted, load, inTrustedGroup);
+	onlinePeerModel.updateNode("unknown", publicKey, fingerprint, trusted, load, inTrustedGroup);
 }
 
 void MainWindow::onTrustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers) {
@@ -428,6 +441,62 @@ void MainWindow::onGroupMembershipsChanged(const QList<GroupMembershipInfo> &gro
 		PrivateKey key = PrivateKey::fromPEM(group.privateKey);
 		ui.groupMembershipList->addItem(group.name + ": " + PublicKey(key).fingerprint());
 	}
+}
+
+void MainWindow::showOnlinePeerListMenu(const QPoint &point) {
+	QModelIndex currentIndex = ui.onlinePeerList->currentIndex();
+	if (!currentIndex.isValid() || onlinePeerModel.isTrusted(currentIndex)) {
+		return;
+	}
+	QList<QAction*> actions;
+	actions << trustOnlinePeerAction;
+	QMenu::exec(actions, ui.onlinePeerList->mapToGlobal(point));
+}
+void MainWindow::showOnlineGroupListMenu(const QPoint &point) {
+	QModelIndex currentIndex = ui.onlineGroupList->currentIndex();
+	if (!currentIndex.isValid() || onlineGroupModel.isTrusted(currentIndex)) {
+		return;
+	}
+	QList<QAction*> actions;
+	actions << trustOnlineGroupAction;
+	QMenu::exec(actions, ui.onlineGroupList->mapToGlobal(point));
+}
+
+void MainWindow::trustOnlinePeer() {
+	// Get the peer key
+	QModelIndex index = ui.onlinePeerList->currentIndex();
+	assert(index.isValid());
+	QString name = onlinePeerModel.getName(index);
+	QString key = onlinePeerModel.getKey(index);
+	QString fingerprint = onlinePeerModel.getFingerprint(index);
+	// Let the user compare the fingerprint
+	QMessageBox::StandardButton button = QMessageBox::question(this, "Do you really want to trust this peer?",
+			"The public key fingerprint (sha1) of this peer is \"" + fingerprint + "\". Is this the peer you want to trust?",
+			QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+	if (button != QMessageBox::Yes) {
+		return;
+	}
+	// Trust the peer
+	dbusNetwork.call("addTrustedPeer", name, key);
+	onlinePeerModel.setTrusted(index, true);
+}
+void MainWindow::trustOnlineGroup() {
+	// Get the peer key
+	QModelIndex index = ui.onlineGroupList->currentIndex();
+	assert(index.isValid());
+	QString name = onlineGroupModel.getName(index);
+	QString key = onlineGroupModel.getKey(index);
+	QString fingerprint = onlineGroupModel.getFingerprint(index);
+	// Let the user compare the fingerprint
+	QMessageBox::StandardButton button = QMessageBox::question(this, "Do you really want to trust this group?",
+			"The public key fingerprint (sha1) of this peer is \"" + fingerprint + "\". Is this the group you want to trust?",
+			QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+	if (button != QMessageBox::Yes) {
+		return;
+	}
+	// Trust the peer
+	dbusNetwork.call("addTrustedGroup", name, key);
+	onlineGroupModel.setTrusted(index, true);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -494,7 +563,7 @@ void MainWindow::refreshAllWidgets() {
 		updateToolChainList(toolChains.value());
 		ui.logList->clear();
 		onlinePeerModel.clear();
-		// TODO: Online group model
+		onlineGroupModel.clear();
 	} else {
 		ui.localNameLabel->setText("<not connected>");
 		ui.localKeyLabel->setText("<not connected>");
@@ -512,6 +581,6 @@ void MainWindow::refreshAllWidgets() {
 		ui.toolChainList->clear();
 		ui.logList->clear();
 		onlinePeerModel.clear();
-		// TODO: Online group model
+		onlineGroupModel.clear();
 	}
 }
