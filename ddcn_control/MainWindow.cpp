@@ -91,7 +91,7 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	// running
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
 			"org.ddcn.CompilerNetwork", "nodeStatusChanged", this,
-			SLOT(onNodeStatusChanged(QString, QString, NodeStatus, QStringList)));
+			SLOT(onNodeStatusChanged(QString, QString, QString, NodeStatus, QStringList, QStringList)));
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
 			"org.ddcn.CompilerService", "currentThreadCountChanged", this,
 			SLOT(onCurrentThreadCountChanged(int)));
@@ -383,8 +383,8 @@ void MainWindow::updateStatusText() {
 	}
 }
 
-void MainWindow::onNodeStatusChanged(QString publicKey, QString fingerprint,
-		NodeStatus nodeStatus, QStringList groups) {
+void MainWindow::onNodeStatusChanged(QString name, QString publicKey, QString fingerprint,
+		NodeStatus nodeStatus, QStringList groupNames, QStringList groupKeys) {
 	qDebug("onNodeStatusChanged");
 	float load = (float)nodeStatus.currentThreads / nodeStatus.maxThreads;
 	// Add node to the group list
@@ -394,7 +394,9 @@ void MainWindow::onNodeStatusChanged(QString publicKey, QString fingerprint,
 		groupMembershipList.append(key.toPEM());
 	}
 	bool inTrustedGroup = false;
-	foreach (QString groupKey, groups) {
+	for (int i = 0; i < groupNames.size(); i++) {
+		QString groupKey = groupKeys[i];
+		QString groupName = groupNames[i];
 		PublicKey key = PublicKey::fromPEM(groupKey);
 		bool trusted = false;
 		bool member = false;
@@ -405,14 +407,12 @@ void MainWindow::onNodeStatusChanged(QString publicKey, QString fingerprint,
 		if (groupMembershipList.contains(groupKey)) {
 			member = true;
 		}
-		// TODO: Name
-		onlineGroupModel.addNodeToGroup("unknown", groupKey, key.fingerprint(),
+		onlineGroupModel.addNodeToGroup(groupName, groupKey, key.fingerprint(),
 				trusted, load, member);
 	}
 	// Add node to the peer list
 	bool trusted = trustedPeerKeys.contains(publicKey);
-	// TODO: Name
-	onlinePeerModel.updateNode("unknown", publicKey, fingerprint, trusted, load, inTrustedGroup);
+	onlinePeerModel.updateNode(name, publicKey, fingerprint, trusted, load, inTrustedGroup);
 }
 
 void MainWindow::onTrustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers) {
