@@ -75,7 +75,6 @@ public:
 	void sendToAll(const Packet &packet);
 	McpoGroup *joinGroup(ariba::ServiceID group);
 	void leaveGroup(McpoGroup *group);
-	void setName(QString name);
 
 	NetworkNode *getNetworkNode(const PublicKey &publicKey);
 signals:
@@ -140,7 +139,7 @@ private:
 
 	MCPO *mcpo;
 
-	QString name;
+	const QString name;
 	PrivateKey privateKey;
 	Certificate certificate;
 

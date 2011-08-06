@@ -82,7 +82,6 @@ CompilerNetwork::~CompilerNetwork() {
 
 void CompilerNetwork::setPeerName(QString peerName) {
 	this->peerName = peerName;
-	network->setName(peerName);
 	settings.setValue("name", peerName);
 	emit peerNameChanged(peerName);
 }
@@ -604,9 +603,10 @@ void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	packetData.resize(sizeof(nodeStatus));
 	memcpy(packetData.data(), &nodeStatus, sizeof(nodeStatus));
 	QDataStream stream(&packetData, QIODevice::Append);
+	stream << getPeerName();
 	foreach (GroupMembership *groupMembership, groupMemberships) {
+		stream << groupMembership->getName();
 		QByteArray key = groupMembership->getPrivateKey().toDER();
-		stream << (unsigned int)key.size();
 		stream << key;
 	}
 	Packet packet = Packet::fromData(PacketType::NodeStatus, packetData);
@@ -691,25 +691,34 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 	status.delegatedJobs = qFromBigEndian(nodeStatus->delegatedJobs);
 	status.localJobs = qFromBigEndian(nodeStatus->localJobs);
 	status.remoteJobs = qFromBigEndian(nodeStatus->remoteJobs);
-	// Parse group info
+	// Get the remaining data after the struct
 	unsigned int groupCount = nodeStatus->groupCount;
 	char *groupData = (char*)packet.getPayloadData() + sizeof(NodeStatusPacket);
 	QByteArray remaining(groupData, packet.getPayloadSize() - sizeof(NodeStatusPacket));
 	QDataStream stream(remaining);
+	QString name;
+	stream >> name;
+	// Parse group info
 	QStringList groupKeys;
+	QStringList groupNames;
 	for (unsigned int i = 0; i < groupCount; i++) {
-		unsigned int keyLength = 0;
-		stream >> keyLength;
+		QString groupName;
+		stream >> groupName;
 		QByteArray keyData;
 		stream >> keyData;
+		PublicKey key = PublicKey::fromDER(keyData);
+		if (!key.isValid()) {
+			break;
+		}
+		groupKeys.append(key.toPEM());
+		groupNames.append(groupName);
 		if (stream.atEnd()) {
 			break;
 		}
-		PublicKey key = PublicKey::fromDER(keyData);
-		groupKeys.append(key.toPEM());
 	}
 	QString fingerprint = node->getPublicKey().fingerprint();
-	emit nodeStatusChanged(node->getPublicKey().toPEM(), fingerprint, status, groupKeys);
+	emit nodeStatusChanged(name, node->getPublicKey().toPEM(), fingerprint,
+			status, groupNames, groupKeys);
 }
 
 void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packet &packet) {

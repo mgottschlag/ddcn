@@ -229,9 +229,6 @@ void NetworkInterface::leaveGroup(McpoGroup *group) {
 			LEAVE_GROUP_EVENT, new ariba::ServiceID(serviceId)));
 	}
 }
-void NetworkInterface::setName(QString name) {
-	// TODO
-}
 
 NetworkNode *NetworkInterface::getNetworkNode(const PublicKey &publicKey) {
 	// TODO: Too slow
