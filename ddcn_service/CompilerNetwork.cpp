@@ -45,8 +45,6 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 			qWarning("Warning: Could not save local private key!");
 		}
 	}
-	// Load trusted peers/groups etc from file
-	loadSettings();
 	// Initialize ariba
 	network = new NetworkInterface(name, localKey);
 	connect(network,
@@ -69,6 +67,8 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 	        SIGNAL(groupMessageReceived(McpoGroup*, NetworkNode*, Packet)),
 	        this,
 	        SLOT(onGroupMessageReceived(McpoGroup*, NetworkNode*, Packet)));
+	// Load trusted peers/groups etc from file
+	loadSettings();
 }
 CompilerNetwork::~CompilerNetwork() {
 	foreach (OutgoingJobRequest *request, outgoingJobRequests) {
@@ -467,10 +467,97 @@ GroupMembership *CompilerNetwork::getGroupMembership(const PublicKey &publicKey)
 }
 
 void CompilerNetwork::loadSettings() {
-	// TODO: Load trusted groups, trusted peers, group memberships
+	// Load trusted peers
+	{
+		int size = this->settings.beginReadArray("trustedPeers");
+		QStringList trustedPeerNames;
+		QList<PublicKey> trustedPeerKeys;
+		for (int i = 0; i < size; ++i) {
+			this->settings.setArrayIndex(i);
+			QString name = this->settings.value("name").toString();
+			PublicKey key = PublicKey::fromPEM(this->settings.value("key").toString());
+			if (!key.isValid()) {
+				qCritical("Invalid trusted peer key");
+				continue;
+			}
+			qCritical("Adding trusted peer: %s", key.fingerprint().toAscii().data());
+			// We have to store these values and cannot call addTrustedPeer()
+			// directly because it modifies the settings which we are currently
+			// reading
+			trustedPeerNames.append(name);
+			trustedPeerKeys.append(key);
+		}
+		this->settings.endArray();
+		for (int i = 0; i < trustedPeerNames.size(); ++i) {
+			addTrustedPeer(trustedPeerNames[i], trustedPeerKeys[i]);
+		}
+	}
+	// Load trusted groups
+	{
+		int size = this->settings.beginReadArray("trustedGroups");
+		QStringList trustedGroupNames;
+		QList<PublicKey> trustedGroupKeys;
+		for (int i = 0; i < size; ++i) {
+			this->settings.setArrayIndex(i);
+			QString name = this->settings.value("name").toString();
+			PublicKey key = PublicKey::fromPEM(this->settings.value("key").toString());
+			if (!key.isValid()) {
+				continue;
+			}
+			trustedGroupNames.append(name);
+			trustedGroupKeys.append(key);
+		}
+		this->settings.endArray();
+		for (int i = 0; i < trustedGroupNames.size(); ++i) {
+			addTrustedGroup(trustedGroupNames[i], trustedGroupKeys[i]);
+		}
+	}
+	// Load group memberships
+	{
+		int size = this->settings.beginReadArray("groupMemberships");
+		QStringList groupMembershipNames;
+		QList<PrivateKey> groupMembershipKeys;
+		for (int i = 0; i < size; ++i) {
+			this->settings.setArrayIndex(i);
+			QString name = this->settings.value("name").toString();
+			PrivateKey key = PrivateKey::fromPEM(this->settings.value("key").toString());
+			if (!key.isValid()) {
+				continue;
+			}
+			groupMembershipNames.append(name);
+			groupMembershipKeys.append(key);
+		}
+		this->settings.endArray();
+		for (int i = 0; i < groupMembershipNames.size(); ++i) {
+			addGroupMembership(groupMembershipNames[i], groupMembershipKeys[i]);
+		}
+	}
 }
 void CompilerNetwork::saveSettings() {
-	// TODO: Save trusted groups, trusted peers, group memberships
+	// Save trusted peers
+	this->settings.beginWriteArray("trustedPeers");
+	for (int i = 0; i < this->trustedPeers.size(); ++i) {
+		this->settings.setArrayIndex(i);
+		this->settings.setValue("name", trustedPeers[i]->getName());
+		this->settings.setValue("key", trustedPeers[i]->getPublicKey().toPEM());
+	}
+	this->settings.endArray();
+	// Save trusted groups
+	this->settings.beginWriteArray("trustedGroups");
+	for (int i = 0; i < this->trustedGroups.size(); ++i) {
+		this->settings.setArrayIndex(i);
+		this->settings.setValue("name", trustedGroups[i]->getName());
+		this->settings.setValue("key", trustedGroups[i]->getPublicKey().toPEM());
+	}
+	this->settings.endArray();
+	// Save trusted groups
+	this->settings.beginWriteArray("groupMemberships");
+	for (int i = 0; i < this->groupMemberships.size(); ++i) {
+		this->settings.setArrayIndex(i);
+		this->settings.setValue("name", groupMemberships[i]->getName());
+		this->settings.setValue("key", groupMemberships[i]->getPrivateKey().toPEM());
+	}
+	this->settings.endArray();
 }
 
 void CompilerNetwork::askForFreeSlots() {
