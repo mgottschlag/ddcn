@@ -146,6 +146,18 @@ PublicKey PublicKey::load(QString fileName) {
 	return fromPEM(QString::fromAscii(pem));
 }
 
+bool PublicKey::verify(QByteArray data, QByteArray signature) {
+	if (!isValid()) {
+		return false;
+	}
+	EVP_MD_CTX context;
+	const EVP_MD *method = EVP_sha1();
+	EVP_VerifyInit(&context, method);
+	EVP_VerifyUpdate(&context, data.data(), data.size());
+	return EVP_VerifyFinal(&context, (unsigned char*)signature.data(),
+			signature.size(), keyData->getKey()) == 1;
+}
+
 PublicKey &PublicKey::operator=(const PublicKey &other) {
 	if (&other == this) {
 		return *this;
@@ -295,7 +307,23 @@ PrivateKey PrivateKey::load(QString fileName) {
 	}
 	QByteArray pem = file.readAll();
 	return fromPEM(QString::fromAscii(pem.data()));
+}
 
+QByteArray PrivateKey::sign(QByteArray data) {
+	if (!isValid()) {
+		return QByteArray();
+	}
+	EVP_MD_CTX context;
+	const EVP_MD *method = EVP_sha1();
+	EVP_SignInit(&context, method);
+	EVP_SignUpdate(&context, data.data(), data.size());
+	QByteArray signature;
+	signature.resize(EVP_PKEY_size(keyData->getKey()));
+	unsigned int signatureSize;
+	EVP_SignFinal(&context, (unsigned char*)signature.data(), &signatureSize,
+			keyData->getKey());
+	signature.resize(signatureSize);
+	return signature;
 }
 
 PrivateKey &PrivateKey::operator=(const PrivateKey &other) {

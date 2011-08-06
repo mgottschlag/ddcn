@@ -139,6 +139,16 @@ public:
 	}
 
 	/**
+	 * Verifies the signature for the data and this public key.
+	 * @param data Data which has been signed.
+	 * @param signature Signature belonging to the data and issued by the
+	 * private key belonging to this key.
+	 * @return True if the signature could be verified, false if it is
+	 * corrupt.
+	 */
+	bool verify(QByteArray data, QByteArray signature);
+
+	/**
 	 * Assignment operator.
 	 */
 	PublicKey &operator=(const PublicKey &other);
@@ -268,6 +278,14 @@ public:
 	bool isValid() const {
 		return keyData != NULL;
 	}
+
+	/**
+	 * Signs the data using this private key so that it lated can be verified with
+	 * PublicKey::verify().
+	 * @param data Data to be signed.
+	 * @return Signature.
+	 */
+	QByteArray sign(QByteArray data);
 
 	/**
 	 * Assignment operator.
