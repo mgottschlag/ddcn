@@ -71,6 +71,15 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 	loadSettings();
 }
 CompilerNetwork::~CompilerNetwork() {
+	for (int i = 0; i < trustedPeers.size(); i++) {
+		delete trustedPeers[i];
+	}
+	for (int i = 0; i < trustedGroups.size(); i++) {
+		delete trustedGroups[i];
+	}
+	for (int i = 0; i < groupMemberships.size(); i++) {
+		delete groupMemberships[i];
+	}
 	foreach (OutgoingJobRequest *request, outgoingJobRequests) {
 		delete request;
 	}
