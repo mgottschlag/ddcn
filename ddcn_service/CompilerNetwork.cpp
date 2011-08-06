@@ -372,8 +372,14 @@ void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet)
 			qDebug("Node asking for available resources.");
 			reportNetworkResources(node);
 			break;
+		case PacketType::QueryGroupNetworkResources:
+			onQueryGroupNetworkResources(node, packet);
+			break;
 		case PacketType::NetworkResourcesAvailable:
 			onNetworkResourcesAvailable(node, packet);
+			break;
+		case PacketType::GroupNetworkResourcesAvailable:
+			onGroupNetworkResourcesAvailable(node, packet);
 			break;
 		case PacketType::QueryNodeStatus:
 			qDebug("Node asking for node status.");
@@ -390,11 +396,8 @@ void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet)
 void CompilerNetwork::onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const Packet &packet) {
 	switch (packet.getType()) {
-		case PacketType::QueryNetworkResources:
-			qDebug("Node asking for network resources.");
-			// TODO: This needs to be special as we have to prove that we are
-			// a member of that group
-			reportNetworkResources(node);
+		case PacketType::QueryGroupNetworkResources:
+			onQueryGroupNetworkResources(node, packet);
 			break;
 		default:
 			qWarning("Warning: Unknown group package type received.");
@@ -475,19 +478,31 @@ void CompilerNetwork::askForFreeSlots() {
 	// TODO: Maybe include the toolchain version here? Might reduce overall
 	// traffic generated
 	Packet packet(PacketType::QueryNetworkResources);
-	// TODO: Debug
-	network->sendToAll(packet);
-	/*foreach (TrustedPeer *trustedPeer, trustedPeers) {
+	foreach (TrustedPeer *trustedPeer, trustedPeers) {
 		network->send(trustedPeer->getNetworkNode(), packet);
-	}*/
+	}
 	// The packet sent to the groups has to look different as we have to
 	// include the group key
-	foreach (TrustedGroup *trustedGroup, trustedGroups) {
+	// TODO: MCPO group functionality not implemented yet!
+	// This means that for now we have to send the packet to ALL peers as soon#
+	// as we trust a group
+	/*foreach (TrustedGroup *trustedGroup, trustedGroups) {
 		// Create a new packet for each group containing the group key
 		QByteArray payload = trustedGroup->getPublicKey().toDER();
-		packet = Packet::fromData(PacketType::QueryNetworkResources, payload);
+		packet = Packet::fromData(PacketType::QueryGroupNetworkResources, payload);
 		network->send(trustedGroup->getMcpoGroup(), packet);
+	}*/
+	if (trustedGroups.empty()) {
+		return;
 	}
+	QByteArray payload;
+	QDataStream stream(&payload, QIODevice::WriteOnly);
+	stream << (unsigned short)trustedGroups.size();
+	foreach (TrustedGroup *trustedGroup, trustedGroups) {
+		stream << trustedGroup->getPublicKey().toDER();
+	}
+	packet = Packet::fromData(PacketType::QueryGroupNetworkResources, payload);
+	network->sendToAll(packet);
 }
 
 void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
@@ -511,6 +526,9 @@ void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	network->send(node, packet);
 }
 void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
+	if (freeLocalSlots <= 0) {
+		return;
+	}
 	QByteArray packetData;
 	QDataStream stream(&packetData, QIODevice::WriteOnly);
 	stream << freeLocalSlots;
@@ -521,6 +539,53 @@ void CompilerNetwork::reportNetworkResources(NetworkNode *node) {
 	}
 	stream << toolChainVersions;
 	Packet packet = Packet::fromData(PacketType::NetworkResourcesAvailable, packetData);
+	network->send(node, packet);
+}
+void CompilerNetwork::onQueryGroupNetworkResources(NetworkNode *node, const Packet &packet) {
+	if (freeLocalSlots <= 0) {
+		return;
+	}
+	QByteArray payload((char*)packet.getPayloadData(), packet.getPayloadSize());
+	QDataStream stream(payload);
+	// We only use a short here to prevend DoS attacks
+	unsigned short groupCount;
+	stream >> groupCount;
+	for (unsigned short i = 0; i < groupCount; i++) {
+		QByteArray derGroupKey;
+		stream >> derGroupKey;
+		PublicKey key = PublicKey::fromDER(derGroupKey);
+		if (!key.isValid()) {
+			return;
+		}
+		// We only want to send a response if we are a member of one of the
+		// listed groups
+		GroupMembership *group = getGroupMembership(key);
+		if (group != NULL) {
+			reportGroupNetworkResources(node, group);
+			return;
+		}
+	}
+}
+void CompilerNetwork::reportGroupNetworkResources(NetworkNode *node, GroupMembership *group) {
+	QByteArray packetData;
+	QDataStream stream(&packetData, QIODevice::WriteOnly);
+	// We have to prove that we are a member of the given group, so we sign our
+	// public key and the other peer's public key with the private group key
+	QByteArray signedText;
+	signedText.append(PublicKey(localKey).toDER());
+	signedText.append(node->getPublicKey().toDER());
+	stream << PublicKey(group->getPrivateKey()).toDER();
+	stream << signedText;
+	stream << group->getPrivateKey().sign(signedText);
+	// Send number of available slots
+	stream << freeLocalSlots;
+	// Send toolchain info so that other peers only ask peers who have the correct toolchains
+	QStringList toolChainVersions;
+	foreach (ToolChain toolChain, toolChains) {
+		toolChainVersions.append(toolChain.getVersion());
+	}
+	stream << toolChainVersions;
+	Packet packet = Packet::fromData(PacketType::GroupNetworkResourcesAvailable, packetData);
 	network->send(node, packet);
 }
 
@@ -562,13 +627,43 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 
 void CompilerNetwork::onNetworkResourcesAvailable(NetworkNode *node, const Packet &packet) {
 	qDebug("onNetworkResourcesAvailable");
-	/*if (packet.getPayloadSize() != sizeof(unsigned int)) {
-		qWarning("Wrong packet size (onNetworkResourcesAvailable(): %d instead of %d).",
-				packet.getPayloadSize(), (int)sizeof(unsigned int));
-		return;
-	}*/
 	QByteArray payload((char*)packet.getPayloadData(), packet.getPayloadSize());
 	QDataStream stream(payload);
+	onGeneralNetworkResourcesAvailable(node, stream);
+}
+void CompilerNetwork::onGroupNetworkResourcesAvailable(NetworkNode *node, const Packet &packet) {
+	QByteArray payload((char*)packet.getPayloadData(), packet.getPayloadSize());
+	QDataStream stream(payload);
+	// Read group signature
+	QByteArray derGroupKey;
+	stream >> derGroupKey;
+	QByteArray signedText;
+	stream >> signedText;
+	QByteArray signature;
+	stream >> signature;
+	// Verify signature
+	PublicKey groupKey = PublicKey::fromDER(derGroupKey);
+	if (!groupKey.isValid()) {
+		return;
+	}
+	if (!getTrustedGroup(groupKey)) {
+		return;
+	}
+	// We expect a specific and unique text so that nobody can replay this part
+	QByteArray expectedText;
+	expectedText.append(node->getPublicKey().toDER());
+	expectedText.append(PublicKey(localKey).toDER());
+	if (signedText != expectedText) {
+		return;
+	}
+	if (!groupKey.verify(signedText, signature)) {
+		return;
+	}
+	// Add network resources
+	onGeneralNetworkResourcesAvailable(node, stream);
+}
+void CompilerNetwork::onGeneralNetworkResourcesAvailable(NetworkNode *node,
+		QDataStream &stream) {
 	unsigned int availableCount;
 	stream >> availableCount;
 	if (availableCount == 0) {

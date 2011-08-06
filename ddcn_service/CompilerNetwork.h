@@ -281,9 +281,13 @@ private:
 
 	void reportNodeStatus(NetworkNode *node);
 	void reportNetworkResources(NetworkNode *node);
+	void onQueryGroupNetworkResources(NetworkNode *node, const Packet &packet);
+	void reportGroupNetworkResources(NetworkNode *node, GroupMembership *group);
 
 	void onNodeStatusChanged(NetworkNode *node, const Packet &packet);
 	void onNetworkResourcesAvailable(NetworkNode *node, const Packet &packet);
+	void onGroupNetworkResourcesAvailable(NetworkNode *node, const Packet &packet);
+	void onGeneralNetworkResourcesAvailable(NetworkNode *node, QDataStream &stream);
 
 	void createJobRequests();
 	void onIncomingJobRequest(NetworkNode *node, const Packet &packet);
