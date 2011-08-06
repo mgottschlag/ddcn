@@ -105,6 +105,19 @@ struct PacketType {
 		 * current work load.
 		 */
 		NodeStatus,
+		/**
+		 * Sent to all peers (with public keys of the targeted groups inside the
+		 * packet) whenever a peer wants to delegate any jobs, but does not have
+		 * information about available resources.
+		 */
+		QueryGroupNetworkResources,
+		/**
+		 * Sent after QueryGroupNetworkResources has been received and if the
+		 * peer has spare resources which the other peer is allowed to use and
+		 * is a member of one of the groups listed in the
+		 * QueryGroupNetworkResources packet.
+		 */
+		GroupNetworkResourcesAvailable,
 		LastType = NodeStatus
 	};
 };
