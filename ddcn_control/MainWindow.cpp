@@ -552,13 +552,16 @@ void MainWindow::refreshAllWidgets() {
 		ui.labelIncomingJobs->setText(QString::number(intReply.value()));
 		// TODO
 		ui.labelDelegatedJobs->setText("0");
+		// TODO
 		ui.labelCompletedJobs->setText("0");
 		ui.workloadBar->setMaximum(maxThreadCount);
 		ui.workloadBar->setValue(currentThreadCount);
-		// TODO
-		ui.trustedPeerList->clear();
-		ui.trustedGroupList->clear();
-		ui.groupMembershipList->clear();
+		QDBusReply<QList<TrustedPeerInfo> > trustedPeers = dbusNetwork.call("getTrustedPeers");
+		onTrustedPeersChanged(trustedPeers.value());
+		QDBusReply<QList<TrustedGroupInfo> > trustedGroups = dbusNetwork.call("getTrustedGroups");
+		onTrustedGroupsChanged(trustedGroups.value());
+		QDBusReply<QList<GroupMembershipInfo> > groupMemberships = dbusNetwork.call("getGroupMemberships");
+		onGroupMembershipsChanged(groupMemberships.value());
 		QDBusReply<QList<ToolChainInfo> > toolChains = dbusService.call("getToolChains");
 		updateToolChainList(toolChains.value());
 		ui.logList->clear();
