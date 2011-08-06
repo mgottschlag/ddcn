@@ -65,8 +65,8 @@ private slots:
 	void pollServiceStatus();
 	void serviceStartTimeout();
 	void updateStatusText();
-	void onNodeStatusChanged(QString publicKey, QString fingerprint,
-			NodeStatus nodeStatus, QStringList groups);
+	void onNodeStatusChanged(QString name, QString publicKey, QString fingerprint,
+			NodeStatus nodeStatus, QStringList groupNames, QStringList groupKeys);
 	void onCurrentThreadCountChanged(int threadCount) {
 		this->currentThreads = serviceActive ? threadCount : 0;
 		updateThreadCount();
