@@ -181,7 +181,7 @@ NetworkInterface::NetworkInterface(QString name,
 	ariba::utility::StartupWrapper::startup(this, false);
 }
 NetworkInterface::~NetworkInterface() {
-	ariba::utility::StartupWrapper::shutdown(this, false);
+	ariba::utility::StartupWrapper::shutdown(this, true);
 	ariba::utility::StartupWrapper::stopSystem();
 }
 
@@ -302,7 +302,8 @@ void NetworkInterface::startup() {
 	// Initialize ariba module
 	aribaModule = new ariba::AribaModule();
 	ariba::Name spovnetName("ddcn");
-	ariba::Name nodeName(name.toAscii());
+	QByteArray asciiName = name.toAscii();
+	ariba::Name nodeName(asciiName);
 	aribaModule->setProperty("endpoints", bootstrapConfig.getEndPoints().toStdString());
 	aribaModule->setProperty("bootstrap.hints", bootstrapConfig.getBootstrapHints().toStdString());
 	// TODO: Can we still change these settings later?
