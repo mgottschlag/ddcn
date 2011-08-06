@@ -55,9 +55,9 @@ CompilerNetworkAdaptor::CompilerNetworkAdaptor(CompilerNetwork *network)
 	        this,
 	        SLOT(onGroupMembershipsChanged(QList<GroupMembership*>)));
 	connect(network,
-	        SIGNAL(nodeStatusChanged(QString, QString, NodeStatus, QStringList)),
+	        SIGNAL(nodeStatusChanged(QString, QString, QString, NodeStatus, QStringList, QStringList)),
 	        this,
-	        SLOT(onNodeStatusChanged(QString, QString, NodeStatus, QStringList)));
+	        SLOT(onNodeStatusChanged(QString, QString, QString, NodeStatus, QStringList, QStringList)));
 }
 
 void CompilerNetworkAdaptor::setPeerName(QString peerName) {
@@ -177,9 +177,10 @@ void CompilerNetworkAdaptor::onTrustedGroupsChanged(const QList<TrustedGroup*> &
 void CompilerNetworkAdaptor::onGroupMembershipsChanged(const QList<GroupMembership*> &groupMemberships) {
 	emit groupMembershipsChanged(toGroupMembershipInfo(groupMemberships));
 }
-void CompilerNetworkAdaptor::onNodeStatusChanged(QString publicKey, QString fingerPrint, NodeStatus nodeStatus, QStringList groups) {
+void CompilerNetworkAdaptor::onNodeStatusChanged(QString name, QString publicKey, QString fingerPrint,
+			NodeStatus nodeStatus, QStringList groupNames, QStringList groupKeys) {
 	qDebug("Node status changed!");
-	emit nodeStatusChanged(publicKey, fingerPrint, nodeStatus, groups);
+	emit nodeStatusChanged(name, publicKey, fingerPrint, nodeStatus, groupNames, groupKeys);
 }
 
 TrustedPeerInfo CompilerNetworkAdaptor::toTrustedPeerInfo(TrustedPeer *trustedPeer) {
