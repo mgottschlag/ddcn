@@ -47,8 +47,8 @@ public:
 
 	TLS();
 	~TLS();
-	bool startServer(/* TODO */);
-	bool startClient(/* TODO */);
+	bool startServer();
+	bool startClient();
 
 	void setCertificate(Certificate cert);
 	Certificate getCertificate();
@@ -79,7 +79,7 @@ private:
 	};
 
 	AcceptConnectState::List doHandshake();
-	AcceptConnectState::List nonBlockigConnectAccept(int status);
+	AcceptConnectState::List nonBlockingConnectAccept(int status);
 	bool doRead();
 	bool doWrite();
 	bool checkOutgoing();

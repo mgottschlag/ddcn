@@ -151,7 +151,7 @@ private:
 	QMap<QString, NetworkNode*> pendingNodes;
 
 	QMutex knownNodesMutex;
-	// TODO: Why doesn't this work?'
+	// TODO: Why doesn't this work?
 	//QSet<ariba::utility::NodeID> knownNodes;
 	QSet<QString> knownNodes;
 

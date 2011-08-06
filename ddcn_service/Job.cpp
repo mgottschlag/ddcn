@@ -126,8 +126,6 @@ void Job::execute() {
 	//TODO DEBUG:qCritical("Start Compiling");
 	gccProcess->setWorkingDirectory(this->workingDir);
 	gccProcess->setProcessChannelMode(QProcess::SeparateChannels);
-	// TODO: Toolchain path
-	qDebug("Process path: %s", toolChain.getPath(language).toAscii().data());
 	gccProcess->start(toolChain.getPath(language), parameters);
 	gccProcess->write(stdinData);
 	gccProcess->closeWriteChannel();
@@ -186,8 +184,7 @@ void Job::setFinished(int returnValue, const QByteArray &stdout, const QByteArra
 }
 
 QString Job::getQProcessErrorDescription(QProcess::ProcessError error) {
-	//finished signal: finished(bool executed, int resultValue, QString consoleOutput, QList<QByteArray> outputFiles);
-	QString errorString = "Error: An unresolveable error occured.\n"; //TODO
+	QString errorString = "Error: An unresolveable error occured.\n";
 	switch(error) {
 		case 0: errorString = "Error: Could not start gcc process.\n"; break;
 		case 1: errorString = "Error: gcc process started successfully but crashed.\n"; break;
