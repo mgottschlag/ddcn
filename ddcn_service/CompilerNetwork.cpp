@@ -94,15 +94,6 @@ QString CompilerNetwork::getPeerName() {
 	return peerName;
 }
 
-void CompilerNetwork::setEncryption(bool encryptionEnabled) {
-	this->encryptionEnabled = encryptionEnabled;
-	// TODO: Disable encryption in NetworkNode
-	emit encryptionChanged(encryptionEnabled);
-}
-bool CompilerNetwork::getEncryption() {
-	return encryptionEnabled;
-}
-
 void CompilerNetwork::setCompression(bool compressionEnabled) {
 	this->compressionEnabled = compressionEnabled;
 	emit compressionChanged(compressionEnabled);

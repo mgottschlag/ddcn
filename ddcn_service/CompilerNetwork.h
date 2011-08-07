@@ -114,10 +114,6 @@ class CompilerNetwork : public QObject {
 	           READ getPeerName
 	           WRITE setPeerName
 	           NOTIFY peerNameChanged)
-	Q_PROPERTY(bool encryption
-	           READ getEncryption
-	           WRITE setEncryption
-	           NOTIFY encryptionChanged)
 public:
 	/**
 	 * Creates a CompilerNetwork object.
@@ -144,15 +140,6 @@ public:
 	 * @return Name of this peer.
 	 */
 	QString getPeerName();
-
-	/**
-	 * @todo This function is not implemented and should be removed.
-	 */
-	void setEncryption(bool encryptionEnabled);
-	/**
-	 * @todo This function is not implemented and should be removed.
-	 */
-	bool getEncryption();
 
 	/**
 	 * Enables compression of outgoing source files.
@@ -292,7 +279,6 @@ private slots:
 	void onPreprocessingFinished(Job *job);
 signals:
 	void peerNameChanged(QString peerName);
-	void encryptionChanged(bool encryptionEnabled);
 	void compressionChanged(bool compressionEnabled);
 	void localKeyChanged(const PrivateKey &privateKey);
 	void bootstrapHintsChanged(const QString &bootstrapHints);
