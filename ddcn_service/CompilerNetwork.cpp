@@ -239,11 +239,18 @@ Job *CompilerNetwork::cancelOutgoingJob() {
 	if (job) {
 		return job;
 	}
-	// TODO: Check whether we can abort an already delegated job
 	return NULL;
 }
 void CompilerNetwork::rejectIncomingJob(Job *job) {
-	// TODO
+	IncomingJob *incoming = job->getIncomingJob();
+	assert(incoming != NULL);
+	QByteArray packetData;
+	QDataStream stream(&packetData, QIODevice::WriteOnly);
+	stream << qToBigEndian(incoming->getId());
+	// The job was not executed
+	stream << false;
+	Packet packet = Packet::fromData(PacketType::JobFinished, packetData);
+	network->send(incoming->getSourcePeer(), packet);
 }
 
 void CompilerNetwork::setFreeLocalSlots(unsigned int localSlots) {
@@ -299,7 +306,8 @@ void CompilerNetwork::onPeerConnected(NetworkNode *node) {
 	if (trustedPeer) {
 		trustedPeer->setNetworkNode(node);
 	}
-	// TODO: Emit spareResources() ?
+	// The new peer might accept job requests
+	createJobRequests();
 }
 void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	if (node->getTrustedPeer()) {
@@ -345,12 +353,10 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	}
 	if (requestsRemoved) {
 		// Create new requests if necessary
-		// TODO: Also look for network resources if necessary
 		createJobRequests();
 	}
 	// Remove free remote slots on this peer
-	// TODO
-	QList<IncomingJobRequest*> incomingJobRequests;
+	freeRemoteSlots.removeAll(node);
 }
 void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet) {
 	qDebug("Message received: %d", packet.getType());
@@ -871,8 +877,6 @@ void CompilerNetwork::onIncomingJobRequest(NetworkNode *node, const Packet &pack
 	// Send a positive reply
 	Packet reply(PacketType::JobRequestAccepted, qToBigEndian(id));
 	network->send(node, reply);
-	// Consume one local slot
-	// TODO: Should this already be done here, or only later when the Job is created?
 }
 
 void CompilerNetwork::onJobRequestAccepted(NetworkNode *node, const Packet &packet) {
@@ -940,7 +944,8 @@ void CompilerNetwork::onJobRequestRejected(NetworkNode *node, const Packet &pack
 	if (!requestFound) {
 		qWarning("onJobRequestRejected: Received unknown job id.");
 	}
-	// TODO: Remove all free slots from this node as it probably will not accept any later job now
+	// Remove all free slots from this node as it probably will not accept any later job now
+	freeRemoteSlots.removeAll(node);
 	// Send new requests to other peers if necessary
 	createJobRequests();
 }
@@ -1093,7 +1098,10 @@ void CompilerNetwork::onJobFinished(NetworkNode *node, const Packet &packet) {
 		QFile file(job->getWorkingDirectory() + "/" + job->getOutputFiles()[i]);
 		if (!file.open(QIODevice::WriteOnly)) {
 			qWarning("Could not open output file.");
-			// TODO: Let the job fail here
+			stderr.append(QString("\nddcn: Could not open output file.").toAscii());
+			if (returnValue == 0) {
+				returnValue = -1;
+			}
 			continue;
 		}
 		file.write(outputFileContent[i]);
@@ -1198,9 +1206,10 @@ void CompilerNetwork::preprocessWaitingJob() {
 		qCritical("preprocessWaitingJob() called without unpreprocessed waiting jobs!");
 		return;
 	}
-	// TODO: Should we rather pick the first job?
-	Job *job = waitingJobs.last();
-	waitingJobs.removeLast();
+	// We pick the first job because it has been waiting for the longest time
+	// to avoid timeouts
+	Job *job = waitingJobs.first();
+	waitingJobs.removeFirst();
 	waitingPreprocessingJobs.append(job);
 	// Start preprocessing
 	connect(job, SIGNAL(preprocessingFinished(Job*)),

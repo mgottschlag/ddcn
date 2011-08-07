@@ -80,6 +80,16 @@ public:
 		return NULL;
 	}
 
+	void removeAll(NetworkNode *node) {
+		for (int i = 0; i < slotList.size(); i++) {
+			if (slotList[i].node == node) {
+				freeSlotCount -= slotList[i].slotCount;
+				slotList.removeAt(i);
+				i--;
+			}
+		}
+	}
+
 	unsigned int getFreeSlotCount() {
 		return freeSlotCount;
 	}
