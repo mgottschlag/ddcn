@@ -168,7 +168,7 @@ void MainWindow::showSettings() {
 	}
 }
 void MainWindow::openHelp() {
-	if (!QDesktopServices::openUrl(QUrl("http://code.google.com/p/ddcn/wiki/Documentation"))) {
+	if (!QDesktopServices::openUrl(QUrl("http://code.google.com/p/ddcn/#Documentation"))) {
 		QMessageBox::critical(this, "Error!", "Could not open web browser.");
 	}
 }
