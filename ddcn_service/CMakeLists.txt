@@ -42,7 +42,6 @@ set(MOC_H
 	Job.h
 	TemporaryFile.h
 	NetworkInterface.h
-	BootstrapConfig.h
 	NetworkNode.h
 )
 

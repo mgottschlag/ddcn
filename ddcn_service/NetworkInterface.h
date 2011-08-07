@@ -70,6 +70,12 @@ public:
 	NetworkInterface(QString name, const PrivateKey &privateKey);
 	~NetworkInterface();
 
+	/**
+	 * @note Needs restart() to take effect.
+	 */
+	void changeIdentity(QString name, const PrivateKey &privateKey);
+	void restart();
+
 	void send(NetworkNode *node, const Packet &packet);
 	void send(McpoGroup *group, const Packet &packet);
 	void sendToAll(const Packet &packet);
@@ -139,7 +145,7 @@ private:
 
 	MCPO *mcpo;
 
-	const QString name;
+	QString name;
 	PrivateKey privateKey;
 	Certificate certificate;
 

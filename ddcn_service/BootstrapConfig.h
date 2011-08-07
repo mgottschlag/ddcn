@@ -29,8 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QSettings>
 
-class BootstrapConfig : QObject {
-	Q_OBJECT
+class BootstrapConfig {
 public:
 	BootstrapConfig();
 
@@ -39,9 +38,6 @@ public:
 
 	void setEndPoints(QString endPoints);
 	QString getEndPoints();
-signals:
-	void bootstrapHintsChanged(QString bootstrapHints);
-	void endPointsChanged(QString endPoints);
 private:
 	QSettings settings;
 };

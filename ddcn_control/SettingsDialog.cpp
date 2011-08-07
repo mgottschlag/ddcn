@@ -79,7 +79,18 @@ bool SettingsDialog::fetchSettings() {
 	} else {
 		return false;
 	}
-	// TODO: Bootstrapping, endpoints
+	stringReply = dbusNetwork.call("getBootstrapHints");
+	if (stringReply.isValid()) {
+		ui.bootstrapHints->setText(stringReply.value());
+	} else {
+		return false;
+	}
+	stringReply = dbusNetwork.call("getEndpoints");
+	if (stringReply.isValid()) {
+		ui.endpoints->setText(stringReply.value());
+	} else {
+		return false;
+	}
 	// Everything has been set up, so we can accept signals now
 	readyForInput = true;
 	return true;
@@ -104,7 +115,12 @@ bool SettingsDialog::writeSettings() {
 	if (compressionChanged) {
 		dbusNetwork.call("setCompression", useCompression);
 	}
-	// TODO: Bootstrapping, endpoints
+	if (bootstrappingChanged) {
+		dbusNetwork.call("setBootstrapHints", bootstrapping);
+	}
+	if (endpointsChanged) {
+		dbusNetwork.call("setEndpoints", endpoints);
+	}
 	return true;
 }
 

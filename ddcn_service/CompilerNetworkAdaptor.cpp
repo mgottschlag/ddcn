@@ -43,6 +43,14 @@ CompilerNetworkAdaptor::CompilerNetworkAdaptor(CompilerNetwork *network)
 	        this,
 	        SLOT(onLocalKeyChanged(PrivateKey)));
 	connect(network,
+	        SIGNAL(bootstrapHintsChanged(QString)),
+	        this,
+	        SLOT(onBootstrapHintsChanged(QString)));
+	connect(network,
+	        SIGNAL(endpointsChanged(QString)),
+	        this,
+	        SLOT(onEndpointsChanged(QString)));
+	connect(network,
 	        SIGNAL(trustedPeersChanged(QList<TrustedPeer*>)),
 	        this,
 	        SLOT(onTrustedPeersChanged(QList<TrustedPeer*>)));
@@ -95,6 +103,20 @@ QString CompilerNetworkAdaptor::getLocalKey() {
 	// We only want to pass back the public key
 	PublicKey publicKey = network->getLocalKey();
 	return publicKey.toPEM();
+}
+
+void CompilerNetworkAdaptor::setBootstrapHints(const QString &bootstrapHints) {
+	network->setBootstrapHints(bootstrapHints);
+}
+QString CompilerNetworkAdaptor::getBootstrapHints() {
+	return network->getBootstrapHints();
+}
+
+void CompilerNetworkAdaptor::setEndpoints(const QString &endpoints) {
+	network->setEndpoints(endpoints);
+}
+QString CompilerNetworkAdaptor::getEndpoints() {
+	return network->getEndpoints();
 }
 
 void CompilerNetworkAdaptor::addTrustedPeer(QString name, QString publicKey) {
@@ -166,6 +188,13 @@ void CompilerNetworkAdaptor::onCompressionChanged(bool compressionEnabled) {
 }
 void CompilerNetworkAdaptor::onLocalKeyChanged(const PrivateKey &privateKey) {
 	emit publicKeyChanged(PublicKey(privateKey).toPEM());
+}
+
+void CompilerNetworkAdaptor::onBootstrapHintsChanged(const QString &bootstrapHints) {
+	emit bootstrapHintsChanged(bootstrapHints);
+}
+void CompilerNetworkAdaptor::onEndpointsChanged(const QString &endpoints) {
+	emit endpointsChanged(endpoints);
 }
 
 void CompilerNetworkAdaptor::onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers) {
