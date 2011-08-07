@@ -78,7 +78,7 @@ sznBeginDefault(DdcnMessage, X) {
 	if (X.isDeserializer() && X.getRemainingLength() < 6 * 8) {
 		qCritical("Empty packet without header received.");
 		data = QByteArray();
-		// TODO
+		serial = 0;
 	} else {
 	quint16 checksum;
 	if (X.isSerializer()) {
@@ -88,20 +88,18 @@ sznBeginDefault(DdcnMessage, X) {
 	X && checksum;
 	unsigned int size = data.size();
 	X && size;
-	data.resize(size);
-
-	// Limit packets to 1MB
-	// TODO: Better limit
-	size = std::min(size, 1u << 20);
-
-	if (X.isSerializer()) {
+	if (X.isDeserializer()) {
+		if (size > X.getRemainingLength() / 8) {
+			qCritical("Packet smaller than the size stored in the header!");
+			size = X.getRemainingLength() / 8;
+		}
 		data.resize(size);
 	}
+
 	// TODO: This can be optimized
 	for (unsigned int i = 0; i < size; i++) {
 		if (X.isDeserializer() && X.getRemainingLength() < 8) {
 			qCritical("Not enough data in packet!");
-			// TODO
 			break;
 		}
 		unsigned char c = data[i];
@@ -276,7 +274,6 @@ NetworkNode *NetworkInterface::getNetworkNode(const PublicKey &publicKey) {
 }
 
 bool NetworkInterface::onLinkRequest(const ariba::utility::NodeID &remote) {
-	// TODO: Do we want to do this? probably not.
 	if (knownNodes.contains(remote.toString().c_str())) {
 		return false;
 	}
@@ -285,16 +282,15 @@ bool NetworkInterface::onLinkRequest(const ariba::utility::NodeID &remote) {
 }
 void NetworkInterface::onMessage(const ariba::DataMessage &msg,
 		const ariba::utility::NodeID &remote, const ariba::utility::LinkID &link) {
-	// TODO: This must not be an assert
-	assert(msg.isMessage());
+	if (!msg.isMessage()) {
+		qCritical("\"msg.isMessage()\" is false, received corrupt message!");
+		return;
+	}
 	DdcnMessage* ddcnMessage = msg.getMessage()->convert<DdcnMessage>();
 	if (ddcnMessage->getData().size() == 0) {
 		qCritical("Received empty message.");
 		return;
 	}
-	/*qDebug("Incoming: %d (serial: %d, checksum: %X)",
-		(int)ddcnMessage->getData().size(), ddcnMessage->getSerial(),
-		ddcnMessage->getChecksum());*/
 	emit aribaMessage(ddcnMessage->getData(), ddcnMessage->getSerial(), remote, link);
 	delete ddcnMessage;
 }
@@ -326,10 +322,8 @@ void NetworkInterface::onJoinFailed(const ariba::SpoVNetID &vid) {
 	qFatal("Could not join spovnet.");
 }
 void NetworkInterface::onLeaveCompleted(const ariba::SpoVNetID &vid) {
-	// TODO
 }
 void NetworkInterface::onLeaveFailed(const ariba::SpoVNetID &vid) {
-	// TODO
 }
 
 void NetworkInterface::startup() {
@@ -340,7 +334,6 @@ void NetworkInterface::startup() {
 	ariba::Name nodeName(asciiName);
 	aribaModule->setProperty("endpoints", bootstrapConfig.getEndPoints().toStdString());
 	aribaModule->setProperty("bootstrap.hints", bootstrapConfig.getBootstrapHints().toStdString());
-	// TODO: Can we still change these settings later?
 	aribaModule->start();
 	// Create a new node
 	node = new ariba::Node(*aribaModule, nodeName);
@@ -382,7 +375,6 @@ void NetworkInterface::receiveData(const ariba::DataMessage &msg) {
 	emit mcpoReceiveData(msg);
 }
 void NetworkInterface::serviceIsReady() {
-	// TODO
 }
 
 void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &event) {
@@ -396,7 +388,7 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 		delete serviceId;
 	} else if (event.getType() == SEND_GROUP_MESSAGE_EVENT) {
 		GroupMessage *groupMessage = event.getData<GroupMessage>();
-		// TODO: Optimize aray these unnecessary copies
+		// TODO: Optimize away these unnecessary copies
 		QByteArray packetData((const char*)groupMessage->packet.getRawData(), groupMessage->packet.getRawSize());
 		QByteArray data = packetData.toHex();
 		DdcnGroupMessage ddcnMessage(groupMessage->nodeId.toString(),
@@ -514,7 +506,6 @@ void NetworkInterface::onNodeOutgoingDataAvailable(NetworkNode *node) {
 	//qCritical("onNodeOutgoingDataAvailable: %d", (int)outgoingData.size());
 	// Inject data into the ariba thread
 	PeerMessage *peerMessage = new PeerMessage;
-	// TODO: This might be a security risk? We probably should encrypt the packet
 	peerMessage->nodeId = node->aribaNode;
 	peerMessage->linkId = node->aribaLink;
 	peerMessage->message = outgoingData;
@@ -529,8 +520,7 @@ void NetworkInterface::onNodeConnectionReady(NetworkNode *node) {
 	QMap<QString, NetworkNode*>::Iterator it = pendingNodes.find(node->aribaNode.toString().c_str());
 	pendingNodes.erase(it);
 	onlineNodes.insert(node->aribaNode.toString().c_str(), node);
-	// TODO: Get the name of the peer
-	emit peerConnected(node, "", node->getPublicKey());
+	emit peerConnected(node);
 }
 
 void NetworkInterface::peerDiscovery() {

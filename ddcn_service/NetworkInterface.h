@@ -84,10 +84,8 @@ public:
 
 	NetworkNode *getNetworkNode(const PublicKey &publicKey);
 signals:
-	void peerConnected(NetworkNode *node, QString name,
-		const PublicKey &publicKey);
+	void peerConnected(NetworkNode *node);
 	void peerDisconnected(NetworkNode *node);
-	void peerChanged(NetworkNode *node, QString name);
 	void messageReceived(NetworkNode *node, const Packet &packet);
 	void groupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const Packet &packet);

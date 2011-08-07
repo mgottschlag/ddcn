@@ -33,7 +33,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDir>
 
 
-//TODO this class could implement TemporaryFile!
 /**
  * This class holds a pair of files (input and output files).
  */
