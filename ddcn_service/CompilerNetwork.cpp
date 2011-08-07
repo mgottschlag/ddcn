@@ -117,8 +117,9 @@ bool CompilerNetwork::getCompression() {
 
 void CompilerNetwork::setLocalKey(const PrivateKey &privateKey) {
 	localKey = privateKey;
-	// TODO: Change key in NetworkInterface
-	//network->changeIdentity(peerName, publicKey);
+	// Change the key in NetworkInterface
+	network->changeIdentity(peerName, privateKey);
+	network->restart();
 	// Save key
 	QString keyFile = QFileInfo(settings.fileName()).absolutePath() + "/privkey.pem";
 	if (!privateKey.save(keyFile)) {
@@ -132,6 +133,24 @@ void CompilerNetwork::generateLocalKey(int keyLength) {
 }
 PrivateKey CompilerNetwork::getLocalKey() {
 	return localKey;
+}
+
+void CompilerNetwork::setBootstrapHints(const QString &bootstrapHints) {
+	bootstrapConfig.setBootstrapHints(bootstrapHints);
+	network->restart();
+	emit bootstrapHintsChanged(bootstrapHints);
+}
+QString CompilerNetwork::getBootstrapHints() {
+	return bootstrapConfig.getBootstrapHints();
+}
+
+void CompilerNetwork::setEndpoints(const QString &endpoints) {
+	bootstrapConfig.setEndPoints(endpoints);
+	network->restart();
+	emit endpointsChanged(endpoints);
+}
+QString CompilerNetwork::getEndpoints() {
+	return bootstrapConfig.getEndPoints();
 }
 
 void CompilerNetwork::addTrustedPeer(QString name, const PublicKey &publicKey) {

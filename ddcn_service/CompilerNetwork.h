@@ -169,6 +169,8 @@ public:
 	/**
 	 * Sets the private key of the local node.
 	 * This key is used to authenticate this peer at other peers.
+	 *
+	 * @note This causes all connections to drop as their key are invalidated.
 	 * @param privateKey New private key for this peer.
 	 */
 	void setLocalKey(const PrivateKey &privateKey);
@@ -182,6 +184,40 @@ public:
 	 * @return Local private key.
 	 */
 	PrivateKey getLocalKey();
+
+	/**
+	 * Sets the bootstrap hints which are passed to ariba.
+	 *
+	 * The format is the one documented at
+	 * http://www.ariba-underlay.org/wiki/Documentation/Configuration
+	 *
+	 * @note This causes all connections to drop as ariba is reinitialized.
+	 * @param bootstrapHints New bootstrap hints.
+	 */
+	void setBootstrapHints(const QString &bootstrapHints);
+	/**
+	 * Returns the bootstrap hints used for ariba.
+	 *
+	 * @return Bootstrap hints.
+	 */
+	QString getBootstrapHints();
+
+	/**
+	 * Sets the local endpoint settings which are passed to ariba.
+	 *
+	 * The format is the one documented at
+	 * http://www.ariba-underlay.org/wiki/Documentation/Configuration
+	 *
+	 * @note This causes all connections to drop as ariba is reinitialized.
+	 * @param bootstrapHints New endpoints.
+	 */
+	void setEndpoints(const QString &endpoints);
+	/**
+	 * Returns the endpoints used by ariba.
+	 *
+	 * @return Endpoints.
+	 */
+	QString getEndpoints();
 
 	void addTrustedPeer(QString name, const PublicKey &publicKey);
 	void removeTrustedPeer(QString name, const PublicKey &publicKey);
@@ -261,6 +297,8 @@ signals:
 	void encryptionChanged(bool encryptionEnabled);
 	void compressionChanged(bool compressionEnabled);
 	void localKeyChanged(const PrivateKey &privateKey);
+	void bootstrapHintsChanged(const QString &bootstrapHints);
+	void endpointsChanged(const QString &endpoints);
 	void trustedPeersChanged(QList<TrustedPeer*> trustedPeers);
 	void trustedGroupsChanged(QList<TrustedGroup*> trustedGroups);
 	void groupMembershipsChanged(QList<GroupMembership*> groupMemberships);
@@ -349,6 +387,8 @@ private:
 	QList<ToolChain> toolChains;
 
 	QSettings settings;
+
+	BootstrapConfig bootstrapConfig;
 };
 
 #endif

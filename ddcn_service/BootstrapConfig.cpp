@@ -28,7 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 BootstrapConfig::BootstrapConfig() : settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	if (!settings.value("network/bootstrap_hints").isValid()) {
-		settings.setValue("network/bootstrap_hints", "ddcn{ip{127.0.0.1};tcp{5005}}");
+		settings.setValue("network/bootstrap_hints", "ddcn{ip{127.0.0.1};tcp{5005};mdns;broadcast}");
 	}
 	if (!settings.value("network/endpoints").isValid()) {
 		settings.setValue("network/endpoints", "ip{127.0.0.1}tcp{5005}");
@@ -37,7 +37,6 @@ BootstrapConfig::BootstrapConfig() : settings(QSettings::IniFormat, QSettings::U
 
 void BootstrapConfig::setBootstrapHints(QString bootstrapHints) {
 	settings.setValue("network/bootstrap_hints", bootstrapHints);
-	emit bootstrapHintsChanged(bootstrapHints);
 }
 QString BootstrapConfig::getBootstrapHints() {
 	return settings.value("network/bootstrap_hints", "").toString();
@@ -45,7 +44,6 @@ QString BootstrapConfig::getBootstrapHints() {
 
 void BootstrapConfig::setEndPoints(QString endPoints) {
 	settings.setValue("network/endpoints", endPoints);
-	emit endPointsChanged(endPoints);
 }
 QString BootstrapConfig::getEndPoints() {
 	return settings.value("network/endpoints", "").toString();

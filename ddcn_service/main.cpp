@@ -43,10 +43,6 @@ int main(int argc, char **argv) {
 	// Create the compiler network
 	CompilerNetwork network;
 	new CompilerNetworkAdaptor(&network);
-	// log4cxx might not be available
-#ifdef logging_rootlevel_error
-	logging_rootlevel_error();
-#endif
 	// Create the compiler service
 	CompilerService service(&network);
 	CompilerServiceAdaptor *serviceAdaptor = new CompilerServiceAdaptor(&service);

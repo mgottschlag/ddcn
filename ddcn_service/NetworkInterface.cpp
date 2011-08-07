@@ -179,10 +179,44 @@ NetworkInterface::NetworkInterface(QString name,
 	// Start networking
 	ariba::utility::StartupWrapper::startSystem();
 	ariba::utility::StartupWrapper::startup(this, false);
+	// log4cxx might not be available
+#ifdef logging_rootlevel_error
+	logging_rootlevel_error();
+#endif
 }
 NetworkInterface::~NetworkInterface() {
 	ariba::utility::StartupWrapper::shutdown(this, true);
 	ariba::utility::StartupWrapper::stopSystem();
+}
+
+void NetworkInterface::changeIdentity(QString name, const PrivateKey &privateKey) {
+	this->name = name;
+	this->privateKey = privateKey;
+}
+void NetworkInterface::restart() {
+	// Stop the system
+	ariba::utility::StartupWrapper::shutdown(this, true);
+	ariba::utility::StartupWrapper::stopSystem();
+	// Kill all existing connections
+	knownNodes.clear();
+	QMapIterator<QString, NetworkNode*> it(onlineNodes);
+	while (it.hasNext()) {
+		it.next();
+		emit peerDisconnected(it.value());
+		delete it.value();
+	}
+	it = QMapIterator<QString, NetworkNode*>(pendingNodes);
+	while (it.hasNext()) {
+		it.next();
+		delete it.value();
+	}
+	// Start the system
+	ariba::utility::StartupWrapper::startSystem();
+	ariba::utility::StartupWrapper::startup(this, false);
+	// log4cxx might not be available
+#ifdef logging_rootlevel_error
+	logging_rootlevel_error();
+#endif
 }
 
 void NetworkInterface::send(NetworkNode *node, const Packet &packet) {

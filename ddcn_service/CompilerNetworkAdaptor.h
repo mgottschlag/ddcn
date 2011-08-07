@@ -66,6 +66,12 @@ public slots:
 	void generateLocalKey(int keyLength = 2048);
 	QString getLocalKey();
 
+	void setBootstrapHints(const QString &bootstrapHints);
+	QString getBootstrapHints();
+
+	void setEndpoints(const QString &endpoints);
+	QString getEndpoints();
+
 	void addTrustedPeer(QString name, QString publicKey);
 	void removeTrustedPeer(QString name, QString publicKey);
 	QList<TrustedPeerInfo> getTrustedPeers();
@@ -86,6 +92,8 @@ private slots:
 	void onEncryptionChanged(bool encryptionEnabled);
 	void onCompressionChanged(bool compressionEnabled);
 	void onLocalKeyChanged(const PrivateKey &privateKey);
+	void onBootstrapHintsChanged(const QString &bootstrapHints);
+	void onEndpointsChanged(const QString &endpoints);
 	void onTrustedPeersChanged(const QList<TrustedPeer*> &trustedPeers);
 	void onTrustedGroupsChanged(const QList<TrustedGroup*> &trustedGroups);
 	void onGroupMembershipsChanged(const QList<GroupMembership*> &groupMemberships);
@@ -96,6 +104,8 @@ signals:
 	void encryptionChanged(bool encryptionEnabled);
 	void compressionChanged(bool compressionEnabled);
 	void publicKeyChanged(QString publicKey);
+	void bootstrapHintsChanged(const QString &bootstrapHints);
+	void endpointsChanged(const QString &endpoints);
 	void trustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers);
 	void trustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups);
 	void groupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships);
