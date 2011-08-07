@@ -51,10 +51,6 @@ int main(int argc, char **argv) {
 			 &app,
 			 SLOT(quit())
 	);
-	// Create compiler network status interface
-	// TODO
-	// Connect compiler service and compiler network
-	// TODO
 	// Create the D-Bus interface
 	QDBusConnection::sessionBus().registerObject("/CompilerService", &service);
 	QDBusConnection::sessionBus().registerObject("/CompilerNetwork", &network);

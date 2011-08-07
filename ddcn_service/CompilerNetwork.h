@@ -283,10 +283,8 @@ public:
 		this->toolChains = toolChains;
 	}
 private slots:
-	void onPeerConnected(NetworkNode *node, QString name,
-		const PublicKey &publicKey);
+	void onPeerConnected(NetworkNode *node);
 	void onPeerDisconnected(NetworkNode *node);
-	void onPeerChanged(NetworkNode *node, QString name);
 	void onMessageReceived(NetworkNode *node, const Packet &packet);
 	void onGroupMessageReceived(McpoGroup *group, NetworkNode *node,
 		const Packet &packet);

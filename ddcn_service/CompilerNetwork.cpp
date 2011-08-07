@@ -48,17 +48,13 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 	// Initialize ariba
 	network = new NetworkInterface(name, localKey);
 	connect(network,
-	        SIGNAL(peerConnected(NetworkNode*, QString, PublicKey)),
+	        SIGNAL(peerConnected(NetworkNode*)),
 	        this,
-	        SLOT(onPeerConnected(NetworkNode*, QString, PublicKey)));
+	        SLOT(onPeerConnected(NetworkNode*)));
 	connect(network,
 	        SIGNAL(peerDisconnected(NetworkNode*)),
 	        this,
 	        SLOT(onPeerDisconnected(NetworkNode*)));
-	connect(network,
-	        SIGNAL(peerChanged(NetworkNode*, QString)),
-	        this,
-	        SLOT(onPeerChanged(NetworkNode*, QString)));
 	connect(network,
 	        SIGNAL(messageReceived(NetworkNode*, Packet)),
 	        this,
@@ -307,9 +303,8 @@ void CompilerNetwork::onDelegatedJobFinished(Job *job) {
 	delete job;
 }
 
-void CompilerNetwork::onPeerConnected(NetworkNode *node, QString name,
-		const PublicKey &publicKey) {
-	TrustedPeer *trustedPeer = getTrustedPeer(publicKey);
+void CompilerNetwork::onPeerConnected(NetworkNode *node) {
+	TrustedPeer *trustedPeer = getTrustedPeer(node->getPublicKey());
 	if (trustedPeer) {
 		trustedPeer->setNetworkNode(node);
 	}
@@ -365,9 +360,6 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	// Remove free remote slots on this peer
 	// TODO
 	QList<IncomingJobRequest*> incomingJobRequests;
-}
-void CompilerNetwork::onPeerChanged(NetworkNode *node, QString name) {
-	// TODO: Nothing to do here? Maybe update TrustedPeer name
 }
 void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet) {
 	qDebug("Message received: %d", packet.getType());
