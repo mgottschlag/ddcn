@@ -116,6 +116,9 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
 			"org.ddcn.CompilerNetwork", "groupMembershipsChanged", this,
 			SLOT(onGroupMembershipsChanged(QList<GroupMembershipInfo>)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
+			"org.ddcn.CompilerNetwork", "publicKeyChanged", this,
+			SLOT(onPublicKeyChanged(QString)));
 
 	if(dbusService.isValid()) {
 		QDBusReply<QList<ToolChainInfo> > reply = dbusService.call("getToolChains");
@@ -152,19 +155,15 @@ void MainWindow::showSettings() {
 		return;
 	}
 	SettingsDialog settings;
+	if (!settings.fetchSettings()) {
+		statusLabel.setText(tr("Error: Could not fetch service settings."));
+		return;
+	}
 	int result = settings.exec();
 	if (result == QDialog::Accepted) {
-		// Set peer name
-		if (settings.isPeerNameChanged()) {
-			// TODO
-		}
-		// Set number of active threads
-		if (settings.isThreadCountChanged()) {
-			// TODO
-		}
-		// Set private key if necessary
-		if (settings.isKeyChanged()) {
-			// TODO
+		if (!settings.writeSettings()) {
+			QMessageBox::critical(this, "Error",
+					"Could not write settings, is the service still active?");
 		}
 	}
 }
@@ -415,6 +414,13 @@ void MainWindow::onNodeStatusChanged(QString name, QString publicKey, QString fi
 	onlinePeerModel.updateNode(name, publicKey, fingerprint, trusted, load, inTrustedGroup);
 }
 
+void MainWindow::onPublicKeyChanged(const QString &publicKey) {
+	PublicKey key = PublicKey::fromPEM(publicKey);
+	QString fingerprint = key.fingerprint();
+	ui.localKeyLabel->setText(fingerprint.left(8) + "..." + fingerprint.right(8));
+	ui.localKeyLabel->setToolTip(fingerprint);
+}
+
 void MainWindow::onTrustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers) {
 	ui.trustedPeerList->clear();
 	trustedPeerKeys.clear();
@@ -536,10 +542,7 @@ void MainWindow::refreshAllWidgets() {
 		QDBusReply<QString> nameReply = dbusNetwork.call("getPeerName");
 		ui.localNameLabel->setText(nameReply.value());
 		QDBusReply<QString> keyReply = dbusNetwork.call("getLocalKey");
-		PublicKey key = PublicKey::fromPEM(keyReply.value());
-		QString fingerprint = key.fingerprint();
-		ui.localKeyLabel->setText(fingerprint.left(8) + "..." + fingerprint.right(8));
-		ui.localKeyLabel->setToolTip(fingerprint);
+		onPublicKeyChanged(keyReply.value());
 		QDBusReply<int> intReply = dbusService.call("getMaxThreadCount");
 		int maxThreadCount = intReply.value();
 		intReply = dbusService.call("getCurrentThreadCount");
