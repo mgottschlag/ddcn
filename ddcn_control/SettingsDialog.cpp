@@ -25,77 +25,162 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "SettingsDialog.h"
+#include "../ddcn_crypto/PublicKey.h"
 
 #include <QDBusInterface>
 #include <QDBusReply>
+#include <QInputDialog>
+#include <QMessageBox>
+#include <QThread>
+#include <QFileDialog>
 
-SettingsDialog::SettingsDialog() {
+SettingsDialog::SettingsDialog()
+		: dbusService("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService"),
+		dbusNetwork("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork"),
+		peerNameChanged(false), threadCountChanged(false), keyChanged(false),
+		bootstrappingChanged(false), endpointsChanged(false), compressionChanged(false),
+		readyForInput(false) {
 	ui.setupUi(this);
+}
+
+bool SettingsDialog::fetchSettings() {
+	// Check the connection to the service
+	if (!dbusService.isValid()) {
+		return false;
+	}
+	if (!dbusNetwork.isValid()) {
+		return false;
+	}
 	// Read current values
-	QDBusInterface serviceInterface("org.ddcn.service", "/CompilerService", "org.ddcn.CompilerService");
-	if (!serviceInterface.isValid()) {
-		return;
-	}
-	QDBusReply<int> intReply = serviceInterface.call("getMaxThreadCount");
+	QDBusReply<int> intReply = dbusService.call("getMaxThreadCount");
 	if (intReply.isValid()) {
-		oldThreadCount = intReply.value();
-		ui.threadCount->setValue(oldThreadCount);
+		ui.threadCount->setValue(intReply.value());
 	} else {
-		oldThreadCount = 0;
+		return false;
 	}
-	QDBusInterface networkInterface("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork");
-	if (!networkInterface.isValid()) {
-		return;
-	}
-	QDBusReply<QString> stringReply = networkInterface.call("getPeerName");
+	QDBusReply<QString> stringReply = dbusNetwork.call("getPeerName");
 	if (stringReply.isValid()) {
-		oldPeerName = stringReply.value();
-		peerName = oldPeerName;
-		ui.peerName->setText(oldPeerName);
+		ui.peerName->setText(stringReply.value());
 	} else {
-		ui.peerName->setText("unknown_peer");
+		return false;
 	}
-	stringReply = networkInterface.call("getKeyFingerprint");
+	stringReply = dbusNetwork.call("getLocalKey");
 	if (stringReply.isValid()) {
-		oldKeyFingerprint = stringReply.value();
-		keyFingerprint = oldKeyFingerprint;
-		ui.keyLabel->setText(oldKeyFingerprint);
+		PublicKey key = PublicKey::fromPEM(stringReply.value());
+		QString fingerprint = key.fingerprint();
+		ui.keyLabel->setText(fingerprint.left(8) + "..." + fingerprint.right(8));
+		ui.keyLabel->setToolTip(fingerprint);
 	} else {
-		ui.keyLabel->setText("unknown_key");
+		return false;
 	}
+	QDBusReply<bool> boolReply = dbusNetwork.call("getCompression");
+	if (boolReply.isValid()) {
+		ui.useCompression->setChecked(boolReply.value());
+	} else {
+		return false;
+	}
+	// TODO: Bootstrapping, endpoints
+	// Everything has been set up, so we can accept signals now
+	readyForInput = true;
+	return true;
 }
-
-bool SettingsDialog::isPeerNameChanged() {
-	return peerName != oldPeerName;
-}
-QString SettingsDialog::getPeerName() {
-	return peerName;
-}
-
-bool SettingsDialog::isThreadCountChanged() {
-	return threadCount != oldThreadCount;
-}
-int SettingsDialog::getThreadCount() {
-	return threadCount;
-}
-
-bool SettingsDialog::isKeyChanged() {
-	return keyFingerprint != oldKeyFingerprint;
-}
-QString SettingsDialog::getKey() {
-	return privateKey;
+bool SettingsDialog::writeSettings() {
+	// Check the connection to the service
+	if (!dbusService.isValid()) {
+		return false;
+	}
+	if (!dbusNetwork.isValid()) {
+		return false;
+	}
+	if (threadCountChanged) {
+		dbusService.call("setMaxThreadCount", threadCount);
+	}
+	if (peerNameChanged) {
+		dbusNetwork.call("setPeerName", peerName);
+	}
+	if (keyChanged) {
+		dbusNetwork.call("setLocalKey", privateKey);
+	}
+	if (compressionChanged) {
+		dbusNetwork.call("setCompression", useCompression);
+	}
+	// TODO: Bootstrapping, endpoints
+	return true;
 }
 
 void SettingsDialog::generateKey() {
-	// TODO
+	bool ok;
+	int bits = QInputDialog::getInt(this, "Enter key length",
+			"Enter the length of the key in bits.", 2048, 0, 1 << 16, 1, &ok);
+	if (!ok) {
+		return;
+	}
+	PrivateKey privateKey = PrivateKey::generate(bits);
+	if (!privateKey.isValid()) {
+		QMessageBox::critical(this, "Error",
+				"Could not generate a key with this length.");
+		return;
+	}
+	keyChanged = true;
+	this->privateKey = privateKey.toPEM();
+	QString fingerprint = PublicKey(privateKey).fingerprint();
+	ui.keyLabel->setText(fingerprint.left(8) + "..." + fingerprint.right(8));
+	ui.keyLabel->setToolTip(fingerprint);
 }
 void SettingsDialog::importKey() {
-	// TODO
+	QString fileName = QFileDialog::getOpenFileName(this,
+			tr("Select a PEM encoded private key file"));
+	if (fileName == "") {
+		return;
+	}
+	PrivateKey privateKey = PrivateKey::load(fileName);
+	if (!privateKey.isValid()) {
+		QMessageBox::critical(this, "Error",
+				"Could not load the key. Are you sure it is both PEM encoded and a private key?");
+		return;
+	}
+	keyChanged = true;
+	this->privateKey = privateKey.toPEM();
+	QString fingerprint = PublicKey(privateKey).fingerprint();
+	ui.keyLabel->setText(fingerprint.left(8) + "..." + fingerprint.right(8));
+	ui.keyLabel->setToolTip(fingerprint);
 }
 void SettingsDialog::computeThreadCount() {
-	// TODO
+	ui.threadCount->setValue(QThread::idealThreadCount());
 }
 
-void SettingsDialog::onAccepted() {
-	// TODO
+void SettingsDialog::onBootstrappingChanged(const QString &bootstrapping) {
+	if (!readyForInput) {
+		return;
+	}
+	bootstrappingChanged = true;
+	this->bootstrapping = bootstrapping;
+}
+void SettingsDialog::onEndpointsChanged(const QString &endpoints) {
+	if (!readyForInput) {
+		return;
+	}
+	endpointsChanged = true;
+	this->endpoints = endpoints;
+}
+void SettingsDialog::onPeerNameChanged(const QString &peerName) {
+	if (!readyForInput) {
+		return;
+	}
+	peerNameChanged = true;
+	this->peerName = peerName;
+}
+void SettingsDialog::onCompressionChanged(bool useCompression) {
+	if (!readyForInput) {
+		return;
+	}
+	compressionChanged = true;
+	this->useCompression = useCompression;
+}
+void SettingsDialog::onThreadCountChanged(int threadCount) {
+	if (!readyForInput) {
+		return;
+	}
+	threadCountChanged = true;
+	this->threadCount = threadCount;
 }

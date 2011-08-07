@@ -82,12 +82,14 @@ private slots:
 		ui.labelIncomingJobs->setText(QString::number(noj));
 	}
 	void updateThreadCount() {
+		ui.threadCountLabel->setText(QString::number(this->maxThreads));
 		ui.workloadBar->setMaximum(this->maxThreads);
 		ui.workloadBar->setValue(this->currentThreads);
 	}
 	void onToolChainsChanged(QList<ToolChainInfo> toolChains) {
 		updateToolChainList(toolChains);
 	}
+	void onPublicKeyChanged(const QString &publicKey);
 	void onTrustedPeersChanged(const QList<TrustedPeerInfo> &trustedPeers);
 	void onTrustedGroupsChanged(const QList<TrustedGroupInfo> &trustedGroups);
 	void onGroupMembershipsChanged(const QList<GroupMembershipInfo> &groupMemberships);

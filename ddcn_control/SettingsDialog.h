@@ -28,6 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SETTINGSDIALOG_H_INCLUDED
 
 #include <QDialog>
+#include <QDBusInterface>
 
 #include "ui_SettingsDialog.h"
 
@@ -36,30 +37,38 @@ class SettingsDialog : public QDialog {
 public:
 	SettingsDialog();
 
-	bool isPeerNameChanged();
-	QString getPeerName();
-
-	bool isThreadCountChanged();
-	int getThreadCount();
-
-	bool isKeyChanged();
-	QString getKey();
+	bool fetchSettings();
+	bool writeSettings();
 private slots:
 	void generateKey();
 	void importKey();
 	void computeThreadCount();
-	void onAccepted();
+	void onBootstrappingChanged(const QString &bootstrapping);
+	void onEndpointsChanged(const QString &endpoints);
+	void onPeerNameChanged(const QString &peerName);
+	void onCompressionChanged(bool useCompression);
+	void onThreadCountChanged(int threadCount);
 private:
 	Ui::SettingsDialog ui;
 
-	QString oldPeerName;
-	int oldThreadCount;
-	QString oldKeyFingerprint;
+	QDBusInterface dbusService;
+	QDBusInterface dbusNetwork;
 
+	bool peerNameChanged;
 	QString peerName;
+	bool threadCountChanged;
 	int threadCount;
+	bool keyChanged;
 	QString keyFingerprint;
 	QString privateKey;
+	bool bootstrappingChanged;
+	QString bootstrapping;
+	bool endpointsChanged;
+	QString endpoints;
+	bool compressionChanged;
+	bool useCompression;
+
+	bool readyForInput;
 };
 
 #endif
