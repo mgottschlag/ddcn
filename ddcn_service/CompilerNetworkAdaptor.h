@@ -42,10 +42,6 @@ class CompilerNetworkAdaptor : public QDBusAbstractAdaptor {
 	           READ getPeerName
 	           WRITE setPeerName
 	           NOTIFY peerNameChanged)
-	Q_PROPERTY(bool encryption
-	           READ getEncryption
-	           WRITE setEncryption
-	           NOTIFY encryptionChanged)
 public:
 	/**
 	 * Creates a dbus adaptor for the compiler network.
@@ -55,9 +51,6 @@ public:
 public slots:
 	void setPeerName(QString peerName);
 	QString getPeerName();
-
-	void setEncryption(bool encryptionEnabled);
-	bool getEncryption();
 
 	void setCompression(bool compressionEnabled);
 	bool getCompression();
@@ -89,7 +82,6 @@ private slots:
 	// These slots just emit the corresponding signals of this class, they are
 	// used to forward the signals of the encapsulated class to dbus
 	void onPeerNameChanged(QString peerName);
-	void onEncryptionChanged(bool encryptionEnabled);
 	void onCompressionChanged(bool compressionEnabled);
 	void onLocalKeyChanged(const PrivateKey &privateKey);
 	void onBootstrapHintsChanged(const QString &bootstrapHints);
@@ -101,7 +93,6 @@ private slots:
 			NodeStatus nodeStatus, QStringList groupNames, QStringList groupKeys);
 signals:
 	void peerNameChanged(QString peerName);
-	void encryptionChanged(bool encryptionEnabled);
 	void compressionChanged(bool compressionEnabled);
 	void publicKeyChanged(QString publicKey);
 	void bootstrapHintsChanged(const QString &bootstrapHints);

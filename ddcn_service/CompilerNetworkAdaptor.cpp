@@ -35,10 +35,6 @@ CompilerNetworkAdaptor::CompilerNetworkAdaptor(CompilerNetwork *network)
 	        this,
 	        SLOT(onPeerNameChanged(QString)));
 	connect(network,
-	        SIGNAL(encryptionChanged(bool)),
-	        this,
-	        SLOT(onEncryptionChanged(bool)));
-	connect(network,
 	        SIGNAL(localKeyChanged(PrivateKey)),
 	        this,
 	        SLOT(onLocalKeyChanged(PrivateKey)));
@@ -73,13 +69,6 @@ void CompilerNetworkAdaptor::setPeerName(QString peerName) {
 }
 QString CompilerNetworkAdaptor::getPeerName() {
 	return network->getPeerName();
-}
-
-void CompilerNetworkAdaptor::setEncryption(bool encryptionEnabled) {
-	network->setEncryption(encryptionEnabled);
-}
-bool CompilerNetworkAdaptor::getEncryption() {
-	return network->getEncryption();
 }
 
 void CompilerNetworkAdaptor::setCompression(bool compressionEnabled) {
@@ -179,9 +168,6 @@ void CompilerNetworkAdaptor::queryNetworkStatus() {
 
 void CompilerNetworkAdaptor::onPeerNameChanged(QString peerName) {
 	emit peerNameChanged(peerName);
-}
-void CompilerNetworkAdaptor::onEncryptionChanged(bool encryptionEnabled) {
-	emit encryptionChanged(encryptionEnabled);
 }
 void CompilerNetworkAdaptor::onCompressionChanged(bool compressionEnabled) {
 	emit compressionChanged(compressionEnabled);
