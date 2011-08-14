@@ -34,8 +34,9 @@ int main(int argc, char **argv) {
 	qDBusRegisterMetaType<QList<ToolChainInfo> >();
 	// All our parameters are supposed to be gcc parameters, so do not pass any
 	// to Qt
-	// TODO: Actually only pass the first argument (program name)
-	QCoreApplication qtApp(argc, argv);
+	char *arg0 = argv[0];
+	int newArgc = 1;
+	QCoreApplication qtApp(newArgc, &arg0);
 
 	// Start the application
 	Application app;

@@ -103,7 +103,6 @@ bool CompilerService::removeJob(Job *job) {
 }
 
 void CompilerService::manageJobs() {
-	//TODO DEBUG: qCritical("Managing gestartet");
 	manageLocalJobs();
 	manageOutgoingJobs();
 }
@@ -133,7 +132,6 @@ void CompilerService::manageLocalJobs() {
 }
 
 void CompilerService::executeFirstJobFromList(QList<Job*> *jobList) {
-		//TODO DEBUG:qCritical("executeFirstJobFromList");
 		Job *job = jobList->first();
 		jobList->removeFirst();
 		executeJobLocally(job);
@@ -141,7 +139,6 @@ void CompilerService::executeFirstJobFromList(QList<Job*> *jobList) {
 
 
 void CompilerService::executeJobLocally(Job* job) {
-	//TODO DEBUG:qCritical("executeJobLocally");
 	job->execute();
 	setCurrentThreadCount(this->currentThreadCount + 1);
 }
@@ -229,7 +226,6 @@ bool CompilerService::isToolChainAvailable(ToolChain target) {
 
 // PRIVATE SLOTS
 void CompilerService::onLocalCompileFinished(Job* job) {
-	//TODO DEBUG:qCritical("Compiler finished");
 	emit localJobCompilationFinished(job);
 	if (!job->wasDelegated()) {
 		emit numberOfJobsInLocalQueueChanged(this->localJobQueue.count());
@@ -266,7 +262,6 @@ void CompilerService::onOutgoingJobCancelled(Job *job) {
 unsigned int CompilerService::computeFreeLocalSlotCount() {
 	// free slots = 2*max threads - active jobs, so that every thread has one
 	// more job in the queue
-	//TODO is this correct?
 	return std::max(maxThreadCount - localJobQueue.size() - remoteJobQueue.size(), 0);
 }
 

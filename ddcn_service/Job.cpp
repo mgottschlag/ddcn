@@ -107,7 +107,6 @@ void Job::execute() {
 		// We do not need to set the output files here as they need to be in the
 		// same directory and have the same name as the input files
 		assert(outputFiles.count() == inputFiles.count());
-		// TODO: Check file names in debug builds via assert
 	} else {
 		parameters = fullParameters;
 	}
@@ -123,7 +122,6 @@ void Job::execute() {
 		this,
 		SLOT(onExecuteError(QProcess::ProcessError))
 	);
-	//TODO DEBUG:qCritical("Start Compiling");
 	gccProcess->setWorkingDirectory(this->workingDir);
 	gccProcess->setProcessChannelMode(QProcess::SeparateChannels);
 	gccProcess->start(toolChain.getPath(language), parameters);

@@ -96,31 +96,29 @@ JobResult CompilerServiceAdaptor::executeJob(QStringList parameters,
 	ToolChain toolChainInfo;
 	for (int i = 0; i < toolChains.size(); i++) {
 		if (toolChains[i].getVersion() == toolChain) {
-			// TODO: Rather pass the whole ToolChain class here so that the job
-			// can get the right filename for the language (gcc/g++)?
 			toolChainInfo = toolChains[i];
 			break;
 		}
 	}
-	// TODO: Error checking - toolchain unsupported?
-	//TODO DEBUG:qCritical("DBus anfrage");
+	// Error checking - toolchain unsupported?
+	if (toolChainInfo.getPath() == "") {
+		JobResult result;
+		result.stderr = QString("Error: ddcn: Unsupported toolchain.").toAscii();
+		result.returnValue = -1;
+		return result;
+	}
+	// Create a job
 	ParameterParser parser(parameters);
-	//TODO DEBUG:qCritical("Parser durch");
 	Job *job = new Job(parser.getInputFiles(), parser.getOutputFiles(),
 	                   parser.getOriginalParameters(),
 	                   parser.getPreprocessingParameters(),
 	                   parser.getCompilerParameters(),
 	                   toolChainInfo, workingPath, false, parser.isDelegatable(),
 	                   stdinData, language);
-	// TODO: Language
-	//TODO DEBUG:qCritical("job erzeugt");
 	message.setDelayedReply(true);
-	//TODO DEBUG:qCritical("setDelayedReply");
 	QDBusMessage *dBusMessage = new QDBusMessage(message.createReply());
-	//TODO DEBUG:qCritical("Reply created");
 	this->jobDBusMessageMap.insert(job, dBusMessage);
 
-	//TODO DEBUG:qCritical("DBus anfrage bearbeitet");
 	service->addJob(job);
 	return JobResult();
 }

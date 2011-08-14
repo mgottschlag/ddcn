@@ -51,8 +51,6 @@ public:
 	ariba::ServiceID getServiceId() {
 		return serviceId;
 	}
-
-	static ariba::ServiceID getServiceIdFromPublicKey(PublicKey publicKey);
 private:
 	int refCount;
 	ariba::ServiceID serviceId;
