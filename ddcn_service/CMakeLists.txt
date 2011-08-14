@@ -25,7 +25,6 @@ set(SRC
 	Job.cpp
 	DBusStructs.cpp
 	NetworkInterface.cpp
-	McpoGroup.cpp
 	TemporaryFile.cpp
 	ToolChain.cpp
 	BootstrapConfig.cpp

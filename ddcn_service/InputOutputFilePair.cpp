@@ -27,6 +27,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "InputOutputFilePair.h"
 #include <QFile>
 #include <QIODevice>
+#include <cassert>
 
 InputOutputFilePair::InputOutputFilePair(QString inputExtension,
 										 QString outputExtension, QString templateName) {
@@ -46,8 +47,12 @@ void InputOutputFilePair::createTemporaryFiles() {
 	for (int i = 0; i < 2; i++) {
 		QFile *file = new QFile(this->filename + this->extensions[i]);
 		if (file->open(QIODevice::WriteOnly)) {
-			//TODO what in case it does not open?
 			file->close();
+		} else {
+			// We previously checked that the file does not exist, the
+			// template is specific to ddcn and there is only one ddcn service
+			// supposed to be running, so just crash here
+			assert(false);
 		}
 	}
 }
@@ -63,7 +68,6 @@ QString InputOutputFilePair::generateFilename(QString templateName) {
 }
 
 QString InputOutputFilePair::randomize() {
-	//TODO Returns a value between 0 and RAND_MAX (defined in <cstdlib> and <stdlib.h>)
 	return QString::number(qrand() % 1000000);
 }
 

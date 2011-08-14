@@ -91,6 +91,5 @@ void NetworkNode::onHandshakeComplete() {
 	} else {
 		publicKey = cert.getPublicKey();
 	}
-	// TODO: Peer name
 	emit connectionReady(this);
 }

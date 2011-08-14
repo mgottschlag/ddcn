@@ -28,9 +28,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ParameterParser::ParameterParser(const QStringList &rawParameters) {
 	parse(rawParameters);
-	/*qCritical("Parser, input: %d", this->inputFiles.count());
-	qCritical("Parser, compile parameter: %d", this->compilerParameters.count());
-	qCritical("Parser, perProParameter: %d", this->preprocessingParameters.count());*/
 }
 ParameterParser::ParameterParser() : delegatable(false) {
 }
@@ -92,6 +89,12 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 			outputFiles.append(rawParameters[i]);
 		} else if (parameter == "-c") {
 			compilerParameters.append(parameter);
+		} else if (parameter == "-x") {
+			// Do not delegate jobs where we have to store file types per file
+			// TODO: This could easily be implemented
+			delegatable = false;
+			preprocessingParameters.append(parameter);
+			compilerParameters.append(parameter);
 		} else if (parameter == "-") {
 			// Do not delegate job which reads from stdin
 			// TODO: This can easily be implemented
@@ -127,7 +130,6 @@ void ParameterParser::parse(const QStringList &rawParameters) {
 			preprocessingParameters.append(parameter);
 		} else if (parameter.at(0) == '-'){
 			// TODO: Other parameters which do not have any "-" in front of them
-			// TODO: File types
 			preprocessingParameters.append(parameter);
 			compilerParameters.append(parameter);
 		} else {

@@ -181,7 +181,7 @@ void CompilerNetwork::addTrustedGroup(QString name, const PublicKey &publicKey) 
 	TrustedGroup *trustedGroup = new TrustedGroup(name, publicKey);
 	trustedGroups.append(trustedGroup);
 	// Join the group
-	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(publicKey);
+	ariba::ServiceID serviceId(publicKey.hash());
 	trustedGroup->setMcpoGroup(network->joinGroup(serviceId));
 	saveSettings();
 	emit trustedGroupsChanged(trustedGroups);
@@ -209,7 +209,7 @@ void CompilerNetwork::addGroupMembership(QString name, const PrivateKey &private
 	GroupMembership *groupMembership = new GroupMembership(name, privateKey);
 	groupMemberships.append(groupMembership);
 	// Join the group
-	ariba::ServiceID serviceId = McpoGroup::getServiceIdFromPublicKey(privateKey);
+	ariba::ServiceID serviceId(PublicKey(privateKey).hash());
 	groupMembership->setMcpoGroup(network->joinGroup(serviceId));
 	saveSettings();
 	emit groupMembershipsChanged(groupMemberships);
@@ -623,7 +623,7 @@ void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	stream << getPeerName();
 	foreach (GroupMembership *groupMembership, groupMemberships) {
 		stream << groupMembership->getName();
-		QByteArray key = groupMembership->getPrivateKey().toDER();
+		QByteArray key = PublicKey(groupMembership->getPrivateKey()).toDER();
 		stream << key;
 	}
 	Packet packet = Packet::fromData(PacketType::NodeStatus, packetData);
