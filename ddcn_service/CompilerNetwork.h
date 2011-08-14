@@ -279,6 +279,15 @@ public:
 	void setToolChains(QList<ToolChain> toolChains) {
 		this->toolChains = toolChains;
 	}
+
+	/**
+	 * Updates the statistics which are sent out when another peer queries the
+	 * node status of this peer.
+	 */
+	void updateStatistics(unsigned int maxThreads, unsigned int currentThreads) {
+		this->maxThreads = maxThreads;
+		this->currentThreads = currentThreads;
+	}
 private slots:
 	void onPeerConnected(NetworkNode *node);
 	void onPeerDisconnected(NetworkNode *node);
@@ -383,6 +392,10 @@ private:
 	QSettings settings;
 
 	BootstrapConfig bootstrapConfig;
+
+	// Statistics which are sent with NodeStatus packets
+	unsigned int maxThreads;
+	unsigned int currentThreads;
 };
 
 #endif

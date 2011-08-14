@@ -28,7 +28,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 		compressionEnabled(true), freeLocalSlots(0), lastJobId(0),
-		settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
+		settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn"),
+		maxThreads(0), currentThreads(0) {
 	// Load peer name and public key from configuration
 	if (!settings.value("name").isValid()) {
 		settings.setValue("name", "ddcn_node");
@@ -610,11 +611,10 @@ void CompilerNetwork::askForFreeSlots() {
 
 void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	NodeStatusPacket nodeStatus;
-	// TODO: Get real data
-	nodeStatus.maxThreads = qToBigEndian(2);
-	nodeStatus.currentThreads = qToBigEndian(1);
-	nodeStatus.delegatedJobs = qToBigEndian(0);
-	nodeStatus.remoteJobs = qToBigEndian(0);
+	nodeStatus.maxThreads = qToBigEndian(maxThreads);
+	nodeStatus.currentThreads = qToBigEndian(currentThreads);
+	nodeStatus.delegatedJobs = qToBigEndian(delegatedJobs.count());
+	nodeStatus.remoteJobs = qToBigEndian(incomingJobs.count());
 	nodeStatus.groupCount = qToBigEndian(groupMemberships.count());
 	QByteArray packetData;
 	packetData.resize(sizeof(nodeStatus));
