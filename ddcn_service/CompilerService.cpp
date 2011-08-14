@@ -40,20 +40,20 @@ CompilerService::CompilerService(CompilerNetwork *network)
 	loadToolChains();
 	// Connect network signals
 	connect(network, SIGNAL(receivedJob(Job*)), this, SLOT(onReceivedJob(Job*)));
-	connect(network, SIGNAL(remoteJobAborted(Job*)), this, SLOT(onRemoteJobAborted(Job*)));
 	connect(network, SIGNAL(outgoingJobCancelled(Job*)), this, SLOT(onOutgoingJobCancelled(Job*)));
+	connect(network, SIGNAL(incomingJobAborted(Job*)), this, SLOT(onIncomingJobAborted(Job*)));
 	network->setFreeLocalSlots(computeFreeLocalSlotCount());
 }
 
 void CompilerService::addJob(Job *job) {
 	if (job->isRemoteJob()) {
-		emit numberOfJobsInRemoteQueueChanged(this->remoteJobQueue.count());
 		connect(job,
 			SIGNAL(finished(Job*)),
 			this,
 			SLOT(onRemoteCompileFinished(Job*))
 		);
 		this->remoteJobQueue.append(job);
+		emit numberOfJobsInRemoteQueueChanged(this->remoteJobQueue.count());
 	} else {
 		// Local jobs shall trigger a signal which gets forwarded to the adaptor
 		connect(job,
@@ -245,8 +245,8 @@ void CompilerService::onReceivedJob(Job *job) {
 	qDebug("onReceivedJob()");
 	addJob(job);
 }
-void CompilerService::onRemoteJobAborted(Job *job) {
-	qDebug("onRemoteJobAborted()");
+void CompilerService::onIncomingJobAborted(Job *job) {
+	qDebug("onIncomingJobAborted()");
 	if (!remoteJobQueue.removeOne(job)) {
 		// If the job is not in the queue, this means that it is active right
 		// now. In this case we do not have to do anything as the job is killed
@@ -256,8 +256,8 @@ void CompilerService::onRemoteJobAborted(Job *job) {
 	}
 }
 void CompilerService::onOutgoingJobCancelled(Job *job) {
-	emit numberOfJobsInRemoteQueueChanged(this->remoteJobQueue.count());
-	this->remoteJobQueue.append(job);
+	this->localJobQueue.append(job);
+	emit numberOfJobsInLocalQueueChanged(this->localJobQueue.count());
 }
 
 unsigned int CompilerService::computeFreeLocalSlotCount() {

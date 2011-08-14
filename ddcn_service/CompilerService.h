@@ -192,7 +192,7 @@ private slots:
 	/**
 	 */
 	void onReceivedJob(Job *job);
-	void onRemoteJobAborted(Job *job);
+	void onIncomingJobAborted(Job *job);
     	void onLocalCompileFinished(Job *job);
     	void onRemoteCompileFinished(Job *job);
 	void onOutgoingJobCancelled(Job *job);
