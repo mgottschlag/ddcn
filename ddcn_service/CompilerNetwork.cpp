@@ -453,6 +453,70 @@ void CompilerNetwork::onPreprocessingFinished(Job *job) {
 		waitingPreprocessedJobs.append(job);
 	}
 }
+void CompilerNetwork::onOutgoingJobRequestTimeout() {
+	qWarning("OutgoingJobRequest had a timeout, check your network!");
+	// Get the request which triggered the timeout
+	int requestIndex = -1;
+	for (int i = 0; i < outgoingJobRequests.count(); i++) {
+		if (sender() == &outgoingJobRequests[i]->timeout) {
+			requestIndex = i;
+			break;
+		}
+	}
+	assert(requestIndex >= 0);
+	// Remove the request, as if it had been rejected
+	NetworkNode *node = outgoingJobRequests[requestIndex]->target;
+	delete outgoingJobRequests[requestIndex];
+	outgoingJobRequests.removeAt(requestIndex);
+	// Remove all free slots from this node as we probably keep running into timeouts
+	freeRemoteSlots.removeAll(node);
+	// Send new requests to other peers if necessary
+	createJobRequests();
+}
+void CompilerNetwork::onOutgoingJobTimeout() {
+	qWarning("OutgoingJob had a timeout, are you working with a slow network connection?");
+	// Get the job which triggered the timeout
+	int jobIndex = -1;
+	for (int i = 0; i < delegatedJobs.count(); i++) {
+		if (sender() == &delegatedJobs[i]->getTimer()) {
+			jobIndex = i;
+			break;
+		}
+	}
+	assert(jobIndex >= 0);
+	// Mark the job as cancelled
+	OutgoingJob *outgoing = delegatedJobs[jobIndex];
+	Job *job = outgoing->getJob();
+	emit outgoingJobCancelled(job);
+	// Delete the job
+	job->setOutgoingJob(NULL);
+	delete outgoing;
+	delegatedJobs.removeAt(jobIndex);
+}
+void CompilerNetwork::onIncomingJobRequestTimeout() {
+	qWarning("IncomingJobRequest had a timeout, are you working with a slow network connection?");
+	// Get the request which triggered the timeout
+	int requestIndex = -1;
+	for (int i = 0; i < incomingJobRequests.count(); i++) {
+		if (sender() == &incomingJobRequests[i]->timeout) {
+			requestIndex = i;
+			break;
+		}
+	}
+	assert(requestIndex >= 0);
+	// We did not execute the job
+	IncomingJobRequest *incoming = incomingJobRequests[requestIndex];
+	QByteArray packetData;
+	QDataStream stream(&packetData, QIODevice::WriteOnly);
+	stream << qToBigEndian(incoming->id);
+	// The job was not executed
+	stream << false;
+	Packet packet = Packet::fromData(PacketType::JobFinished, packetData);
+	network->send(incoming->source, packet);
+	// Remove the request
+	delete incomingJobRequests[requestIndex];
+	incomingJobRequests.removeAt(requestIndex);
+}
 
 TrustedPeer *CompilerNetwork::getTrustedPeer(const PublicKey &publicKey) {
 	// TODO: Way too slow
@@ -833,10 +897,13 @@ void CompilerNetwork::createJobRequests() {
 		}
 		qDebug("createJobRequests: Sending job request.");
 		// Create request
-		// TODO: The request needs a timeout so that we do not wait forever
 		OutgoingJobRequest *request = new OutgoingJobRequest;
 		request->target = target;
 		request->id = generateJobId();
+		// A timeout is installed so that we do not wait forever
+		connect(&request->timeout, SIGNAL(timeout()), this, SLOT(onOutgoingJobRequestTimeout()));
+		request->timeout.setSingleShot(true);
+		request->timeout.start(15000);
 		outgoingJobRequests.append(request);
 		Packet packet(PacketType::JobRequest, qToBigEndian(request->id));
 		network->send(request->target, packet);
@@ -868,10 +935,13 @@ void CompilerNetwork::onIncomingJobRequest(NetworkNode *node, const Packet &pack
 		return;
 	}
 	// Create an incoming job request
-	// TODO: Create a timeout so that we do not wait forever
 	IncomingJobRequest *request = new IncomingJobRequest;
 	request->source = node;
 	request->id = id;
+	connect(&request->timeout, SIGNAL(timeout()), this, SLOT(onIncomingJobRequestTimeout()));
+	request->timeout.setSingleShot(true);
+	// Fairly high timeout interval as we have to wait for the job data
+	request->timeout.start(60000);
 	incomingJobRequests.append(request);
 	// Send a positive reply
 	Packet reply(PacketType::JobRequestAccepted, qToBigEndian(id));
@@ -915,7 +985,7 @@ void CompilerNetwork::onJobRequestAccepted(NetworkNode *node, const Packet &pack
 		}
 	}
 	if (!requestFound) {
-		qWarning("onJobRequestAccepted: Received unknown job id.");
+		qWarning("onJobRequestAccepted: Received unknown job id (removed because of a timeout?).");
 	}
 }
 void CompilerNetwork::onJobRequestRejected(NetworkNode *node, const Packet &packet) {
@@ -1041,9 +1111,28 @@ void CompilerNetwork::onJobData(NetworkNode *node, const Packet &packet) {
 }
 void CompilerNetwork::onJobDataReceived(NetworkNode *node, const Packet &packet) {
 	qDebug("onJobDataReceived");
+	unsigned int id = qFromBigEndian(*packet.getPayload<unsigned int>());
 	// Restart outgoing job timeout (we can wait longer for actual compilation
 	// than for receiving the job data)
-	// TODO
+	OutgoingJob *outgoing = NULL;
+	for (int i = 0; i < delegatedJobs.size(); i++) {
+		if (delegatedJobs[i]->getTargetPeer() == node && delegatedJobs[i]->getId() == id) {
+			outgoing = delegatedJobs[i];
+			break;
+		}
+	}
+	if (outgoing == NULL) {
+		qWarning("onJobDataReceived(): Invaild job id.");
+		return;
+	}
+	connect(&outgoing->getTimer(), SIGNAL(timeout()), this, SLOT(onOutgoingJobRequestTimeout()));
+	outgoing->getTimer().setSingleShot(true);
+	// This time we choose a longer interval as compiling might take some time
+	// for large files
+	// TODO: There still might be files which take longer than this, at least
+	// with C++ and complex templates - do we have to care about these
+	// pathologic cases? No real project should hit this
+	outgoing->getTimer().start(120000);
 }
 void CompilerNetwork::onJobFinished(NetworkNode *node, const Packet &packet) {
 	qDebug("onJobFinished");
@@ -1248,6 +1337,9 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	network->send(request->target, packet);
 	// Store outgoing job info
 	OutgoingJob *outgoing = new OutgoingJob(request->target, job, request->id);
+	connect(&outgoing->getTimer(), SIGNAL(timeout()), this, SLOT(onOutgoingJobRequestTimeout()));
+	outgoing->getTimer().setSingleShot(true);
+	outgoing->getTimer().start(60000);
 	job->setOutgoingJob(outgoing);
 	delegatedJobs.append(outgoing);
 	qDebug("Delegated job (id: %d)", outgoing->getId());

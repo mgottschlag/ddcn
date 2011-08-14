@@ -296,6 +296,9 @@ private slots:
 		const Packet &packet);
 
 	void onPreprocessingFinished(Job *job);
+	void onOutgoingJobRequestTimeout();
+	void onOutgoingJobTimeout();
+	void onIncomingJobRequestTimeout();
 signals:
 	void peerNameChanged(QString peerName);
 	void compressionChanged(bool compressionEnabled);
@@ -309,7 +312,6 @@ signals:
 	void incomingJobAborted(Job *job);
 	void nodeStatusChanged(QString name, QString publicKey, QString fingerPrint,
 			NodeStatus nodeStatus, QStringList groupNames, QStringList groupKeys);
-	// TODO: Not connected to anything yet
 	void outgoingJobCancelled(Job *job);
 private:
 	TrustedPeer *getTrustedPeer(const PublicKey &publicKey);
