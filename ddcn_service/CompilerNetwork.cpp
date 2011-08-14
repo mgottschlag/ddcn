@@ -330,8 +330,7 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	for (int i = incomingJobs.size() - 1; i >= 0; i--) {
 		if (incomingJobs[i]->getSourcePeer() == node) {
 			// Kill the job
-			// TODO: CompilerService does not yet react to this
-			emit remoteJobAborted(incomingJobs[i]->getJob());
+			emit incomingJobAborted(incomingJobs[i]->getJob());
 			// Delete the job
 			delete incomingJobs[i]->getJob();
 			delete incomingJobs[i];
@@ -1130,7 +1129,7 @@ void CompilerNetwork::onAbortJob(NetworkNode *node, const Packet &packet) {
 	for (int i = 0; i < incomingJobs.count(); i++) {
 		if (incomingJobs[i]->getSourcePeer() == node && incomingJobs[i]->getId() == id) {
 			// Kill the job
-			emit remoteJobAborted(incomingJobs[i]->getJob());
+			emit incomingJobAborted(incomingJobs[i]->getJob());
 			// Delete the job
 			delete incomingJobs[i]->getJob();
 			delete incomingJobs[i];
