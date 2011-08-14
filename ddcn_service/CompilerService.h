@@ -114,6 +114,7 @@ public:
 	void setMaxThreadCount(int count) {
 		this->saveMaxThreadCount(count);
 		network->setFreeLocalSlots(computeFreeLocalSlotCount());
+		network->updateStatistics(maxThreadCount, currentThreadCount);
 		emit maxThreadCountChanged(this->maxThreadCount);
 	}
 
@@ -262,13 +263,15 @@ private:
 	 */
     void setCurrentThreadCount(int count) {
         this->currentThreadCount = count;
+		network->updateStatistics(maxThreadCount, currentThreadCount);
         emit currentThreadCountChanged(this->currentThreadCount);
     }
 
     /**
-	 * Determines and sets the caculated ideal number of threads to be run on the loacal machine.
+	 * Loads the number of processes to use from the settings file, or if this
+	 * fails, computes it from the number of cores.
 	 */
-    void determineAndSetMaxThreadCount();
+    void loadMaxThreadCount();
 
 	/**
 	 * Returns the number of free slots.

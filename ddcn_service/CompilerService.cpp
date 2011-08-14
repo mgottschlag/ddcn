@@ -36,7 +36,7 @@ CompilerService::CompilerService(CompilerNetwork *network)
 		: settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn") {
 	this->network = network;
 	setCurrentThreadCount(0);
-	determineAndSetMaxThreadCount();
+	loadMaxThreadCount();
 	loadToolChains();
 	// Connect network signals
 	connect(network, SIGNAL(receivedJob(Job*)), this, SLOT(onReceivedJob(Job*)));
@@ -201,11 +201,12 @@ void CompilerService::saveToolChains()  {
 	this->settings.endArray();
 }
 
-void CompilerService::determineAndSetMaxThreadCount() {
+void CompilerService::loadMaxThreadCount() {
 	this->maxThreadCount = this->settings.value(this->settingMaxThreadCount, -1).toInt();
 	if (this->maxThreadCount <= 0) {
 		setMaxThreadCount(-1);
 	}
+	network->updateStatistics(maxThreadCount, currentThreadCount);
 }
 
 void CompilerService::saveMaxThreadCount(int count) {
