@@ -27,16 +27,20 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef JOBREQUEST_H_INCLUDED
 #define JOBREQUEST_H_INCLUDED
 
+#include <QTimer>
+
 class NetworkNode;
 
 struct IncomingJobRequest {
 	NetworkNode *source;
 	unsigned int id;
+	QTimer timeout;
 };
 
 struct OutgoingJobRequest {
 	NetworkNode *target;
 	unsigned int id;
+	QTimer timeout;
 };
 
 

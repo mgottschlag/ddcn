@@ -29,6 +29,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "NetworkNode.h"
 #include "Job.h"
+
+#include <QTimer>
+
 /**
  * Class contains information about an outgoing Job
  */
@@ -49,10 +52,15 @@ public:
 	unsigned int getId() {
 		return id;
 	}
+
+	QTimer &getTimer() {
+		return timer;
+	}
 private:
 	NetworkNode *targetPeer;
 	Job *job;
 	unsigned int id;
+	QTimer timer;
 };
 
 #endif
