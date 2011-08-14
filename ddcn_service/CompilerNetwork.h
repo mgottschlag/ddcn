@@ -52,6 +52,11 @@ public:
 	}
 
 	void append(const FreeCompilerSlots &freeSlots) {
+		if (freeSlotCount > 200) {
+			// Limit the slot count so that other peers cannot make this peer
+			// run low on memory
+			return;
+		}
 		if (freeSlots.slotCount == 0) {
 			return;
 		}

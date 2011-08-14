@@ -845,7 +845,6 @@ void CompilerNetwork::onGeneralNetworkResourcesAvailable(NetworkNode *node,
 	if (availableCount == 0) {
 		return;
 	}
-	// TODO: It is possible to DOS the client here by passing in a huge value
 	// This is not a proper fix as the peer can just send the packet repeatedly
 	if (availableCount > 16) {
 		availableCount = 16;
