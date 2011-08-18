@@ -1335,10 +1335,11 @@ void CompilerNetwork::delegateJob(Job *job, OutgoingJobRequest *request) {
 	stream << compressionEnabled;
 	stream << fileContent;
 	Packet packet = Packet::fromData(PacketType::JobData, packetData);
+	qDebug("Outgoing job size: %d bytes", packetData.size());
 	network->send(request->target, packet);
 	// Store outgoing job info
 	OutgoingJob *outgoing = new OutgoingJob(request->target, job, request->id);
-	connect(&outgoing->getTimer(), SIGNAL(timeout()), this, SLOT(onOutgoingJobRequestTimeout()));
+	connect(&outgoing->getTimer(), SIGNAL(timeout()), this, SLOT(onOutgoingJobTimeout()));
 	outgoing->getTimer().setSingleShot(true);
 	outgoing->getTimer().start(60000);
 	job->setOutgoingJob(outgoing);
