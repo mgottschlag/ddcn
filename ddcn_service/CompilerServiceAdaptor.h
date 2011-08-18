@@ -79,9 +79,9 @@ public slots:
 	 * @param parameters the parameters that will be passed on to the gcc/g++ compiler.
 	 * @param toolChain the toolChain that will used for compiling.
 	 * @param workingPath the direcotry in which the compiler was executed and the output files will be stored.
-	 * @param stdinData //TODO
-	 * @param language //TODO programming language?!
-	 * @param message //TODO
+	 * @param stdinData input parameters from the terminal.
+	 * @param language the programming language of the code to be compiled.
+	 * @param message dbus message
 	 * @return the result of an executed job.
 	 */
 	JobResult executeJob(QStringList parameters, QString toolChain,

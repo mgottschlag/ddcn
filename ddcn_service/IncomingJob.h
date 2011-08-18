@@ -31,22 +31,42 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "NetworkNode.h"
 #include "Job.h"
 /**
- * Class contains information about the available compiler versions
+ * Class represents a job that has been accepted from the network.
+ * Additionally, it contains informathin about the source peer and an unique id.
  */
 class IncomingJob {
 public:
+	/**Constructs a new incoming job.
+	 * @param sourcePeer the peer who delegated the job to the network.
+	 * @param job the job that has been delegated.
+	 * @param id the unique id used to identify the job.
+	 */
 	IncomingJob(NetworkNode *sourcePeer, Job *job, unsigned int id) {
 		this->sourcePeer = sourcePeer;
 		this->job = job;
 		this->id = id;
 	}
 
+	/**
+	 * Returns the peer that delegated the job to the network.
+	 * @return the peer that delegated the job to the network.
+	 */
 	NetworkNode *getSourcePeer() {
 		return sourcePeer;
 	}
+
+	/**
+	 * Returns the job that has been delegated to the network.
+	 * @return the job that has been delegated to the network.
+	 */
 	Job *getJob() {
 		return job;
 	}
+
+	/**
+	 * Returns the id used for the job's identification.
+	 * @return the id used for the job's identification.
+	 */
 	unsigned int getId() {
 		return id;
 	}
