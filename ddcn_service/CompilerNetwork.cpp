@@ -1124,7 +1124,7 @@ void CompilerNetwork::onJobDataReceived(NetworkNode *node, const Packet &packet)
 		qWarning("onJobDataReceived(): Invaild job id.");
 		return;
 	}
-	connect(&outgoing->getTimer(), SIGNAL(timeout()), this, SLOT(onOutgoingJobRequestTimeout()));
+	connect(&outgoing->getTimer(), SIGNAL(timeout()), this, SLOT(onOutgoingJobTimeout()));
 	outgoing->getTimer().setSingleShot(true);
 	// This time we choose a longer interval as compiling might take some time
 	// for large files
