@@ -92,6 +92,7 @@ public:
 	 * Returns the result of the job as JobResult object.
 	 * This method has to be called after recieving the finished signal.
 	 * @return the result of the job as JobResult object.
+	 */
 	JobResult getJobResult() {
 		return this->jobResult;
 	}
