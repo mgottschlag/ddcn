@@ -646,7 +646,9 @@ void CompilerNetwork::askForFreeSlots() {
 	// traffic generated
 	Packet packet(PacketType::QueryNetworkResources);
 	foreach (TrustedPeer *trustedPeer, trustedPeers) {
-		network->send(trustedPeer->getNetworkNode(), packet);
+		if (trustedPeer->getNetworkNode() != NULL) {
+			network->send(trustedPeer->getNetworkNode(), packet);
+		}
 	}
 	// The packet sent to the groups has to look different as we have to
 	// include the group key
