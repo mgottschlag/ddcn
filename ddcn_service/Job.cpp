@@ -157,6 +157,7 @@ void Job::onPreProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 	preprocessingResult.returnValue = exitCode;
 	if (exitCode != 0) {
 		// Do not continue if preprocessing failed
+		preprocessed = true;
 		emit preprocessingFinished(this);
 	} else {
 		this->preProcessListPosition++;
