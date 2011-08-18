@@ -84,6 +84,7 @@ private:
 	/**
 	 * Generates a random file name arround a given template.
 	 * @param the template to generate the file name arround.
+	 */
 	QString generateFilename(QString templateName);
 	void createTemporaryFiles();
 	QString randomize();
