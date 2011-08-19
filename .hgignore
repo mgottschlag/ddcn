@@ -1,5 +1,9 @@
 syntax: glob
 build
+docs/ddcn_service/html
+docs/UserDocumentation.aux
+docs/UserDocumentation.log
+docs/UserDocumentation.tex.backup
 syntax: regexp
 .*\.swp
 .*\..*~

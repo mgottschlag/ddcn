@@ -24,6 +24,27 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/**
+ * @mainpage ddcn_service
+ *
+ * @section about About
+ *
+ * The ddcn_service program sends and receives compiler jobs in the network and
+ * receives local jobs, additionally it executes jobs if the system is idle.
+ *
+ * @section structure Structure
+ *
+ * The system is built around two important classes, CompilerService and
+ * CompilerNetwork. The manages and executes the local jobs and jobs coming from
+ * the network while the latter implements the network protocol and
+ * sends/receives compiler jobs. A compiler job is encapsulated in a Job object,
+ * with additional information attached to it via OutgoingJob or IncomingJob
+ * objects if the job is executed on a different computer.
+ *
+ * The D-Bus interface is implemented in the classes ending with *Adaptor, that
+ * is, CompilerNetworkAdaptor and CompilerServiceAdaptor.
+ */
+
 #include "CompilerServiceAdaptor.h"
 #include "CompilerNetworkAdaptor.h"
 #include "DBusStructs.h"
