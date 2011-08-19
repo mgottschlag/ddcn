@@ -544,10 +544,10 @@ void MainWindow::refreshAllWidgets() {
 		QDBusReply<QString> keyReply = dbusNetwork.call("getLocalKey");
 		onPublicKeyChanged(keyReply.value());
 		QDBusReply<int> intReply = dbusService.call("getMaxThreadCount");
-		int maxThreadCount = intReply.value();
+		maxThreads = intReply.value();
 		intReply = dbusService.call("getCurrentThreadCount");
 		int currentThreadCount = intReply.value();
-		ui.threadCountLabel->setText(QString::number(maxThreadCount));
+		ui.threadCountLabel->setText(QString::number(maxThreads));
 		ui.serviceActiveLabel->setText("yes");
 		intReply = dbusService.call("getNumberOfJobsInLocalQueue");
 		ui.labelLocalJobs->setText(QString::number(intReply.value()));
@@ -557,7 +557,7 @@ void MainWindow::refreshAllWidgets() {
 		ui.labelDelegatedJobs->setText("0");
 		// TODO
 		ui.labelCompletedJobs->setText("0");
-		ui.workloadBar->setMaximum(maxThreadCount);
+		ui.workloadBar->setMaximum(maxThreads);
 		ui.workloadBar->setValue(currentThreadCount);
 		QDBusReply<QList<TrustedPeerInfo> > trustedPeers = dbusNetwork.call("getTrustedPeers");
 		onTrustedPeersChanged(trustedPeers.value());
