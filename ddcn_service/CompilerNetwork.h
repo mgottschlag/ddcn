@@ -51,49 +51,10 @@ public:
 	FreeCompilerSlotList() : freeSlotCount(0), maxFreeSlotCount(0) {
 	}
 
-	void append(const FreeCompilerSlots &freeSlots) {
-		if (freeSlotCount > 200) {
-			// Limit the slot count so that other peers cannot make this peer
-			// run low on memory
-			return;
-		}
-		if (freeSlots.slotCount == 0) {
-			return;
-		}
-		slotList.append(freeSlots);
-		freeSlotCount += freeSlots.slotCount;
-		// As soon as the remote slot count grows, set the new maximum
-		maxFreeSlotCount = freeSlotCount;
-	}
-	NetworkNode *removeFirst(QString toolChain) {
-		while (!slotList.empty()) {
-			FreeCompilerSlots &freeSlots = slotList.last();
-			if (isCompatible(toolChain, freeSlots)) {
-				freeSlots.slotCount--;
-				freeSlotCount--;
-				// Take a copy as the reference is invalidated in removeLast()
-				NetworkNode *node = freeSlots.node;
-				if (freeSlots.slotCount == 0) {
-					slotList.removeLast();
-				}
-				return node;
-			} else {
-				freeSlotCount -= freeSlots.slotCount;
-				slotList.removeLast();
-			}
-		}
-		return NULL;
-	}
+	void append(const FreeCompilerSlots &freeSlots);
+	NetworkNode *removeFirst(QString toolChain);
 
-	void removeAll(NetworkNode *node) {
-		for (int i = 0; i < slotList.size(); i++) {
-			if (slotList[i].node == node) {
-				freeSlotCount -= slotList[i].slotCount;
-				slotList.removeAt(i);
-				i--;
-			}
-		}
-	}
+	void removeAll(NetworkNode *node);
 
 	unsigned int getFreeSlotCount() {
 		return freeSlotCount;
@@ -102,17 +63,7 @@ public:
 		return maxFreeSlotCount;
 	}
 private:
-	static bool isCompatible(QString toolChain, FreeCompilerSlots &freeSlots) {
-		if (freeSlots.toolChainVersions.contains(toolChain)) {
-			return true;
-		}
-		foreach (QString version, freeSlots.toolChainVersions) {
-			if (ToolChain::isCompatible(toolChain, version)) {
-				return true;
-			}
-		}
-		return false;
-	}
+	static bool isCompatible(QString toolChain, FreeCompilerSlots &freeSlots);
 
 	QList<FreeCompilerSlots> slotList;
 	unsigned int freeSlotCount;
