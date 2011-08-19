@@ -92,6 +92,9 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
 			"org.ddcn.CompilerNetwork", "nodeStatusChanged", this,
 			SLOT(onNodeStatusChanged(QString, QString, QString, NodeStatus, QStringList, QStringList)));
+	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
+			"org.ddcn.CompilerNetwork", "peerNameChanged", this,
+			SLOT(onPeerNameChanged(QString)));
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerService",
 			"org.ddcn.CompilerService", "currentThreadCountChanged", this,
 			SLOT(onCurrentThreadCountChanged(int)));
@@ -382,9 +385,12 @@ void MainWindow::updateStatusText() {
 	}
 }
 
+void MainWindow::onPeerNameChanged(const QString &name) {
+	ui.localNameLabel->setText(name);
+}
+
 void MainWindow::onNodeStatusChanged(QString name, QString publicKey, QString fingerprint,
 		NodeStatus nodeStatus, QStringList groupNames, QStringList groupKeys) {
-	qDebug("onNodeStatusChanged");
 	float load = (float)nodeStatus.currentThreads / nodeStatus.maxThreads;
 	// Add node to the group list
 	QStringList groupMembershipList;
