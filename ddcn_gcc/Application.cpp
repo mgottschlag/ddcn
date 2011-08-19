@@ -130,7 +130,6 @@ QStringList Application::fetchToolChainList() {
 	QList<ToolChainInfo> toolChainInfo = reply.value();
 	QStringList toolChains;
 	foreach(ToolChainInfo info, toolChainInfo) {
-		qDebug("Toolchain available: %s", info.version.toAscii().data());
 		toolChains.append(info.version);
 	}
 
@@ -154,7 +153,7 @@ int Application::executeJob(QString toolChain, QStringList parameters,
 	QDBusReply<JobResult> reply = QDBusConnection::sessionBus().call(msg,
 			QDBus::Block, 180000);
 	if (!reply.isValid()) {
-		qCritical(reply.error().message().toAscii().data());
+		qCritical("%s",reply.error().message().toAscii().data());
 		qCritical("Error: Could not call compiler service (executeJob()).");
 		return -1;
 	}
