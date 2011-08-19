@@ -219,6 +219,7 @@ void CompilerNetwork::removeTrustedPeer(QString name, const PublicKey &publicKey
 	foreach (TrustedPeer *trustedPeer, trustedPeers) {
 		if (trustedPeer->getPublicKey() == publicKey) {
 			if (trustedPeer->getNetworkNode() != NULL) {
+				freeRemoteSlots.removeAll(trustedPeer->getNetworkNode());
 				trustedPeer->getNetworkNode()->setTrustedPeer(NULL);
 			}
 			trustedPeers.removeOne(trustedPeer);
@@ -425,10 +426,8 @@ void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet)
 		case PacketType::JobRequestAccepted:
 			onJobRequestAccepted(node, packet);
 			break;
-			break;
 		case PacketType::JobRequestRejected:
 			onJobRequestRejected(node, packet);
-			break;
 			break;
 		case PacketType::JobData:
 			onJobData(node, packet);
@@ -463,7 +462,7 @@ void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet)
 			onNodeStatusChanged(node, packet);
 			break;
 		default:
-			qWarning("Warning: Unknown package type received.");
+			qWarning("Warning: Unknown package type received: %d.", packet.getType());
 			break;
 	}
 }
@@ -655,6 +654,8 @@ void CompilerNetwork::loadSettings() {
 	// Load group memberships
 	{
 		int size = this->settings.beginReadArray("groupMemberships");
+		qDebug("The settings file contains %d sets of group membership data.",
+				size);
 		QStringList groupMembershipNames;
 		QList<PrivateKey> groupMembershipKeys;
 		for (int i = 0; i < size; ++i) {
@@ -662,6 +663,8 @@ void CompilerNetwork::loadSettings() {
 			QString name = this->settings.value("name").toString();
 			PrivateKey key = PrivateKey::fromPEM(this->settings.value("key").toString());
 			if (!key.isValid()) {
+				qWarning("Error: Corrupt private group key for group \"%s\", removing the group.",
+						name.toAscii().data());
 				continue;
 			}
 			groupMembershipNames.append(name);
@@ -669,6 +672,7 @@ void CompilerNetwork::loadSettings() {
 		}
 		this->settings.endArray();
 		for (int i = 0; i < groupMembershipNames.size(); ++i) {
+			qDebug("Adding a group: %s", groupMembershipNames[i].toAscii().data());
 			addGroupMembership(groupMembershipNames[i], groupMembershipKeys[i]);
 		}
 	}
