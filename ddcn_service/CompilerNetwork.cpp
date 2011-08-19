@@ -122,7 +122,6 @@ CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 	        SIGNAL(groupMessageReceived(McpoGroup*, NetworkNode*, Packet)),
 	        this,
 	        SLOT(onGroupMessageReceived(McpoGroup*, NetworkNode*, Packet)));
-	// Load trusted peers/groups etc from file
 	loadSettings();
 }
 CompilerNetwork::~CompilerNetwork() {
@@ -405,6 +404,7 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	bool requestsRemoved = false;
 	for (int i = outgoingJobRequests.size() - 1; i >= 0; i--) {
 		if (outgoingJobRequests[i]->target == node) {
+			delete outgoingJobRequests[i];
 			outgoingJobRequests.removeAt(i);
 			requestsRemoved = true;
 		}
@@ -505,8 +505,10 @@ void CompilerNetwork::onPreprocessingFinished(Job *job) {
 	// Insert job into waitingPreprocessedJobs if it is in waitingPreprocessingJobs
 	// or delegate the job if possible
 	if (acceptedJobRequests.size() > 0) {
-		delegateJob(job, acceptedJobRequests.back());
+		OutgoingJobRequest *request = acceptedJobRequests.back();
+		delegateJob(job, request);
 		acceptedJobRequests.removeLast();
+		delete request;
 	} else {
 		waitingPreprocessedJobs.append(job);
 	}
@@ -1034,6 +1036,9 @@ void CompilerNetwork::onJobRequestAccepted(NetworkNode *node, const Packet &pack
 				// No job is ready, so wait until a job has been preprocessed
 				acceptedJobRequests.append(request);
 				outgoingJobRequests.removeAt(i);
+				// In this case, we can stop the timeout as we can be sure
+				// that the request will be valid for some time
+				request->timeout.stop();
 				return;
 			}
 			delegateJob(job, request);
