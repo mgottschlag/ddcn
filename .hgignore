@@ -4,6 +4,8 @@ docs/ddcn_service/html
 docs/UserDocumentation.aux
 docs/UserDocumentation.log
 docs/UserDocumentation.tex.backup
+docs/ddcn_gcc/html
+docs/ddcn_control/html
 syntax: regexp
 .*\.swp
 .*\..*~
