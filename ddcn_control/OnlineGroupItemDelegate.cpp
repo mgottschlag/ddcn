@@ -41,9 +41,9 @@ void OnlineGroupItemDelegate::paint(QPainter *painter,
 	if (index.column() == 0) {
 		bool trusted = index.data().toBool();
 		if (trusted) {
-			painter->drawPixmap(0, 0, trustedIcon);
+			painter->drawPixmap(0, option.rect.top(), trustedIcon);
 		} else {
-			painter->drawPixmap(0, 0, untrustedIcon);
+			painter->drawPixmap(0, option.rect.top(), untrustedIcon);
 		}
 	} else if (index.column() == 4) {
 		float load = index.data().toFloat();
