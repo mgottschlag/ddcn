@@ -1056,7 +1056,8 @@ void CompilerNetwork::onJobRequestAccepted(NetworkNode *node, const Packet &pack
 		}
 	}
 	if (!requestFound) {
-		qWarning("onJobRequestAccepted: Received unknown job id (removed because of a timeout?).");
+		// TODO: This is happening too often at the moment, better send less request
+		//qWarning("onJobRequestAccepted: Received unknown job id (removed because of a timeout?).");
 	}
 }
 void CompilerNetwork::onJobRequestRejected(NetworkNode *node, const Packet &packet) {
