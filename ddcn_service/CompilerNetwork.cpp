@@ -26,6 +26,64 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerNetwork.h"
 
+void FreeCompilerSlotList::append(const FreeCompilerSlots &freeSlots) {
+	if (freeSlotCount > 200) {
+		// Limit the slot count so that other peers cannot make this peer
+		// run low on memory
+		return;
+	}
+	if (freeSlots.slotCount == 0) {
+		return;
+	}
+	slotList.append(freeSlots);
+	freeSlotCount += freeSlots.slotCount;
+	// As soon as the remote slot count grows, set the new maximum
+	maxFreeSlotCount = freeSlotCount;
+}
+NetworkNode *FreeCompilerSlotList::removeFirst(QString toolChain) {
+	while (!slotList.empty()) {
+		unsigned int chosenIndex = qrand() % slotList.count();
+		FreeCompilerSlots &freeSlots = slotList[chosenIndex];
+		if (isCompatible(toolChain, freeSlots)) {
+			freeSlots.slotCount--;
+			freeSlotCount--;
+			// Take a copy as the reference is invalidated in removeLast()
+			NetworkNode *node = freeSlots.node;
+			if (freeSlots.slotCount == 0) {
+				slotList.removeAt(chosenIndex);
+			}
+			return node;
+		} else {
+			freeSlotCount -= freeSlots.slotCount;
+			slotList.removeAt(chosenIndex);
+		}
+	}
+	return NULL;
+}
+
+void FreeCompilerSlotList::removeAll(NetworkNode *node) {
+	for (int i = 0; i < slotList.size(); i++) {
+		if (slotList[i].node == node) {
+			freeSlotCount -= slotList[i].slotCount;
+			slotList.removeAt(i);
+			i--;
+		}
+	}
+}
+
+bool FreeCompilerSlotList::isCompatible(QString toolChain,
+                                        FreeCompilerSlots &freeSlots) {
+	if (freeSlots.toolChainVersions.contains(toolChain)) {
+		return true;
+	}
+	foreach (QString version, freeSlots.toolChainVersions) {
+		if (ToolChain::isCompatible(toolChain, version)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 CompilerNetwork::CompilerNetwork() : encryptionEnabled(true),
 		compressionEnabled(true), freeLocalSlots(0), lastJobId(0),
 		settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn"),
