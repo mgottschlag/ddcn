@@ -736,11 +736,13 @@ void CompilerNetwork::askForFreeSlots() {
 
 void CompilerNetwork::reportNodeStatus(NetworkNode *node) {
 	NodeStatusPacket nodeStatus;
-	nodeStatus.maxThreads = qToBigEndian(maxThreads);
-	nodeStatus.currentThreads = qToBigEndian(currentThreads);
-	nodeStatus.delegatedJobs = qToBigEndian(delegatedJobs.count());
-	nodeStatus.remoteJobs = qToBigEndian(incomingJobs.count());
-	nodeStatus.groupCount = qToBigEndian(groupMemberships.count());
+	nodeStatus.maxThreads = qToBigEndian((unsigned short)maxThreads);
+	nodeStatus.currentThreads = qToBigEndian((unsigned short)currentThreads);
+	// TODO: This is not displayed anywhere in the GUI yet anyways
+	nodeStatus.localJobs = 0;
+	nodeStatus.delegatedJobs = qToBigEndian((unsigned short)delegatedJobs.count());
+	nodeStatus.remoteJobs = qToBigEndian((unsigned short)incomingJobs.count());
+	nodeStatus.groupCount = qToBigEndian((unsigned short)groupMemberships.count());
 	QByteArray packetData;
 	packetData.resize(sizeof(nodeStatus));
 	memcpy(packetData.data(), &nodeStatus, sizeof(nodeStatus));
@@ -834,7 +836,7 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 	status.localJobs = qFromBigEndian(nodeStatus->localJobs);
 	status.remoteJobs = qFromBigEndian(nodeStatus->remoteJobs);
 	// Get the remaining data after the struct
-	unsigned int groupCount = nodeStatus->groupCount;
+	unsigned int groupCount = qFromBigEndian(nodeStatus->groupCount);
 	char *groupData = (char*)packet.getPayloadData() + sizeof(NodeStatusPacket);
 	QByteArray remaining(groupData, packet.getPayloadSize() - sizeof(NodeStatusPacket));
 	QDataStream stream(remaining);
@@ -855,6 +857,7 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 		groupKeys.append(key.toPEM());
 		groupNames.append(groupName);
 		if (stream.atEnd()) {
+			qWarning("onNodeStatusChanged: Too few group keys received.");
 			break;
 		}
 	}
