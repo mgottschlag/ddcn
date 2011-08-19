@@ -1,0 +1,78 @@
+
+  Dynamic Distributed Compiler Network
+ ======================================
+
+Dependencies:
+
+  The program depends on the following libraries which either have to be
+  installed system-wide or have to be in the build prefix passed to cmake:
+
+  - ariba (>=0.7)
+  - mcpo (>=0.5)
+  - Qt4
+  - OpenSSL (>=0.9.8)
+  
+  Additionally, to compile the project, gcc/g++ and cmake are required.
+
+Compiling:
+
+  The following steps will compile the project within the subdirectory build/,
+  this assumes that the current working directory is the directory where this
+  README is:
+
+    mkdir build
+    cd build
+    cmake ..
+    make
+
+  Optionally, you can install all executables system-wide by additionally
+  executing:
+  
+    sudo make install
+
+  If you do not want to install it system-wide you can install into a different
+  prefix by replacing the "cmake .." above with:
+
+    cmake .. -DCMAKE_PREFIX_PATH=/your/prefix
+
+  If you call cmake like this, it will also find libraries installed in that
+  prefix.
+
+Running:
+
+  To run the graphical interface, run:
+
+    build/bin/ddcn_control
+
+  To only start the service without any GUI, run:
+
+    build/bin/ddcn_service
+
+  (if you installed the programs system-wide, leave out the build/bin)
+
+  To compile a C file after the service has been started (directly or through
+  the GUI), run:
+  
+    build/bin/ddcn_gcc /path/to/the/file.c -o output_file
+
+  To compile a C++ file:
+
+    export PATH=/current/working/dir/build/bin
+	ddcn_gcc/ddcn_g++ /path/to/the/file.cpp -o output_file
+
+  If you are using this with a makefile generator like autotools or cmake, make
+  sure that both ddcn_gcc and ddcn_g++ are in your PATH, then set them as
+  CC/CXX programs.
+
+Documentation:
+
+  TODO: Links to user documentation, design documentation
+
+  Doxygen documentation can be generated with the Doxyfile files in the
+  subdirectories ddcn_service, ddcn_gcc and ddcn_control like this:
+
+    cd ddcn_service
+    doxygen
+
+  The resulting documentation is at docs/ddcn_service/html/index.html.
+
