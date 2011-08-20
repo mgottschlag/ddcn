@@ -149,7 +149,8 @@ QByteArray TLS::readOutgoing() {
 }
 
 static int tlsVerifyCallback(X509_STORE_CTX *context, void *userdata) {
-	// TODO: At least check whether we have a certificate
+	// The only thing we need to check is that the public key of this peer is
+	// valid, and this is done in NetworkNode
 	return 1;
 }
 
@@ -215,7 +216,6 @@ TLS::AcceptConnectState::List TLS::nonBlockingConnectAccept(int status) {
 		handshaken = true;
 		// Fetch remote certificate
 		CertificateData *certData = new CertificateData(SSL_get_peer_certificate(ssl));
-		// TODO: Check whetehr certificate is valid
 		peerCert = Certificate(certData);
 		return AcceptConnectState::Finished;
 	}
