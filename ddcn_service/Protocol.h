@@ -118,7 +118,7 @@ struct PacketType {
 		 * QueryGroupNetworkResources packet.
 		 */
 		GroupNetworkResourcesAvailable,
-		LastType = NodeStatus
+		LastType = GroupNetworkResourcesAvailable
 	};
 };
 
