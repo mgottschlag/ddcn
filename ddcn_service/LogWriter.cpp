@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cassert>
+#include <QStringList>
 
 LogWriter::LogWriter() : logStream(NULL) {
 	// This is a singleton, we need to implement it like this to ensure that
@@ -63,31 +64,34 @@ void LogWriter::clearLog() {
 
 void LogWriter::qtMessageHandler(QtMsgType type, const char *message) {
 	QDateTime dateTime = QDateTime::currentDateTime();
-	QString dateTimeString = dateTime.toString() + "\t";
-	QString text = dateTimeString;
+	QString prefix = dateTime.toString() + "\t";
+	QStringList lines = QString(message).split('\n');
 	switch (type) {
 	case QtDebugMsg:
-		text += QString("Debug\t%1\n").arg(message);
+		prefix += "Debug\t";
 		break;
 	case QtWarningMsg:
-		text += QString("Warning\t%1\n").arg(message);
+		prefix += "Warning\t";
 		break;
 	case QtCriticalMsg:
-		text += QString("Critical\t%1\n").arg(message);
+		prefix += "Critical\t";
 		break;
 	case QtFatalMsg:
-		text += QString("Fatal\t%1\n").arg(message);
+		prefix += "Fatal\t";
 		break;
 	}
 	QMutexLocker lock(&instance->logMutex);
-	std::cout << text.toAscii().data();
+	foreach (QString line, lines) {
+		std::cout << (prefix + line).toAscii().data() << std::endl;
+	}
 	if (!instance->logFile.isOpen()) {
 		return;
 	}
-	*instance->logStream << text;
+	foreach (QString line, lines) {
+		*instance->logStream << prefix << line << "\n";
+	}
 	instance->logStream->flush();
 	instance->logFile.flush();
-	std::flush(std::cout);
 	if (type == QtFatalMsg) {
 		std::abort();
 	}
