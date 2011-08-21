@@ -914,7 +914,7 @@ void CompilerNetwork::onGeneralNetworkResourcesAvailable(NetworkNode *node,
 	if (availableCount == 0) {
 		return;
 	}
-	// This is not a proper fix as the peer can just send the packet repeatedly
+	// This is not a proper fix as the peer can just send the paoutgoingJobRequestscket repeatedly
 	if (availableCount > 16) {
 		availableCount = 16;
 	}
@@ -1043,8 +1043,6 @@ void CompilerNetwork::onJobRequestAccepted(NetworkNode *node, const Packet &pack
 				// No job is ready, so wait until a job has been preprocessed
 				acceptedJobRequests.append(request);
 				outgoingJobRequests.removeAt(i);
-				// In this case, we can stop the timeout as we can be sure
-				// that the request will be valid for some time
 				request->timeout.stop();
 				return;
 			}
