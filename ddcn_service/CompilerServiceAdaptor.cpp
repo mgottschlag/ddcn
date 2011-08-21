@@ -26,6 +26,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CompilerServiceAdaptor.h"
 #include "ParameterParser.h"
+#include "LogWriter.h"
+
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QVariant>
@@ -144,6 +146,9 @@ int CompilerServiceAdaptor::getNumberOfJobsInLocalQueue() {
 }
 int CompilerServiceAdaptor::getNumberOfJobsInRemoteQueue() {
 	return service->getNumberOfJobsInRemoteQueue();
+}
+void CompilerServiceAdaptor::clearLog() {
+	LogWriter::get().clearLog();
 }
 
 void CompilerServiceAdaptor::localCompilationJobFinished(Job *job) {

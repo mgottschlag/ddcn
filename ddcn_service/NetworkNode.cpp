@@ -84,7 +84,7 @@ void NetworkNode::onIncomingDataAvailable() {
 }
 
 void NetworkNode::onHandshakeComplete() {
-	qCritical("Handshaken!");
+	qDebug("Handshaken!");
 	Certificate cert = tls.getPeerCertificate();
 	if (!cert.isValid()) {
 		qCritical("Remote cert is null!");

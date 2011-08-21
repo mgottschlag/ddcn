@@ -63,7 +63,6 @@ public:
 	 * @return the list of ToolChains.
 	 */
     QList<ToolChain> *getToolChains() {
-		qCritical("GetToolchains, %d", this->toolChains.count());
         return &this->toolChains;
     }
 
