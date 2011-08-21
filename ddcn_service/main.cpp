@@ -54,6 +54,15 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char **argv) {
 	QCoreApplication app(argc, argv);
+	// Create the settings directory if it does not exist
+	{
+		QSettings settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn");
+		QString settingsDir = QFileInfo(settings.fileName()).absolutePath();
+		QDir dir;
+		if (!dir.exists(settingsDir)) {
+			dir.mkpath(settingsDir);
+		}
+	}
 	// Register meta types
 	registerCustomDBusTypes();
 	qRegisterMetaType<ariba::utility::NodeID>();
