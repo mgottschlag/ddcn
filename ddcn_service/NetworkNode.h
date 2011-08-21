@@ -35,30 +35,67 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class TrustedPeer;
 
+/**
+ * Holds the information about the connection to another peer in the network.
+ */
 class NetworkNode : public QObject {
 	Q_OBJECT
 public:
+	/**
+	 * Constructor.
+	 */
 	NetworkNode(ariba::utility::NodeID nodeId, ariba::utility::LinkID linkId);
+	/**
+	 * Returns the public key of this peer. This key is always correct and has
+	 * been verified in the TLS handshake.
+	 */
 	PublicKey getPublicKey() {
 		return publicKey;
 	}
+	/**
+	 * Marks the peer as trusted.
+	 */
 	void setTrustedPeer(TrustedPeer *trustedPeer) {
 		this->trustedPeer = trustedPeer;
 	}
+	/**
+	 * Returns the TrustedPeer instance connected to this node or NULL when we
+	 * do not trust the peer.
+	 */
 	TrustedPeer *getTrustedPeer() {
 		return trustedPeer;
 	}
+	/**
+	 * Sends a packet to the peer. Use NetworkInterface::send() instead.
+	 */
 	void sendPacket(const Packet &packet);
 
+	/**
+	 * Returns the next expected serial number for the next packet from this
+	 * peer. This is used in NetworkInterface for some basic error detection.
+	 */
 	unsigned short getNextExpectedSerial() {
 		return ++lastExpectedSerial;
 	}
+	/**
+	 * Returns the next serial number for the next packet sent to this peer.
+	 * This is used in NetworkInterface for some basic error detection.
+	 */
 	unsigned short getNextOutgoingSerial() {
 		return ++lastOutgoingSerial;
 	}
 signals:
+	/**
+	 * Triggered when there is data which should be sent by NetworkInterface.
+	 */
 	void outgoingDataAvailable(NetworkNode *node);
+	/**
+	 * Triggered if a complete packet was received from the TLS connection.
+	 */
 	void packetReceived(NetworkNode *node, const Packet &packet);
+	/**
+	 * Triggered when the TLS stream is ready.
+	 */
 	void connectionReady(NetworkNode *node);
 private slots:
 	void onOutgoingDataAvailable();

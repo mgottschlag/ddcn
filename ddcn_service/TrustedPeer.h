@@ -33,25 +33,49 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class NetworkNode;
 
+/**
+ * Stores the information about a trusted peer.
+ *
+ * CompilerNetwork holds a list of these and reads/saves them from a file
+ */
 class TrustedPeer {
 public:
+	/**
+	 * Constructor. Called from CompilerNetwork::addTrustedPeer().
+	 */
 	TrustedPeer(QString name, const PublicKey &publicKey) : name(name),
 			publicKey(publicKey), node(NULL) {
 	}
 
+	/**
+	 * Sets the name of the trusted peer. This name is purely descriptive and
+	 * can be freely set by the service.
+	 */
 	void setName(QString name) {
 		this->name = name;
 	}
+	/**
+	 * Returns the name of the trusted peer.
+	 */
 	QString getName() {
 		return name;
 	}
+	/**
+	 * Returns the public key identifying the trusted peer.
+	 */
 	PublicKey getPublicKey() {
 		return publicKey;
 	}
 
+	/**
+	 * Sets the network node of this trusted peer when we have connected to it.
+	 */
 	void setNetworkNode(NetworkNode *node) {
 		this->node = node;
 	}
+	/**
+	 * Returns the network node of this peer or NULL if it is not online.
+	 */
 	NetworkNode *getNetworkNode() {
 		return node;
 	}

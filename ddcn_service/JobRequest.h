@@ -31,17 +31,24 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class NetworkNode;
 
+/**
+ * Stores information about a request from another peer to delegate jobs to this
+ * peer.
+ */
 struct IncomingJobRequest {
 	NetworkNode *source;
 	unsigned int id;
 	QTimer timeout;
 };
 
+/**
+ * Stores information about a request to another peer whether we can delegate
+ * jobs to that peer.
+ */
 struct OutgoingJobRequest {
 	NetworkNode *target;
 	unsigned int id;
 	QTimer timeout;
 };
-
 
 #endif

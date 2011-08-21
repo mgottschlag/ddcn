@@ -33,7 +33,15 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDBusMetaType>
 #include "Job.h"
 
+/*
+ * This class contains several functions/operators to be able to transmit
+ * custom structs via D-Bus. Do not forget to register them in main() when you
+ * add them here.
+ */
 
+/**
+ * Encapsulates the information about a TrustedPeer for D-Bus function calls.
+ */
 struct TrustedPeerInfo {
 	QString name;
 	QString publicKey;
@@ -45,6 +53,9 @@ Q_DECLARE_METATYPE(QList<TrustedPeerInfo>)
 QDBusArgument &operator<<(QDBusArgument &argument, const TrustedPeerInfo &info);
 const QDBusArgument &operator>>(const QDBusArgument &argument, TrustedPeerInfo &info);
 
+/**
+ * Encapsulates the information about a TrustedGroup for D-Bus function calls.
+ */
 struct TrustedGroupInfo {
 	QString name;
 	QString publicKey;
@@ -56,6 +67,9 @@ Q_DECLARE_METATYPE(QList<TrustedGroupInfo>)
 QDBusArgument &operator<<(QDBusArgument &argument, const TrustedGroupInfo &info);
 const QDBusArgument &operator>>(const QDBusArgument &argument, TrustedGroupInfo &info);
 
+/**
+ * Encapsulates the information about a GroupMembership for D-Bus function calls.
+ */
 struct GroupMembershipInfo {
 	QString name;
 	QString privateKey;
@@ -68,6 +82,9 @@ QDBusArgument &operator<<(QDBusArgument &argument, const GroupMembershipInfo &in
 const QDBusArgument &operator>>(const QDBusArgument &argument, GroupMembershipInfo &info);
 
 
+/**
+ * Encapsulates the information about a ToolChain for D-Bus function calls.
+ */
 struct ToolChainInfo {
 	QString path;
 	QString version;

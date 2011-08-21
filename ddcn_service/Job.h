@@ -33,6 +33,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "InputOutputFilePair.h"
 #include "ToolChain.h"
 
+/**
+ * Returns the result of a job as returned to ddcn_gcc via D-Bus.
+ */
 struct JobResult {
 	QByteArray stdout;
 	QByteArray stderr;
@@ -83,7 +86,7 @@ public:
 		return this->remoteJob;
 	}
 
-	
+
 	void setRemoteJob(bool isRemoteJob) {
 		this->remoteJob = isRemoteJob;
 	}
