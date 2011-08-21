@@ -53,6 +53,7 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	connect(&serviceStatusTimer, SIGNAL(timeout()), SLOT(pollServiceStatus()));
 	connect(&serviceTimeoutTimer, SIGNAL(timeout()), SLOT(serviceStartTimeout()));
 	connect(this, SIGNAL(serviceStatusChanged(bool)), SLOT(updateStatusText()));
+	connect(this, SIGNAL(serviceStatusChanged(bool)), SLOT(updateServiceActivationButton()));
 	// If the user right-clicks into the online peer/group lists, there shall
 	// be a context menu to trust selected peers/groups
 	ui.onlinePeerList->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -89,6 +90,10 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	ui.onlineGroupList->setColumnWidth(4, 40);
 	ui.onlineGroupList->setUniformRowHeights(true);
 	ui.onlineGroupList->setItemDelegate(&onlineGroupItemDelegate);
+
+	//update Buttons
+	updateServiceActivationButton();
+	
 	// We can already connect the signals here, even if the service is not yet
 	// running
 	QDBusConnection::sessionBus().connect("org.ddcn.service", "/CompilerNetwork",
@@ -436,6 +441,21 @@ void MainWindow::updateStatusText() {
 		statusLabel.setText("Service inactive.");
 	}
 }
+void MainWindow::updateServiceActivationButton() {
+	if (serviceActive) {
+		ui.actionStopService->setVisible(true);
+		ui.actionStartService->setDisabled(false);
+		ui.actionStartService->setVisible(false);
+		ui.actionStartService->setDisabled(true);
+	} else {
+		ui.actionStopService->setVisible(false);
+		ui.actionStartService->setDisabled(true);
+		ui.actionStartService->setVisible(true);
+		ui.actionStartService->setDisabled(false);
+	}
+	
+}
+
 
 void MainWindow::onPeerNameChanged(const QString &name) {
 	ui.localNameLabel->setText(name);

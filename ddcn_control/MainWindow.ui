@@ -514,7 +514,7 @@
   <action name="actionStartService">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/icons/icons/network-disconnect.png</normaloff>:/icons/icons/network-disconnect.png</iconset>
+     <normaloff>:/icons/icons/network-connect.png</normaloff>:/icons/icons/network-connect.png</iconset>
    </property>
    <property name="text">
     <string>Start service</string>
@@ -526,7 +526,7 @@
   <action name="actionStopService">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/icons/icons/network-connect.png</normaloff>:/icons/icons/network-connect.png</iconset>
+     <normaloff>:/icons/icons/network-disconnect.png</normaloff>:/icons/icons/network-disconnect.png</iconset>
    </property>
    <property name="text">
     <string>Stop service</string>
