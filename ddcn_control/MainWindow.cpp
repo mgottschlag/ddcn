@@ -501,7 +501,7 @@ void MainWindow::trustOnlineGroup() {
 	QString fingerprint = onlineGroupModel.getFingerprint(index);
 	// Let the user compare the fingerprint
 	QMessageBox::StandardButton button = QMessageBox::question(this, "Do you really want to trust this group?",
-			"The public key fingerprint (sha1) of this peer is \"" + fingerprint + "\". Is this the group you want to trust?",
+			"The public key fingerprint (sha1) of this group is \"" + fingerprint + "\". Is this the group you want to trust?",
 			QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 	if (button != QMessageBox::Yes) {
 		return;
