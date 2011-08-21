@@ -11,7 +11,7 @@ Dependencies:
   - mcpo (>=0.5)
   - Qt4
   - OpenSSL (>=0.9.8)
-  
+
   Additionally, to compile the project, gcc/g++ and cmake are required.
 
 Compiling:
@@ -27,7 +27,7 @@ Compiling:
 
   Optionally, you can install all executables system-wide by additionally
   executing:
-  
+
     sudo make install
 
   If you do not want to install it system-wide you can install into a different
@@ -52,13 +52,13 @@ Running:
 
   To compile a C file after the service has been started (directly or through
   the GUI), run:
-  
+
     build/bin/ddcn_gcc /path/to/the/file.c -o output_file
 
   To compile a C++ file:
 
     export PATH=/current/working/dir/build/bin
-	ddcn_gcc/ddcn_g++ /path/to/the/file.cpp -o output_file
+    ddcn_gcc/ddcn_g++ /path/to/the/file.cpp -o output_file
 
   If you are using this with a makefile generator like autotools or cmake, make
   sure that both ddcn_gcc and ddcn_g++ are in your PATH, then set them as
@@ -66,9 +66,20 @@ Running:
 
 Documentation:
 
-  TODO: Links to user documentation, design documentation
+  There is a user documentation in the docs/ directory, under
+  docs/UserDocumentation.pdf. If you have received this copy of ddcn directly
+  from mercurial, only the LaTeX sources are included, you have to build the PDF
+  through pdflatex:
 
-  Doxygen documentation can be generated with the Doxyfile files in the
+    cd docs
+    pdflatex UserDocumentation.tex
+
+  Additional docuimentation can be found under the following address, this
+  includes a short guide into the internal design of ddcn:
+
+    http://code.google.com/p/ddcn/
+
+  Internal doxygen documentation can be generated with the Doxyfile files in the
   subdirectories ddcn_service, ddcn_gcc and ddcn_control like this:
 
     cd ddcn_service
