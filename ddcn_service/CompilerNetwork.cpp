@@ -418,7 +418,7 @@ void CompilerNetwork::onPeerDisconnected(NetworkNode *node) {
 	freeRemoteSlots.removeAll(node);
 }
 void CompilerNetwork::onMessageReceived(NetworkNode *node, const Packet &packet) {
-	qDebug("Message received: %d", packet.getType());
+	qDebug("Message received: %d, size %d", packet.getType(), packet.getPayloadSize());
 	switch (packet.getType()) {
 		case PacketType::JobRequest:
 			onIncomingJobRequest(node, packet);
@@ -619,7 +619,7 @@ void CompilerNetwork::loadSettings() {
 				qCritical("Invalid trusted peer key");
 				continue;
 			}
-			qCritical("Adding trusted peer: %s", key.fingerprint().toAscii().data());
+			qDebug("Adding trusted peer: %s", key.fingerprint().toAscii().data());
 			// We have to store these values and cannot call addTrustedPeer()
 			// directly because it modifies the settings which we are currently
 			// reading
@@ -850,20 +850,21 @@ void CompilerNetwork::onNodeStatusChanged(NetworkNode *node, const Packet &packe
 	QStringList groupKeys;
 	QStringList groupNames;
 	for (unsigned int i = 0; i < groupCount; i++) {
+		if (stream.atEnd()) {
+			qWarning("onNodeStatusChanged: Too few group keys received.");
+			break;
+		}
 		QString groupName;
 		stream >> groupName;
 		QByteArray keyData;
 		stream >> keyData;
 		PublicKey key = PublicKey::fromDER(keyData);
 		if (!key.isValid()) {
+			qWarning("onNodeStatusChanged: Received an invalid key.");
 			break;
 		}
 		groupKeys.append(key.toPEM());
 		groupNames.append(groupName);
-		if (stream.atEnd()) {
-			qWarning("onNodeStatusChanged: Too few group keys received.");
-			break;
-		}
 	}
 	QString fingerprint = node->getPublicKey().fingerprint();
 	emit nodeStatusChanged(name, node->getPublicKey().toPEM(), fingerprint,
