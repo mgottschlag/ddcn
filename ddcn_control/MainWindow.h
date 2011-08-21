@@ -61,6 +61,8 @@ public slots:
 	void leaveGroup();
 	void createGroup();
 	void exportPrivateGroupKey();
+	void refreshLog();
+	void clearLog();
 private slots:
 	void pollServiceStatus();
 	void serviceStartTimeout();

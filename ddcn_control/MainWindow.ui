@@ -475,10 +475,7 @@
        <attribute name="title">
         <string>Log</string>
        </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <property name="margin">
-         <number>5</number>
-        </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="QListWidget" name="logList">
           <item>
@@ -501,6 +498,24 @@
            </property>
           </item>
          </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="clearLog">
+            <property name="text">
+             <string>Clear the log</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="refreshLog">
+            <property name="text">
+             <string>Refresh now</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -1235,6 +1250,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>refreshLog</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>refreshLog()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>497</x>
+     <y>479</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>clearLog</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>clearLog()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>172</x>
+     <y>479</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>serviceStatusChanged(bool)</signal>
@@ -1253,5 +1300,7 @@
   <slot>exportPrivateGroupKey()</slot>
   <slot>joinGroup()</slot>
   <slot>leaveGroup()</slot>
+  <slot>refreshLog()</slot>
+  <slot>clearLog()</slot>
  </slots>
 </ui>

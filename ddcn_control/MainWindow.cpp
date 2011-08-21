@@ -40,6 +40,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cassert>
 #include <QCloseEvent>
 #include <QMenu>
+#include <QSettings>
+#include <QFile>
 
 MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	dbusNetwork("org.ddcn.service", "/CompilerNetwork", "org.ddcn.CompilerNetwork"),
@@ -129,6 +131,7 @@ MainWindow::MainWindow() : currentThreads(0), maxThreads(0),
 	}
 	refreshAllWidgets();
 	pollServiceStatus();
+	refreshLog();
 }
 
 void MainWindow::startService() {
@@ -360,6 +363,55 @@ void MainWindow::exportPrivateGroupKey() {
 				"Could not save the private key of the group!");
 	}
 }
+void MainWindow::refreshLog() {
+	ui.logList->clear();
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn");
+	QString settingsDir = QFileInfo(settings.fileName()).absolutePath();
+	QString logFileName = settingsDir + "/ddcn.log";
+	QFile logFile(logFileName);
+	if (!logFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		qWarning("Could not open the log file.");
+		return;
+	}
+	while (!logFile.atEnd()) {
+		QString line = logFile.readLine();
+		if (line[line.count() - 1] == '\n') {
+			line.resize(line.count() - 1);
+		}
+		int firstTab = line.indexOf('\t');
+		int secondTab = line.indexOf('\t', firstTab + 1);
+		if (firstTab == -1 || secondTab == -1) {
+			if (line != "") {
+				ui.logList->addItem(line);
+			}
+			continue;
+		}
+		QString time = line.left(firstTab);
+		QString type = line.mid(firstTab  + 1, secondTab - firstTab - 1);
+		QString text = line.mid(secondTab + 1);
+		QListWidgetItem *item = new QListWidgetItem(time + ": " + text);
+		if (type == "Critical") {
+			item->setBackgroundColor(QColor(255, 128, 128));
+		} else if (type == "Warning") {
+			item->setBackgroundColor(QColor(255, 255, 128));
+		} else if (type == "Fatal") {
+			item->setBackgroundColor(QColor(255, 0, 0));
+		}
+		ui.logList->addItem(item);
+	}
+}
+void MainWindow::clearLog() {
+	qDebug("clearLog()");
+	QDBusReply<void> reply = dbusService.call("clearLog");
+	if (!reply.isValid()) {
+		// If the service is not running, delete the file manually
+		QSettings settings(QSettings::IniFormat, QSettings::UserScope, "ddcn", "ddcn");
+		QString settingsDir = QFileInfo(settings.fileName()).absolutePath();
+		QString logFileName = settingsDir + "/ddcn.log";
+		QFile logFile(logFileName);
+		logFile.remove();
+	}
+}
 
 void MainWindow::pollServiceStatus() {
 	bool active = dbusService.isValid();
@@ -573,7 +625,6 @@ void MainWindow::refreshAllWidgets() {
 		onGroupMembershipsChanged(groupMemberships.value());
 		QDBusReply<QList<ToolChainInfo> > toolChains = dbusService.call("getToolChains");
 		updateToolChainList(toolChains.value());
-		ui.logList->clear();
 		onlinePeerModel.clear();
 		onlineGroupModel.clear();
 	} else {
@@ -591,7 +642,6 @@ void MainWindow::refreshAllWidgets() {
 		ui.trustedGroupList->clear();
 		ui.groupMembershipList->clear();
 		ui.toolChainList->clear();
-		ui.logList->clear();
 		onlinePeerModel.clear();
 		onlineGroupModel.clear();
 	}
