@@ -63,10 +63,12 @@ public slots:
 	void exportPrivateGroupKey();
 	void refreshLog();
 	void clearLog();
+    void updateServiceActivationButton(bool);
 private slots:
 	void pollServiceStatus();
 	void serviceStartTimeout();
 	void updateStatusText();
+	void updateServiceActivationButton();
 	void onPeerNameChanged(const QString &name);
 	void onNodeStatusChanged(QString name, QString publicKey, QString fingerprint,
 			NodeStatus nodeStatus, QStringList groupNames, QStringList groupKeys);
