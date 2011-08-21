@@ -350,7 +350,7 @@ void CompilerNetwork::onDelegatedJobFinished(Job *job) {
 	}
 	incomingJobs.removeOne(incoming);
 	// Send job result
-	qDebug("Remote job finished (id: %d), %d (\"%s\")", incoming->getId(), result.returnValue, result.stderr.data());
+	qDebug("Remote job finished (id: %d), %d", incoming->getId(), result.returnValue);
 	QByteArray packetData;
 	QDataStream stream(&packetData, QIODevice::WriteOnly);
 	stream << qToBigEndian(incoming->getId());
