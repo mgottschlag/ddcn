@@ -40,25 +40,63 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QObject>
 
+/**
+ * Contains the number of free remote slots after the network node has adverised
+ * that it has less local jobs than it could execute.
+ */
 struct FreeCompilerSlots {
 	NetworkNode *node;
 	unsigned int slotCount;
 	QStringList toolChainVersions;
 };
 
+/**
+ * Manages a list containing the peers which have advertised free compiler slots
+ * on their machine.
+ */
 class FreeCompilerSlotList {
 public:
+	/**
+	 * Constructor. Creates an empty list.
+	 */
 	FreeCompilerSlotList() : freeSlotCount(0), maxFreeSlotCount(0) {
 	}
 
+	/**
+	 * Appends a number of free remote slots to the list.
+	 */
 	void append(const FreeCompilerSlots &freeSlots);
+	/**
+	 * Pops a random free remote slot from the list whose toolchain is
+	 * compatible to this toolchain version.
+	 *
+	 * This removes free slots with an incompatible toolchain from the list if
+	 * it encounters them.
+	 *
+	 * @param toolChain Tool chain version which has to be supported.
+	 * @return NetworkNode which has had a free remote slot available. Might be
+	 * NULL if no slot was found.
+	 */
 	NetworkNode *removeFirst(QString toolChain);
 
+	/**
+	 * Removes all slots advertised by a certain node, e.g. when the node
+	 * disconnects.
+	 */
 	void removeAll(NetworkNode *node);
 
+	/**
+	 * Returns the overall number of free remove slots in the list.
+	 */
 	unsigned int getFreeSlotCount() {
 		return freeSlotCount;
 	}
+	/**
+	 * Returns the number of slots after the last call to append(). This is used
+	 * to compute the amount of slots used after this peer has received the last
+	 * offer as a heuristic as to when this peer has to ask for remote slots
+	 * again.
+	 */
 	unsigned int getMaxFreeSlotCount() {
 		return maxFreeSlotCount;
 	}

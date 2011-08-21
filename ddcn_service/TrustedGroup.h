@@ -31,25 +31,52 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QString>
 
+/**
+ * Stores the information about a trusted group.
+ *
+ * CompilerNetwork holds a list of these and reads/saves them from a file
+ */
 class TrustedGroup {
 public:
+	/**
+	 * Constructor. Called from CompilerNetwork::addTrustedGroup().
+	 */
 	TrustedGroup(QString name, const PublicKey &publicKey) : name(name),
 			publicKey(publicKey), mcpoGroup(0) {
 	}
 
+	/**
+	 * Sets the name of the trusted group. This name is purely descriptive and
+	 * can be freely set by the service.
+	 */
 	void setName(QString name) {
 		this->name = name;
 	}
+	/**
+	 * Returns the name of the trusted group.
+	 */
 	QString getName() {
 		return name;
 	}
+	/**
+	 * Returns the public key identifying the trusted group.
+	 */
 	PublicKey getPublicKey() {
 		return publicKey;
 	}
 
+	/**
+	 * Sets the mcpo group which shall be used for this group.
+	 *
+	 * Multiple TrustedGroup and GroupMembership instances might share an
+	 * mcpo group as the mcpo identifier is a simple hash value.
+	 */
 	void setMcpoGroup(McpoGroup *group) {
 		mcpoGroup = group;
 	}
+	/**
+	 * Returns the mcpo group used for this group.
+	 */
 	McpoGroup *getMcpoGroup() {
 		return mcpoGroup;
 	}

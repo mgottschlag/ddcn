@@ -29,21 +29,65 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QStringList>
 
+/**
+ * Parses the parameters for a gcc call and splits them up into preprocessor
+ * and compiler parameter sets.
+ *
+ * For local compilation then the original parameters are used whereas for
+ * remote compilation only the compiler parameters are sent to prevent double
+ * evaluation of macros.
+ */
 class ParameterParser {
 public:
+	/**
+	 * Constructor. Parses the given set of parameters.
+	 *
+	 * @param rawParameters Set of parameters passed to gcc, shall not contain
+	 * the first parameter which contains the program name only.
+	 */
 	ParameterParser(const QStringList &rawParameters);
+	/**
+	 * Constructor. Creates empty parameter lists.
+	 */
 	ParameterParser();
 
+	/**
+	 * Parses a set of parameters. This is called implicitly from the
+	 * constructor which takes a string list parameter.
+	 */
 	void parse(const QStringList &rawParameters);
 
+	/**
+	 * Returns true if the job can be delegated to a different peer. This is the
+	 * case if only preprocessing is done or if linking shall be done, or if the
+	 * parser encounters parameters which are not yet supported.
+	 */
 	bool isDelegatable();
 
+	/**
+	 * Returns the original unaltered set of parameters.
+	 */
 	QStringList getOriginalParameters();
 
+	/**
+	 * Returns the set of parameters which shall be used for local preprocessing
+	 * before a job is sent out.
+	 */
 	QStringList getPreprocessingParameters();
+	/**
+	 * Returns the set of compiler parameters which shall be used by other
+	 * peers.
+	 */
 	QStringList getCompilerParameters();
 
+	/**
+	 * Returns a list with the input file names which have to be preprocessed.
+	 */
 	QStringList getInputFiles();
+	/**
+	 * Returns a list with the resulting output file names. The returning array
+	 * has to be as long as the array returned by getInputFiles().
+	 */
 	QStringList getOutputFiles();
 private:
 	bool delegatable;

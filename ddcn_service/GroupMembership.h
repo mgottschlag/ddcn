@@ -32,23 +32,52 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QString>
 
+/**
+ * Information about whether this peer is a member of another group.
+ *
+ * Group membership is realized via a shared private key. Only peers which have
+ * the key can pretend to be a member of a group. Of course this also means that
+ * the key must not get lost or passed to untrusted others.
+ */
 class GroupMembership {
 public:
+	/**
+	 * Constructor. Called from CompilerNetwork::addGroupMembership().
+	 */
 	GroupMembership(QString name, const PrivateKey &privateKey) : name(name),
 			privateKey(privateKey) {
 	}
+	/**
+	 * Sets the name of the group. This name is purely descriptive and can be
+	 * freely set by the service.
+	 */
 	void setName(QString name) {
 		this->name = name;
 	}
+	/**
+	 * Returns the name of the group.
+	 */
 	QString getName() {
 		return name;
 	}
+	/**
+	 * Returns the private key identifying the group.
+	 */
 	PrivateKey getPrivateKey() {
 		return privateKey;
 	}
+	/**
+	 * Sets the mcpo group which shall be used for this group.
+	 *
+	 * Multiple TrustedGroup and GroupMembership instances might share an
+	 * mcpo group as the mcpo identifier is a simple hash value.
+	 */
 	void setMcpoGroup(McpoGroup *mcpoGroup) {
 		this->mcpoGroup = mcpoGroup;
 	}
+	/**
+	 * Returns the mcpo group used for this group.
+	 */
 	McpoGroup *getMcpoGroup() {
 		return mcpoGroup;
 	}

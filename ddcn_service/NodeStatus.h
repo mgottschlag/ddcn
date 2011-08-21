@@ -27,11 +27,32 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef NODESTATUS_H_INCLUDED
 #define NODESTATUS_H_INCLUDED
 
+/**
+ * Contains the status of a single other node as shown in the network status
+ * list in ddcn_control.
+ */
 struct NodeStatus {
+	/**
+	 * Maximum threads this peer will use for jobs.
+	 */
 	int maxThreads;
+	/**
+	 * Number of threads which are currently in use.
+	 */
 	int currentThreads;
+	/**
+	 * Number of local jobs in the queue.
+	 *
+	 * @todo This is not implemented and probably will not be used. Remove this?
+	 */
 	int localJobs;
+	/**
+	 * Number of jobs this peer has delegated to other peers.
+	 */
 	int delegatedJobs;
+	/**
+	 * Number of jobs this peer has received from other peers right now.
+	 */
 	int remoteJobs;
 };
 

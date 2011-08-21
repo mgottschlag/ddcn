@@ -29,14 +29,33 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QSettings>
 
+/**
+ * Encapsulates access to the bootstrap and endpoint settings in the settings
+ * file.
+ */
 class BootstrapConfig {
 public:
+	/**
+	 * Constructor.
+	 */
 	BootstrapConfig();
 
+	/**
+	 * Sets the bootstrap hints.
+	 */
 	void setBootstrapHints(QString bootstrapHints);
+	/**
+	 * Returns the bootstrap hints.
+	 */
 	QString getBootstrapHints();
 
+	/**
+	 * Sets the end point settings.
+	 */
 	void setEndPoints(QString endPoints);
+	/**
+	 * Returns the end point settings.
+	 */
 	QString getEndPoints();
 private:
 	QSettings settings;
