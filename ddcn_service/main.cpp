@@ -51,6 +51,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QCoreApplication>
 #include <QDBusConnection>
+#include "LogWriter.h"
 
 int main(int argc, char **argv) {
 	QCoreApplication app(argc, argv);
@@ -62,6 +63,11 @@ int main(int argc, char **argv) {
 		if (!dir.exists(settingsDir)) {
 			dir.mkpath(settingsDir);
 		}
+	}
+	// Initialize an instance of the log writer
+	LogWriter logWriter;
+	if (!logWriter.init()) {
+		qCritical("Could not open the log file!");
 	}
 	// Register meta types
 	registerCustomDBusTypes();

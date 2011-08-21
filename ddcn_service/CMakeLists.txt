@@ -30,6 +30,7 @@ set(SRC
 	BootstrapConfig.cpp
 	NetworkNode.cpp
 	ParameterParser.cpp
+	LogWriter.cpp
 )
 
 set(MOC_H
