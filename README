@@ -84,7 +84,7 @@ Documentation:
     http://code.google.com/p/ddcn/
 
   Internal doxygen documentation can be generated with the Doxyfile files in the
-  subdirectories ddcn_service, ddcn_gcc and ddcn_control like this:
+  subdirectories ddcn_service, ddcn_crypto, ddcn_gcc and ddcn_control like this:
 
     cd ddcn_service
     doxygen
