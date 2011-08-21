@@ -6,6 +6,7 @@ docs/UserDocumentation.log
 docs/UserDocumentation.tex.backup
 docs/ddcn_gcc/html
 docs/ddcn_control/html
+docs/ddcn_crypto/html
 syntax: regexp
 .*\.swp
 .*\..*~

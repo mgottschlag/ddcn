@@ -32,18 +32,55 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class CertificateData;
 class TLS;
 
+/**
+ * Wraps around an OpenSSL certificate.
+ *
+ * This class only implements the absolutely necessary functionality as
+ * certificates are not used anywhere.
+ */
 class Certificate {
 public:
+	/**
+	 * Constructor. Creates an invalid certificate.
+	 */
 	Certificate();
+	/**
+	 * Copy constructor.
+	 */
 	Certificate(const Certificate &cert);
+	/**
+	 * Destructor.
+	 */
 	~Certificate();
 
+	/**
+	 * Creates a self-signed certificate from the given public key.
+	 *
+	 * The public key has to contain valid private key information.
+	 *
+	 * @param key Public key to be used for the certificate.
+	 * @return Certificate, might be invalid if the key is not also a valid
+	 * private key.
+	 */
 	static Certificate createSelfSigned(const PublicKey &key);
 
+	/**
+	 * Returns the public key of the certificate.
+	 *
+	 * @return Public key of the certificarte.
+	 */
 	PublicKey getPublicKey();
 
+	/**
+	 * Returns whether the certificate is valid.
+	 */
 	bool isValid();
 
+	/**
+	 * Assignment operator.
+	 *
+	 * This returns an invalid certificate if and only if cert is invalid.
+	 */
 	Certificate &operator=(const Certificate &cert);
 private:
 	Certificate(CertificateData *certData);
