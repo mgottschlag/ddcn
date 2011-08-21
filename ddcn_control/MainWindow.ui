@@ -279,47 +279,17 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
-         <widget class="QCheckBox" name="autoRefresh">
-          <property name="text">
-           <string>Periodically refresh every</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QSpinBox" name="refreshInterval">
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="value">
-           <number>10</number>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2">
-         <widget class="QLabel" name="label_8">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>seconds</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="3">
+        <item row="4" column="0" colspan="3">
          <widget class="QPushButton" name="refreshButton">
           <property name="text">
            <string>Refresh now</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0" colspan="4">
+        <item row="1" column="0" colspan="3">
          <widget class="QTreeView" name="onlinePeerList"/>
         </item>
-        <item row="3" column="0" colspan="4">
+        <item row="3" column="0" colspan="3">
          <widget class="QTreeView" name="onlineGroupList"/>
         </item>
        </layout>
@@ -831,38 +801,6 @@
     <hint type="destinationlabel">
      <x>339</x>
      <y>261</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MainWindow</sender>
-   <signal>serviceStatusChanged(bool)</signal>
-   <receiver>autoRefresh</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>334</x>
-     <y>263</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>108</x>
-     <y>479</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MainWindow</sender>
-   <signal>serviceStatusChanged(bool)</signal>
-   <receiver>refreshInterval</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>334</x>
-     <y>263</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>239</x>
-     <y>480</y>
     </hint>
    </hints>
   </connection>
