@@ -337,9 +337,15 @@ void CompilerNetwork::onDelegatedJobFinished(Job *job) {
 		foreach (QString fileName, outputFiles) {
 			QFile file(fileName);
 			if (!file.open(QIODevice::ReadOnly)) {
-				qFatal("onJobFinished(): Could not read previously created temporary file.");
+				qFatal("onDelegatedJobFinished(): Could not read previously created temporary file.");
 			}
 			fileContent.append(file.readAll());
+			file.remove();
+		}
+		QStringList inputFiles = job->getInputFiles();
+		foreach (QString fileName, inputFiles) {
+			QFile file(fileName);
+			file.remove();
 		}
 	}
 	incomingJobs.removeOne(incoming);
