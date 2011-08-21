@@ -28,15 +28,55 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QFile>
 #include <boost/concept_check.hpp>
 
+/**
+ * Represents a temporary file.
+ */
 class TemporaryFile {
 public:
+	/**
+	 * Creates a new temporary file according to the given extension, the templateName which by
+	 * default is "ddcn_tmp_" and the filename.
+	 * A random number will be added to the filename.
+	 * Note:  the temporary file will be written to the folder specified as temporary files folder in
+	 * the settings.
+	 * The full filename will be of the form: path/templateName + filename + random number.extension
+	 * @param extension the extension for the file.
+	 * @param templateName the templateName for the new file.
+	 * @param filename the filename for the new file.
+	 */
 	TemporaryFile(QString extension, QString templateName = "ddcn_tmp_",
 				  QString filename = "");
+	/**
+	 * Returns the full filename of the file of the form: path/templateName + filename + random number.extension
+	 * @return the full filename.
+	 */
 	QString getFilename();
+
+	/**
+	 * Returns the extension of the file.
+	 * @return the extension of the file.
+	 */
 	QString getExtension();
+
+	/**
+	 * Returns the file as QFile object.
+	 * @return the file.
+	 */
 	QFile *getFile();
 private:
-	QString generateFilename(QString templateName, QString proposedFilename);
+	/**
+	 * Generates a new unique (meaning: not yet existent in the temporary files folder) filename
+	 * consisting of the given templateName, the filename and a random number.
+	 * @param templateName the templateName.
+	 * @param filename the filename.
+	 * @return the generated filename.
+	 */
+	QString generateFilename(QString templateName, QString filename);
+
+	/**
+	 * Returns a random integer number with maximum 6 digits.
+	 * @return a random integer number.
+	 */
 	QString randomize();
 	QString name;
 	QString path;
