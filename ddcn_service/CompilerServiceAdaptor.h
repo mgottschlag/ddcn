@@ -112,6 +112,10 @@ public slots:
 	 * @return the number of jobs that have been accepted from other peers.
 	 */
 	int getNumberOfJobsInRemoteQueue();
+	/**
+	 * Clears the log file.
+	 */
+	void clearLog();
 private slots:
 	/**
 	 * Called when the number of currently running threads changes.

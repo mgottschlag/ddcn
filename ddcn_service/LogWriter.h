@@ -30,6 +30,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QtGlobal>
 #include <QFile>
 #include <QTextStream>
+#include <QMutex>
 
 /**
  * Class which logs all output to a file which comes from qDebug, qCritical or
@@ -65,10 +66,15 @@ public:
 	 * Opens the log file.
 	 */
 	bool init();
+	/**
+	 * Clears the log file.
+	 */
+	void clearLog();
 private:
 	static void qtMessageHandler(QtMsgType type, const char *message);
 	Q_DISABLE_COPY(LogWriter);
 
+	QMutex logMutex;
 	QFile logFile;
 	QTextStream *logStream;
 

@@ -411,7 +411,7 @@ void NetworkInterface::handleSystemEvent(const ariba::utility::SystemEvent &even
 
 void NetworkInterface::onAribaMessage(const QByteArray &data, unsigned short serial,
 		const ariba::utility::NodeID &remote, const ariba::utility::LinkID &link) {
-	qCritical("onAribaMessage");
+	qDebug("onAribaMessage");
 	NetworkNode *networkNode = NULL;
 	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.find(remote.toString().c_str());
 	if (it != onlineNodes.end()) {
@@ -433,7 +433,7 @@ void NetworkInterface::onAribaMessage(const QByteArray &data, unsigned short ser
 	networkNode->getTLS().writeIncoming(data);
 }
 void NetworkInterface::onAribaLinkUp(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
-	qCritical("onAribaLinkUp");
+	qDebug("onAribaLinkUp");
 	NetworkNode *networkNode = new NetworkNode(remote, link);
 	connect(networkNode, SIGNAL(outgoingDataAvailable(NetworkNode*)),
 		this, SLOT(onNodeOutgoingDataAvailable(NetworkNode*)));
@@ -453,7 +453,7 @@ void NetworkInterface::onAribaLinkUp(const ariba::utility::LinkID &link, const a
 	pendingNodes.insert(remote.toString().c_str(), networkNode);
 }
 void NetworkInterface::onAribaLinkDown(const ariba::utility::LinkID &link, const ariba::utility::NodeID &remote) {
-	qCritical("onAribaLinkDown");
+	qDebug("onAribaLinkDown");
 	// Find NetworkNode for this node id
 	QMap<QString, NetworkNode*>::Iterator it = onlineNodes.find(remote.toString().c_str());
 	if (it != onlineNodes.end()) {
@@ -477,7 +477,7 @@ void NetworkInterface::onAribaLinkFail(const ariba::utility::LinkID &link, const
 	onAribaLinkDown(link, remote);
 }
 void NetworkInterface::onMcpoReceiveData(const ariba::DataMessage &msg) {
-	qCritical("Group message incoming.");
+	qDebug("Group message incoming.");
 	DdcnGroupMessage* ddcnMessage = msg.getMessage()->convert<DdcnGroupMessage>();
 	ariba::ServiceID groupId(std::atoi(ddcnMessage->getServiceId().c_str()));
 	QByteArray packetData = QByteArray::fromHex(ddcnMessage->getText().c_str());
@@ -524,7 +524,7 @@ void NetworkInterface::onNodeConnectionReady(NetworkNode *node) {
 }
 
 void NetworkInterface::peerDiscovery() {
-	qCritical("Checking for new nodes...");
+	qDebug("Checking for new nodes...");
 	std::vector<ariba::utility::NodeID> nodes = node->getNeighborNodes();
 	knownNodesMutex.lock();
 	//qCritical("Known nodes before: %d", knownNodes.size());
@@ -540,7 +540,7 @@ void NetworkInterface::peerDiscovery() {
 		if (nodeId >= node->getNodeId()) {
 			continue;
 		}
-		qCritical("New neighbor %s", nodeId.toString().c_str());
+		qDebug("New neighbor %s", nodeId.toString().c_str());
 		// Only create the link once
 		knownNodes.insert(nodeId.toString().c_str());
 		// Only one side of the connection shall create a link
