@@ -4,7 +4,7 @@
 \usepackage{verbatim}
 
 \title{Dynamic Distributed Compiler Network - User Documentation}
-\author{Florian Münchbach, Mathias Gottschlag}
+\author{Benjamin Fus, Florian Münchbach, Mathias Gottschlag}
 
 \begin{document}
 
@@ -12,7 +12,7 @@
 
 \section{Overview}
 
-Distributed Dynamic Compiler Network (short ``ddcn'') is a system to speed up compilation times of large C and C++ programs via offloading some of the work to other computers in the network. This is done by providing a local service (\texttt{ddcn\_service}) on every of the computers which receives jobs from local  gcc-like compiler processes (\texttt{ddcn\_gcc}, \texttt{ddcn\_g++}) and communicates with the other peers in a decentralized fashion to delegate parts of this work where possible. The local service usually is configured through a graphical control interface (\texttt{ddcn\_control}).
+Distributed Dynamic Compiler Network (short ``ddcn'') is a system to speed up compilation times of large C and C++ programs by distributing some of the work to other computers in the network.\\This is done by providing a local service (\texttt{ddcn\_service}) on every computer which receives jobs from local  gcc-like compiler processes (\texttt{ddcn\_gcc}, \texttt{ddcn\_g++}) and communicates with the other peers in a decentralized fashion to delegate parts of this work where possible. The local service usually is configured through a graphical control interface (\texttt{ddcn\_control}).
 
 \section{Compiling}
 
