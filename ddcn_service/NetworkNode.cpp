@@ -66,7 +66,7 @@ void NetworkNode::onIncomingDataAvailable() {
 		//qDebug("packet: %d/%d (type: %d).", dataSize, packetSize, header.type);
 		if (dataSize >= packetSize + sizeof(header)) {
 			if (dataSize == packetSize + sizeof(header)) {
-				Packet packet = Packet::fromRawData(incomingData.left(sizeof(header) + packetSize));
+				Packet packet = Packet::fromRawData(incomingData);
 				// TODO: Disconnect if packet is invalid
 				emit packetReceived(this, packet);
 				incomingData = QByteArray();
