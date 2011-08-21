@@ -2,6 +2,8 @@
 \usepackage[utf8x]{inputenc}
 \usepackage{fullpage}
 \usepackage{verbatim}
+\usepackage[pdftex]{graphicx}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
 
 \title{Dynamic Distributed Compiler Network - User Documentation}
 \author{Benjamin Fus, Florian Münchbach, Mathias Gottschlag}
@@ -12,58 +14,68 @@
 
 \section{Overview}
 
-Distributed Dynamic Compiler Network (short ``ddcn'') is a system to speed up compilation times of large C and C++ programs by distributing some of the work to other computers in the network.\\This is done by providing a local service (\texttt{ddcn\_service}) on every computer which receives jobs from local  gcc-like compiler processes (\texttt{ddcn\_gcc}, \texttt{ddcn\_g++}) and communicates with the other peers in a decentralized fashion to delegate parts of this work where possible. The local service usually is configured through a graphical control interface (\texttt{ddcn\_control}).
+Distributed Dynamic Compiler Network (short ``ddcn'') is a system to speed up compilation times of large C and C++ programs by distributing some of the work to other computers in the network.\\Therefore, ddcn sets up a local service (\texttt{ddcn\_service}) on every peer which receives jobs from the local gcc-like compiler processes (\texttt{ddcn\_gcc}, \texttt{ddcn\_g++}) and communicates decentralized with the other peers to be able to delegate as many parts of its own work as possible. The local service can be configured and controlled using a graphical control interface (\texttt{ddcn\_control}).
 
 \section{Compiling}
 
-For instructions on compiling the system read the README file coming with the source. The project uses cmake to generate makefiles. When all dependencies are installed, \texttt{mkdir build \&\& cd build \&\& cmake .. \&\& make} should be enough to produce working executables. The following sections will just use the file names of them without any path. Usually they are in the directory \texttt{bin} within the current working directory if you build the project directly with cmake/make.
+For instructions on how to compile the system please read the README file coming with the source.\\The project uses cmake to generate makefiles. After installing all dependencies (namely ariba, mcpo, OpenSSL and Qt4)
+, \texttt{mkdir build \&\& cd build \&\& cmake .. \&\& make} should produce working executables.\\
+If you build the project directly with cmake/make the executables can be found in the directory where you build ddcn.\\
+In the following sections we will just use the file names of the executables without any path.
 
 \section{ddcn\_control - Setting up a local network node}
 
-To launch the control program which starts/configures the local network node, call the executable \texttt{ddcn\_control}. The window which opens should completely be greyed out, this is because no network node is running yet. To start one, press the icon in the upper left corner.
+To launch the graphical control program which starts/configures the local network node, call the executable \texttt{ddcn\_control}. The opening window should almost completely be greyed out, indicating that no network node is running yet. To start one, press the 
+\includegraphics[scale=0.1,keepaspectratio=true]{../ddcn_control/icons/network-disconnect.png} icon in the upper left corner.\\
+\smallskip
 
-The first tab in the window now shows you the statistics of the running \texttt{ddcn\_service} instance. Most important here is the key fingerprint on the left side - this is your identity in the network. Press the ``Change'' button to come to a settings dialog where you can regenerate, import or export your key. The node name however can appear more than once in a network and exists to provide a readable description of the node in the network overview tab.
+The first tab in the window shows statistics of the running \texttt{ddcn\_service} instance. Most important here is the key fingerprint and the node name on the left side - this is your identity in the network. Pressing the ``Change'' button will bring up a settings dialog that allows you to regenerate, import or export your key. The node name however can appear more than once in a network and exists to provide a readable description of the node in the network overview tab.\\
+\smallskip
 
-Also configurable is the number of local processes the program will try to start in parallel. This roughly translates to the \texttt{-j} parameter of GNU make and should be about the same as the number of physical CPUs in your system.
+Also configurable is the number of local processes the program will try to start parallel. This roughly resembles the \texttt{-j} parameter of GNU make and should be about the number of physical CPUs in your system.
 
 \section{Connecting to other peers}
 
-To connect to other peers in the network, you first need to set the bootstrapping and endpoint settings in the configuration dialog. These are documented at \textbf{TODO}, per default \texttt{ddcn\_service} listens at the local TCP port 5005 and to look for other peers via mDNS and broadcasting. Now, if you start another peer in the network as described above, the program should automatically connect to it. The list of peers which have connected can be viewed at the ``Network Status'' tab in the control window. This list does not refresh automatically though, you have to press the button below it.
-The peers will not exchange compiler jobs yet - per default, a peer does not trust any other peer as this would impose a huge security problem. This means that the you manually have to add peers or group of peers to the list of peers you trusts.
+To connect to other peers in the network, you first have to change the bootstrapping and endpoint settings in the configuration dialog.\\These are documented at \textbf{\url{http://www.ariba-underlay.org/wiki/Documentation/Configuration}}.\\Per default \texttt{ddcn\_service} listens at the local TCP port 5005. It searches for other peers via mDNS and broadcasting. Now, if you start another peer in the network as described above, the program should automatically connect to it. The list of peers found in the network can be viewed at the ``Network Status'' tab in the control window. This list does \textit{not} refresh automatically. So you have to press the button below it.\\
+The peers will not exchange compiler jobs yet - per default, a peer does not trust any other peer because this would impose a huge security problem. This means that the you manually have to add single peers or groups of peers to the list of peers you trusts.
 
 \subsection{Trusting a single peer}
+There are two ways if you want to trust a single peer:
+\begin{itemize}
+  \item{\bf Trusting an online peer} Either the peer is online, right click onto the peer in the ``Network Status'' list and select ``\textbf{Trust this peer...}''. The icon next to the peer will change to a green shield indicating that the service will now try to delegate compiler jobs to this peer.
+  \item{\bf Trusting an offline peer} If the peer is not online, you can import a PEM encoded public key file by pressing ``Add trusted peer'' in the ``Trust settings'' tab of the window.
+\end{itemize}
 
-To trust a single peer, there are two ways:
-
-If it is online, the easiest way is to right click onto the peer in the ``Network Status'' list and select ``\textbf{TODO}''. The icon next to the peer should change to a green shield indicating that the service will try to delegate compiler jobs to this peer.
-
-If the peer is not online, you can import a PEM encoded public key file by pressing ``Add trusted peer'' in the ``Trust settings'' tab of the window.
 
 \subsection{Joining a group of peers}
 
-Groups of peers are supported via a shared private key which every peer in the group has and which is used to verify that a peer is in a certain group. Groups are managed in the ``Group membership'' tab in the window. To create a new peer group, go there and press ``Create new group''. This will autogenerate a random private key which serves as the identity of the group, the name which was given to the group again is purely of a descriptive nature. To invite others to the group, press ``Export private group key'' and pass the key to the other computers which should join the group. To join the group on these machines, press ``Join group'' there and select the key file produced in the previous step. You can also import any other PEM encoded private key file if you want to use OpenSSL or a similar utility to create a group key.
+Groups of peers are supported via a shared private key which every peer in the group has and which is used to verify that a peer is a member of a certain group. \\
+Groups are managed in the ``Group membership'' tab in the window. \\
+To create a new peer group there, press ``Create new group''. This will autogenerate a random private key which serves as the identity of the group, the name which was given to the group again is purely of a descriptive nature. To invite others to the group, press ``Export private group key'' and pass the key to the other computers which should join the group. To join the group on these machines, press ``Join group'' there and select the key file produced in the previous step. You can also import any other PEM encoded private key file if you want to use OpenSSL or a similar utility to create a group key.\\
+\smallskip
 
-It is important to knpw that if you are a member of the group, you do not automatically trust it. You explicitly have to do it as shown in the next step.
+It is important to know that being a member of a group does not mean you do automatically trust it. You explicitly have to mark the group trusted as shown in the next step.
 
 \subsection{Trusting a group of peers}
 
+%TODO a reference to trusting single peers might be enough
 To trust a group of peers, there again are two ways, like with single peers - you can either right-click into the online group list and trust the group in the context menu of the list if there are peers online which are members of the group, or you can import the public key of the group by clicking ``Add trusted group'' in the ``Trust settings'' tab.
 
 \section{ddcn\_service - Creating a network node without the GUI}
 
-Internally, \texttt{ddcn\_control} just starts \texttt{ddcn\_service}, this process also can be run without the graphical interface where necessary (e.g. on headless servers). The two processes then communicate via a D-Bus interface which also could be used by other front-ends. The D-Bus interface sits behind the address \texttt{org.ddcn.service}, documentation for the interface is only available as doxygen documentation of the adaptor classes within the \texttt{ddcn\_service} sources. If you write a front-end and want to change some settings as done in the configuration dialog of \texttt{ddcn\_control}, do not edit the INI file described below but rather call the appropriate functions via D-Bus as only this ensures that the local network node instantly will reconfigure and apply the changes.
-
-%TODO: Headless? :D
+Internally, \texttt{ddcn\_control} starts \texttt{ddcn\_service}. Instead this process can also be run without the graphical interface if necessary (e.g. on headless servers). The two processes communicate via a D-Bus interface that also could be used by other front-ends. The D-Bus interface is reachable under the address \texttt{org.ddcn.service}. The documentation of the interface is only available as doxygen documentation of the adaptor classes within the \texttt{ddcn\_service} sources. If you write a front-end and want to change settings, as it is done in the configuration dialog of \texttt{ddcn\_control}, do not edit the INI file described below but rather call the appropriate functions via D-Bus. This ensures that the local network node will be informed about changes and reconfigures itself.
 
 \section{Configuration files}
 
-The configuration files for the local network node are stored in \texttt{\textasciitilde/.config/ddcn}. There you have the private key of the local network node (\texttt{privkey.pem}) and an INI file holding the other configurable options available through \texttt{ddcn\_control}.
+The configuration files for the local network node are, by default, stored in \texttt{\textasciitilde/.config/ddcn}. There you will find the private key of the local network node (\texttt{privkey.pem}) and an INI file holding the other configurable options available through \texttt{ddcn\_control}.
 
 \section{Calling the compiler}
 
-The project provides a drop-in replacement for the GNU gcc compilier (or more precisely, for the \texttt{gcc} and \texttt{g++} programs from that compiler suite) which can compile C and C++. The replacement for \texttt{gcc} is \texttt{bin/ddcn\_gcc}, while the replacement for the C++ compiler is located not in the output directory but in the \texttt{ddcn\_gcc/} source directory and is called \texttt{ddcn\_g++}. This utility is a simple shell script which calls the C compiler replacement with the environment variable \texttt{DDCN\_LANGUAGE} set to \texttt{c++}. Note however that compiling fails if no local network node is running as everything actually happens inside of this central process, only command line parameters and \texttt{stdin} data are transferred.
+The project provides a drop-in replacement for the GNU gcc compilier (or more precisely, for the \texttt{gcc} and \texttt{g++} programs from that compiler suite) which can compile C and C++. The replacement for \texttt{gcc} is \texttt{bin/ddcn\_gcc}, while \texttt{ddcn\_g++} replaces the C++ compiler. \texttt{ddcn\_g++} is not located in the output directory but in the \texttt{ddcn\_gcc/} source directory. This utility is a simple shell script which calls the C compiler replacement with the environment variable \texttt{DDCN\_LANGUAGE} set to \texttt{c++}.\\
+Note: However, compiling fails if no local network node is running because everything actually happens inside of this central process. Only command line parameters and \texttt{stdin} data are transferred.\\
+\smallskip
 
-In order to compile an existing project with these compilers you have to make sure they are both somewhere in your \texttt{PATH} variable. Then you can just select different \texttt{CC} and \texttt{CXX} program names. Assume that the sources are under \texttt{/home/spovnet/ddcn} while the output files are under \texttt{/home/spovnet/ddcn/build} as described in the readme, you can compile an autotools project with the following lines:
+In order to compile an existing project with one of these compilers you have to make sure their paths are both somewhere in your \texttt{PATH} variable. Then you can just select different \texttt{CC} and \texttt{CXX} program names. Assuming the sources are saved in \texttt{/home/spovnet/ddcn} while the output files are in \texttt{/home/spovnet/ddcn/build} as described in the readme, you can compile an autotools project with the following lines:
 
 \begin{verbatim}
 export PATH=/home/spovnet/ddcn/build/bin:/home/spovnet/ddcn/ddcn_gcc:$PATH
@@ -71,22 +83,25 @@ CC=ddcn_gcc CXX=ddcn_g++ ./configure
 make -j20
 \end{verbatim} 
 
-Note the huge value passed to the \texttt{-j} option - this is not dangerous but even necessary to let ddcn pass some of the processes to other peers in the network as it always will try to compile them first and only delegates them if it has more jobs in the queue than what the user specified to be the maximum value of parallel jobs.
+Note the huge value passed to the \texttt{-j} option - this is not dangerous but even necessary to let ddcn pass some of the processes to other peers in the network as it always will try to compile them first and only delegates them if it has more jobs waiting than the user specified maximum value of parallel jobs.
 
 \section{Toolchains}
 
-If you compile in a heterogenous network, you will get into the situation where different computers have different operating systems or even different hardware architectures. These cases are handled via identifying a computer via a combination of its gcc target triple and the first three (including the dot) letters of its version, for example \texttt{i686-linux-gnu/4.4}. The local default compiler sitting at \texttt{/usr/bin/gcc} and \texttt{/usr/bin/g++} is automatically recognized and added to the configuration if missing.
+If you compile in a heterogenous network, you will get into the situation where different computers have different operating systems or even different hardware architectures. These cases are handled by identifying a computer using a combination of its gcc target triple and the first three (including the dot) letters of its version, for example \texttt{i686-linux-gnu/4.4}. The local default compilers at \texttt{/usr/bin/gcc} and \texttt{/usr/bin/g++} will automatically be recognized and added to the configuration if missing.
 
 \subsection{Adding and removing toolchains}
 
-If you however want to add other toolchains with a different gcc version or target achitecture as you want to be able to support machines with an incompatible architecture, you need to manually notify the system of your toolchain. This is done by pressing the ``Add'' button on the ``Toolchains'' tab in the control window which will cause a file open dialog to pop up where you have to select the \texttt{gcc} executable of your compiler. Custom prefices and suffices to the compiler name (e.g. \texttt{/usr/bin/arm-cross-gcc-4.6}) are supported as well as long as neither the suffix nor the prefix contain the word \texttt{gcc}. You can always remove a toolchain by selecting it from the list and pressing the ``Remove'' button.
+If you want to add other toolchains with a different gcc version or target achitecture to be able to support machines with an incompatible architecture, you will need to manually notify the system of your toolchain. To do so, press the ``Add'' button on the ``Toolchains'' tab in the control window which will bring up a file-open dialog. Where you have to select the \texttt{gcc} executable of your compiler. Custom prefices and suffices to the compiler name (e.g. \texttt{/usr/bin/arm-cross-gcc-4.6}) are supported so long as neither the suffix nor the prefix contain the word \texttt{gcc}. \\You can always remove a toolchain by selecting it from the list and pressing the ``Remove'' button.
 
 \subsection{Toolchain compatibility}
 
-There are some rules to when a toolchain is compatible to another. The easiest one is that they are compatible when their identifier (target triple and version, as described above) is identical. But even when they are not, they might play together well enough:
+There are some rules when a toolchain is compatible to another.\\
+The easiest one is that they are compatible when their identifier (target triple and version, as described above) are identical. But even when they are not, they might work together well enough:\\
+\smallskip
 
-If the target triple is compatible or identical, computers with a higher gcc version can compile jobs for computers with a lower version. This is because of new features in newer gcc versions older compilers might not support everything a newer compiler supports.
+If the target triple is compatible or identical, computers with a higher gcc version can compile jobs for computers with a lower version. The reason is that new features of newer gcc versions might not be supported by older versions of gcc.\\
+\smallskip
 
-If the target triple differs, the compilers are incompatible if the host architecture does not match (e.g. \texttt{arm} vs. \texttt{i686}) with an exception being that \texttt{amd64} and \texttt{x86\_64} are still compatible to 32-bit intel architectures. But even if the architecture is the same, the compiler might still use e.g. a different ABI if it was compiled for a different operating system - only target triples which both contain the word ``\texttt{linux}'' are still considered to be compatible even if they otherwise differ.
+Compilers are incompatible if the target triple differs and the host architecture does not match (e.g. \texttt{arm} vs. \texttt{i686}). Nevertheless, \texttt{amd64} and \texttt{x86\_64} are still compatible to 32-bit intel architectures. Even if the architecture is the same, the compiler might still use e.g. a different ABI if it was compiled for a different operating system - only target triples containing the word ``\texttt{linux}'' are considered to be compatible even if they would differ otherwise.
 
 \end{document}
