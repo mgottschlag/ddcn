@@ -301,6 +301,7 @@ NetworkNode *NetworkInterface::getNetworkNode(const PublicKey &publicKey) {
 		if (it.value()->getPublicKey() == publicKey) {
 			return it.value();
 		}
+		it++;
 	}
 	return NULL;
 }
