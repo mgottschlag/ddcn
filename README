@@ -11,6 +11,10 @@ Dependencies:
   - mcpo (>=0.5)
   - Qt4
   - OpenSSL (>=0.9.8)
+  - log4cxx
+
+  It is strongly advised to build ariba with log4cxx support to enable logging
+  ariba messages to the ddcn log file.
 
   Additionally, to compile the project, gcc/g++ and cmake are required.
 

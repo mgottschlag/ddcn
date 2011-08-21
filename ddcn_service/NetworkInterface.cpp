@@ -30,6 +30,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDebug>
 #include <QtEndian>
 #include <QThread>
+#include <log4cxx/appenderskeleton.h>
 
 uint qHash(ariba::utility::NodeID nodeId) {
 	return qHash(nodeId.toString().c_str());
@@ -148,6 +149,29 @@ sznBeginDefault(DdcnGroupMessage, X) {
 
 vsznDefault(DdcnGroupMessage);
 
+class DdcnAppender : public log4cxx::AppenderSkeleton {
+public:
+	virtual void append(const log4cxx::spi::LoggingEventPtr &event,
+	                    log4cxx::helpers::Pool& p) {
+		QString message = event->getClass().getName().c_str();
+		message += event->getMessage().c_str();
+		if (event->getLevel()->isGreaterOrEqual(log4cxx::Level::getFatal())) {
+			qFatal("%s", message.toAscii().data());
+		} else if (event->getLevel()->isGreaterOrEqual(log4cxx::Level::getError())) {
+			qCritical("%s", message.toAscii().data());
+		} else if (event->getLevel()->isGreaterOrEqual(log4cxx::Level::getWarn())) {
+			qWarning("%s", message.toAscii().data());
+		} else {
+			qDebug("%s", message.toAscii().data());
+		}
+	}
+	virtual void close() {
+	}
+	virtual bool requiresLayout() const {
+		return false;
+	}
+};
+typedef log4cxx::helpers::ObjectPtrT<DdcnAppender> DdcnAppenderPtr;
 
 void PacketHeader::insertPacketHeaderLength(QByteArray &packet) {
 	PacketHeader header;
@@ -176,9 +200,13 @@ NetworkInterface::NetworkInterface(QString name,
 		SLOT(onAribaLinkFail(ariba::utility::LinkID, ariba::utility::NodeID)), Qt::QueuedConnection);
 	// Start networking
 	ariba::utility::StartupWrapper::startSystem();
+#ifdef HAVE_LOG4CXX_LOGGER_H
+	log4cxx::Logger::getRootLogger()->removeAllAppenders();
+	log4cxx::Logger::getRootLogger()->addAppender(new DdcnAppender);
+#endif
 	ariba::utility::StartupWrapper::startup(this, false);
 	// log4cxx might not be available
-#ifdef logging_rootlevel_error
+#ifdef HAVE_LOG4CXX_LOGGER_H
 	logging_rootlevel_error();
 #endif
 }
@@ -210,9 +238,13 @@ void NetworkInterface::restart() {
 	}
 	// Start the system
 	ariba::utility::StartupWrapper::startSystem();
+#ifdef HAVE_LOG4CXX_LOGGER_H
+	log4cxx::Logger::getRootLogger()->removeAllAppenders();
+	log4cxx::Logger::getRootLogger()->addAppender(new DdcnAppender);
+#endif
 	ariba::utility::StartupWrapper::startup(this, false);
 	// log4cxx might not be available
-#ifdef logging_rootlevel_error
+#ifdef HAVE_LOG4CXX_LOGGER_H
 	logging_rootlevel_error();
 #endif
 }
