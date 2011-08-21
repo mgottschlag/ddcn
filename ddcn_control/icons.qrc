@@ -2,15 +2,8 @@
     <qresource prefix="/icons">
         <file>icons/configure.png</file>
         <file>icons/help-contents.png</file>
-        <file>icons/im-user-offline.png</file>
-        <file>icons/im-user.png</file>
-        <file>icons/list-add.png</file>
-        <file>icons/list-remove.png</file>
         <file>icons/network-connect.png</file>
         <file>icons/network-disconnect.png</file>
-        <file>icons/view-certificate-add.png</file>
-        <file>icons/view-certificate-export.png</file>
-        <file>icons/view-certificate.png</file>
         <file>icons/security-low.png</file>
         <file>icons/security-high.png</file>
     </qresource>
