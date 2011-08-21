@@ -401,7 +401,6 @@ void MainWindow::refreshLog() {
 	}
 }
 void MainWindow::clearLog() {
-	qDebug("clearLog()");
 	QDBusReply<void> reply = dbusService.call("clearLog");
 	if (!reply.isValid()) {
 		// If the service is not running, delete the file manually
@@ -411,6 +410,7 @@ void MainWindow::clearLog() {
 		QFile logFile(logFileName);
 		logFile.remove();
 	}
+	refreshLog();
 }
 
 void MainWindow::pollServiceStatus() {
