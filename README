@@ -91,3 +91,19 @@ Documentation:
 
   The resulting documentation is at docs/ddcn_service/html/index.html.
 
+Compiling on the SpoVNet contest image:
+
+  The following steps are specific to a clean spovnet contest image and will
+  produce binaries for ddcn there:
+
+    cd ~/Contest
+    sudo apt-get install mercurial libqt4-dev cmake
+    hg clone https://mgottschlag@code.google.com/p/ddcn/
+    mkdir ddcn/build
+    cd ddcn/build
+    cmake .. -DCMAKE_PREFIX_PATH=/home/spovnet/Contest/0build
+    make
+
+  The service is placed at /home/spovnet/Contest/ddcn/build/bin/ddcn_service,
+  the compilers are at /home/spovnet/Contest/ddcn/build/bin/ddcn_gcc and
+  /home/spovnet/Contest/ddcn/ddcn_gcc/ddcn_g++.
