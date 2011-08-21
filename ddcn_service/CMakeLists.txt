@@ -39,7 +39,6 @@ set(MOC_H
 	CompilerNetworkAdaptor.h
 	InputOutputFilePair.h
 	Job.h
-	TemporaryFile.h
 	NetworkInterface.h
 	NetworkNode.h
 )
