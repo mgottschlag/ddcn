@@ -207,7 +207,7 @@ NetworkInterface::NetworkInterface(QString name,
 	ariba::utility::StartupWrapper::startup(this, false);
 	// log4cxx might not be available
 #ifdef HAVE_LOG4CXX_LOGGER_H
-	logging_rootlevel_error();
+	log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getWarn());
 #endif
 }
 NetworkInterface::~NetworkInterface() {
@@ -245,7 +245,7 @@ void NetworkInterface::restart() {
 	ariba::utility::StartupWrapper::startup(this, false);
 	// log4cxx might not be available
 #ifdef HAVE_LOG4CXX_LOGGER_H
-	logging_rootlevel_error();
+	log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getWarn());
 #endif
 }
 
