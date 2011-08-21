@@ -25,7 +25,7 @@ In the following sections we will just use the file names of the executables wit
 
 \section{ddcn\_control - Setting up a local network node}
 
-To launch the graphical control program which starts/configures the local network node, call the executable \texttt{ddcn\_control}. The opening window should almost completely be greyed out, indicating that no network node is running yet. To start one, press the 
+To launch the graphical control program which starts/configures the local network node, call the executable \texttt{ddcn\_control}. The opening window should almost completely be grayed out, indicating that no network node is running yet. To start one, press the 
 \includegraphics[scale=0.1,keepaspectratio=true]{../ddcn_control/icons/network-disconnect.png} icon in the upper left corner.\\
 \smallskip
 
@@ -51,7 +51,7 @@ There are two ways if you want to trust a single peer:
 
 Groups of peers are supported via a shared private key which every peer in the group has and which is used to verify that a peer is a member of a certain group. \\
 Groups are managed in the ``Group membership'' tab in the window. \\
-To create a new peer group there, press ``Create new group''. This will autogenerate a random private key which serves as the identity of the group, the name which was given to the group again is purely of a descriptive nature. To invite others to the group, press ``Export private group key'' and pass the key to the other computers which should join the group. To join the group on these machines, press ``Join group'' there and select the key file produced in the previous step. You can also import any other PEM encoded private key file if you want to use OpenSSL or a similar utility to create a group key.\\
+To create a new peer group there, press ``Create new group''. This will auto-generate a random private key which serves as the identity of the group, the name which was given to the group again is purely of a descriptive nature. To invite others to the group, press ``Export private group key'' and pass the key to the other computers which should join the group. To join the group on these machines, press ``Join group'' there and select the key file produced in the previous step. You can also import any other PEM encoded private key file if you want to use OpenSSL or a similar utility to create a group key.\\
 \smallskip
 
 It is important to know that being a member of a group does not mean you do automatically trust it. You explicitly have to mark the group trusted as shown in the next step.
@@ -71,7 +71,7 @@ The configuration files for the local network node are, by default, stored in \t
 
 \section{Calling the compiler}
 
-The project provides a drop-in replacement for the GNU gcc compilier (or more precisely, for the \texttt{gcc} and \texttt{g++} programs from that compiler suite) which can compile C and C++. The replacement for \texttt{gcc} is \texttt{bin/ddcn\_gcc}, while \texttt{ddcn\_g++} replaces the C++ compiler. \texttt{ddcn\_g++} is not located in the output directory but in the \texttt{ddcn\_gcc/} source directory. This utility is a simple shell script which calls the C compiler replacement with the environment variable \texttt{DDCN\_LANGUAGE} set to \texttt{c++}.\\
+The project provides a drop-in replacement for the GNU gcc compiler (or more precisely, for the \texttt{gcc} and \texttt{g++} programs from that compiler suite) which can compile C and C++. The replacement for \texttt{gcc} is \texttt{bin/ddcn\_gcc}, while \texttt{ddcn\_g++} replaces the C++ compiler. \texttt{ddcn\_g++} is not located in the output directory but in the \texttt{ddcn\_gcc/} source directory. This utility is a simple shell script which calls the C compiler replacement with the environment variable \texttt{DDCN\_LANGUAGE} set to \texttt{c++}.\\
 Note: However, compiling fails if no local network node is running because everything actually happens inside of this central process. Only command line parameters and \texttt{stdin} data are transferred.\\
 \smallskip
 
@@ -87,11 +87,11 @@ Note the huge value passed to the \texttt{-j} option - this is not dangerous but
 
 \section{Toolchains}
 
-If you compile in a heterogenous network, you will get into the situation where different computers have different operating systems or even different hardware architectures. These cases are handled by identifying a computer using a combination of its gcc target triple and the first three (including the dot) letters of its version, for example \texttt{i686-linux-gnu/4.4}. The local default compilers at \texttt{/usr/bin/gcc} and \texttt{/usr/bin/g++} will automatically be recognized and added to the configuration if missing.
+If you compile in a heterogeneous network, you will get into the situation where different computers have different operating systems or even different hardware architectures. These cases are handled by identifying a computer using a combination of its gcc target triple and the first three (including the dot) letters of its version, for example \texttt{i686-linux-gnu/4.4}. The local default compilers at \texttt{/usr/bin/gcc} and \texttt{/usr/bin/g++} will automatically be recognized and added to the configuration if missing.
 
 \subsection{Adding and removing toolchains}
 
-If you want to add other toolchains with a different gcc version or target achitecture to be able to support machines with an incompatible architecture, you will need to manually notify the system of your toolchain. To do so, press the ``Add'' button on the ``Toolchains'' tab in the control window which will bring up a file-open dialog. Where you have to select the \texttt{gcc} executable of your compiler. Custom prefices and suffices to the compiler name (e.g. \texttt{/usr/bin/arm-cross-gcc-4.6}) are supported so long as neither the suffix nor the prefix contain the word \texttt{gcc}. \\You can always remove a toolchain by selecting it from the list and pressing the ``Remove'' button.
+If you want to add other toolchains with a different gcc version or target architecture to be able to support machines with an incompatible architecture, you will need to manually notify the system of your toolchain. To do so, press the ``Add'' button on the ``Toolchains'' tab in the control window which will bring up a file-open dialog. Where you have to select the \texttt{gcc} executable of your compiler. Custom prefixes and suffices to the compiler name (e.g. \texttt{/usr/bin/arm-cross-gcc-4.6}) are supported so long as neither the suffix nor the prefix contain the word \texttt{gcc}. \\You can always remove a toolchain by selecting it from the list and pressing the ``Remove'' button.
 
 \subsection{Toolchain compatibility}
 
