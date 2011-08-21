@@ -64,6 +64,12 @@ int main(int argc, char **argv) {
 			dir.mkpath(settingsDir);
 		}
 	}
+	// This has to be done before initializing the log writer as an existing
+	// instance might be writing into the log right now
+	if (!QDBusConnection::sessionBus().registerService("org.ddcn.service")) {
+		std::cout << "The program is already running, aborting." << std::endl;
+		return -1;
+	}
 	// Initialize an instance of the log writer
 	LogWriter logWriter;
 	if (!logWriter.init()) {
@@ -90,7 +96,6 @@ int main(int argc, char **argv) {
 	// Create the D-Bus interface
 	QDBusConnection::sessionBus().registerObject("/CompilerService", &service);
 	QDBusConnection::sessionBus().registerObject("/CompilerNetwork", &network);
-	QDBusConnection::sessionBus().registerService("org.ddcn.service");
 	// Start the event loop
 	return app.exec();
 }
