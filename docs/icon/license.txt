@@ -1,0 +1,5 @@
+The icon is derived from icons from the oxygen icon theme and licensed under the
+LGPL v3 (see ../../ddcn_control/icons/license.txt)
+
+http://www.oxygen-icons.org/
+
