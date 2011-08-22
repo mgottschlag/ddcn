@@ -50,7 +50,7 @@ Job::Job(QStringList inputFiles, QStringList outputFiles,
 	this->workingDir = workingDir;
 	this->stdinData = stdinData;
 	this->language = language;
-	qCritical("in: %s, param: %s, tool: %s, delegatable: %d",
+	qDebug("in: %s, param: %s, tool: %s, delegatable: %d",
 			(inputFiles.count() <= 0) ? "[no inputFiles]" : inputFiles[0].toAscii().data(),
 			(fullParameters.count() <= 0) ? "[no parameters]" : fullParameters[0].toAscii().data(),
 			toolChain.getVersion().toAscii().data(), (int)this->delegatable);
@@ -132,7 +132,7 @@ void Job::execute() {
 
 void Job::onExecuteFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 	compiling = false;
-	qCritical("Execute finished: %d", gccProcess->exitCode());
+	qDebug("Execute finished: %d", gccProcess->exitCode());
 	jobResult.stdout = gccProcess->readAllStandardOutput();
 	jobResult.stderr = gccProcess->readAllStandardError();
 	jobResult.returnValue = exitCode;
